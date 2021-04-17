@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.1)
 ## --------------------------- AUTOMATED TESTS
 aux_source_directory        (automation                 AUTOMATION_SOURCES)
 
-add_executable              (ezdata-automated-tests     ${AUTOMATION_SOURCES})
-add_dependencies            (ezdata-automated-tests     ezdata::static)
+add_executable              (cppmarkup-automated-tests     ${AUTOMATION_SOURCES})
+add_dependencies            (cppmarkup-automated-tests     cppmarkup::static)
 
-target_link_libraries       (ezdata-automated-tests     PUBLIC      ezdata::static)
-target_include_directories  (ezdata-automated-tests     PUBLIC      ezdata::static)
+target_link_libraries       (cppmarkup-automated-tests     PUBLIC      cppmarkup::static)
+target_include_directories  (cppmarkup-automated-tests     PUBLIC      cppmarkup::static)
 
 ## --------------------------- TRIVIAL TESTS
 add_executable(poc-static_inline poc-static_inline.cpp)

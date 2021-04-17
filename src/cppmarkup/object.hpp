@@ -21,20 +21,20 @@
  *std::string_view)을 제공해야 합니다. 직렬화를 위해선 void(std::string, std::span<const std::byte>)
  *함수가 제공되어야 합니다.
  *
- * 기본적으로, ezdata::marshal 네임스페이스의 parse 및 serialize 함수를 찾습니다.
+ * 기본적으로, cppmarkup::marshal 네임스페이스의 parse 및 serialize 함수를 찾습니다.
  *
  * 파싱에 실패할 경우 예외를 던지거나, 단순히 실패 구조체를 반환할 수 있습니다. (optional)
  *
  * Json 및 XML 오브젝트 트리 전체를 파싱 및 직렬화하는 인터페이스를 제공합니다. 
  */
-namespace ezdata {
+namespace cppmarkup {
 // clang-format off
 struct tag_duplication_exception : std::exception {};
 struct attribute_duplication_exception : std::exception {};
 // clang-format on
-} // namespace ezdata
+} // namespace cppmarkup
 
-namespace ezdata::impl {
+namespace cppmarkup::impl {
 
 template <class source_type>
 using parse_fn_t = std::function<bool(void*, size_t, source_type const&)>;
@@ -96,7 +96,7 @@ struct traits : object_base {
 };
 
 /**
- * EZDATA_ADD로 생성되는 오브젝트 인스턴스가 상속합니다.
+ * CPPMARKUP_ADD로 생성되는 오브젝트 인스턴스가 상속합니다.
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
@@ -108,7 +108,7 @@ struct object_inst_init {
 
         for (auto& pn : nodes)
         {
-            if (pn.tag == tag) { throw ezdata::tag_duplication_exception{}; }
+            if (pn.tag == tag) { throw cppmarkup::tag_duplication_exception{}; }
         }
 
         auto& n      = nodes.emplace_back();
@@ -144,9 +144,9 @@ struct object_inst_attr_init {
     }
 };
 
-} // namespace ezdata::impl
+} // namespace cppmarkup::impl
 
-namespace ezdata::marshal {
+namespace cppmarkup::marshal {
 
 bool parse(int32_t& d, pugi::xml_node const& s) { return true; }
 bool parse(int64_t& d, pugi::xml_node const& s) { return true; }
@@ -155,38 +155,38 @@ bool parse(int8_t& d, pugi::xml_node const& s) { return true; }
 bool parse(float& d, pugi::xml_node const& s) { return true; }
 bool parse(double& d, pugi::xml_node const& s) { return true; }
 bool parse(std::u8string& d, pugi::xml_node const& s) { return true; }
-bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s) { return true; }
+bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s) { return true; }
 
-} // namespace ezdata::marshal
+} // namespace cppmarkup::marshal
 
-#define EZDATA_OBJECT_TEMPLATE(template_type_name)                                \
-    struct INTERNAL_EZ_SUPER_##template_type_name                                 \
-        : public ::ezdata::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
-        using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;         \
-    };                                                                            \
+#define CPPMARKUP_OBJECT_TEMPLATE(template_type_name)                                \
+    struct INTERNAL_EZ_SUPER_##template_type_name                                    \
+        : public ::cppmarkup::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
+        using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;            \
+    };                                                                               \
     struct template_type_name : public INTERNAL_EZ_SUPER_##template_type_name
 
-#ifndef EZDATA_ALIGN
-#define EZDATA_ALIGN 8
+#ifndef CPPMARKUP_ALIGN
+#define CPPMARKUP_ALIGN 8
 #endif
 
-#define EZDATA_ADD(varname, tag, default_value, ...)                                                       \
+#define CPPMARKUP_ADD(varname, tag, default_value, ...)                                                    \
     struct INTERNAL_EZ_INSTANCE_##varname {                                                                \
         using value_type = decltype(default_value);                                                        \
                                                                                                            \
     private:                                                                                               \
-        alignas(EZDATA_ALIGN) value_type _value                             = default_value;               \
-        static inline std::atomic<::ezdata::impl::node_property*> _node_ref = nullptr;                     \
+        alignas(CPPMARKUP_ALIGN) value_type _value                             = default_value;            \
+        static inline std::atomic<::cppmarkup::impl::node_property*> _node_ref = nullptr;                  \
                                                                                                            \
     public:                                                                                                \
         static bool parse(void* r, size_t size, pugi::xml_node const& s)                                   \
         {                                                                                                  \
             assert(sizeof(value_type) == size);                                                            \
-            return ::ezdata::marshal::parse(*(value_type*)r, s);                                           \
+            return ::cppmarkup::marshal::parse(*(value_type*)r, s);                                        \
         }                                                                                                  \
                                                                                                            \
-        static inline ::ezdata::impl::object_inst_init<                                                    \
-            INTERNAL_EZ_INSTANCE_##varname, value_type, EZDATA_ALIGN>                                      \
+        static inline ::cppmarkup::impl::object_inst_init<                                                 \
+            INTERNAL_EZ_INSTANCE_##varname, value_type, CPPMARKUP_ALIGN>                                   \
             _init{                                                                                         \
                 _node_ref,                                                                                 \
                 INTERNAL_EZ_node_list,                                                                     \
@@ -226,19 +226,19 @@ bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s) { return true;
         __VA_ARGS__                                                                                        \
     } varname{this};
 
-#define EZDATA_ATTR(attr_name, default_value)                             \
-    alignas(EZDATA_ALIGN) std::u8string attr_name;                        \
+#define CPPMARKUP_ATTR(attr_name, default_value)                          \
+    alignas(CPPMARKUP_ALIGN) std::u8string attr_name;                     \
     struct INTERNAL_EZ_ATTR_##attr_name {                                 \
-        static inline ::ezdata::impl::object_inst_attr_init<              \
-            INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>                   \
+        static inline ::cppmarkup::impl::object_inst_attr_init<           \
+            INTERNAL_EZ_ATTR_##attr_name, CPPMARKUP_ALIGN>                \
             _init{INTERNAL_EZ_node_list, u8## #attr_name, default_value}; \
     };
 
-#define EZDATA_ADD_ARRAY(template_type_name)
-#define EZDATA_DESCRIPTION_BELOW(description) \
+#define CPPMARKUP_ADD_ARRAY(template_type_name)
+#define CPPMARKUP_DESCRIPTION_BELOW(description) \
     static inline INTERNAL_EZ_description_replacer DESCRIPTION_##__LINE__{description};
 
-#define EZDATA_NESTED_OBJECT(varname, tag, ...)               \
-    EZDATA_OBJECT_TEMPLATE(INTERNAL_EZ_##varname##_TEMPLATE){ \
-        __VA_ARGS__};                                         \
-    EZDATA_ADD(varname, tag, INTERNAL_EZ_##varname##_TEMPLATE{})
+#define CPPMARKUP_NESTED_OBJECT(varname, tag, ...)               \
+    CPPMARKUP_OBJECT_TEMPLATE(INTERNAL_EZ_##varname##_TEMPLATE){ \
+        __VA_ARGS__};                                            \
+    CPPMARKUP_ADD(varname, tag, INTERNAL_EZ_##varname##_TEMPLATE{})

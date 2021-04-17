@@ -1,19 +1,19 @@
 #include "catch.hpp"
-#include <ezdata/object.hpp>
+#include "cppmarkup/object.hpp"
 
-namespace test::ezdata::objects {
-EZDATA_OBJECT_TEMPLATE(some_type)
+namespace test::cppmarkup::objects {
+CPPMARKUP_OBJECT_TEMPLATE(some_type)
 {
     /*
     struct INTERNAL_EZ_INSTANCE_varname {
         using value_type                                 = decltype(TEMP_DEFAULTVAL);
-        alignas(EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
+        alignas(CPPMARKUP_ALIGN) value_type _value = TEMP_DEFAULTVAL;
 
-        static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, EZDATA_ALIGN> _init{
+        static inline cppmarkup::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, CPPMARKUP_ALIGN> _init{
             INTERNAL_EZ_node_list, u8"TagName", sizeof _value, &INTERNAL_EZ_description_str,
             [](void *r, size_t size, pugi::xml_node const &s) -> bool {
                 assert(sizeof(value_type) == size);
-                return ezdata::marshal::parse(*(value_type *)r, s);
+                return cppmarkup::marshal::parse(*(value_type *)r, s);
             }};
 
         operator value_type() const
@@ -34,28 +34,28 @@ EZDATA_OBJECT_TEMPLATE(some_type)
         // attribute
         std::u8string Attr1;
         struct INTERNAL_EZ_ATTR_Attr1 {
-            static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, EZDATA_ALIGN>
+            static inline cppmarkup::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, CPPMARKUP_ALIGN>
                 _init{
                     INTERNAL_EZ_node_list, u8"Attr1", u8"Attr1Default"};
         };
     } d;
     */
 
-    // EZDATA_DESCRIPTION_BELOW(u8"");
-    EZDATA_ADD(fooa, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
-    EZDATA_ADD(grr, u8"EOFO", 2);
+    // CPPMARKUP_DESCRIPTION_BELOW(u8"");
+    CPPMARKUP_ADD(fooa, u8"Fooa", 3.141, CPPMARKUP_ATTR(Attr1, u8"Hell, world!"));
+    CPPMARKUP_ADD(grr, u8"EOFO", 2);
 
-    EZDATA_OBJECT_TEMPLATE(nested_type)
+    CPPMARKUP_OBJECT_TEMPLATE(nested_type)
     {
-        // EZDATA_DESCRIPTION_BELOW(u8"");
-        EZDATA_ADD(fooale, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
+        // CPPMARKUP_DESCRIPTION_BELOW(u8"");
+        CPPMARKUP_ADD(fooale, u8"Fooa", 3.141, CPPMARKUP_ATTR(Attr1, u8"Hell, world!"));
     };
 
-    EZDATA_ADD(poop, u8"Poop", nested_type{});
+    CPPMARKUP_ADD(poop, u8"Poop", nested_type{});
 
-    EZDATA_NESTED_OBJECT(
+    CPPMARKUP_NESTED_OBJECT(
         lod, u8"Lod",
-        EZDATA_ADD(laa, u8"Laa", 34));
+        CPPMARKUP_ADD(laa, u8"Laa", 34));
 };
 
 TEST_CASE("instanciation")
@@ -63,4 +63,4 @@ TEST_CASE("instanciation")
     some_type r;
     std::atomic<void*> k;
 }
-} // namespace test::ezdata::objects
+} // namespace test::cppmarkup::objects

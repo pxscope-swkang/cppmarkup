@@ -73,8 +73,12 @@ struct node_property {
 class object_base
 {
 public:
-    virtual std::list<node_property> const& properties() const = 0;
-    virtual ~object_base()                                     = default;
+    virtual ~object_base() = default;
+
+    virtual std::vector<node_property> const& properties() const = 0;
+    virtual size_t depth() const                                 = 0;
+
+    // TODO: 여기에 DUMP 및 PARSE 함수성 추가.
 };
 
 /**
@@ -85,17 +89,14 @@ public:
  */
 template <typename Tmplt_>
 struct traits : object_base {
-    static inline std::list<node_property> INTERNAL_EZ_node_list = {};
-    static inline const char8_t* INTERNAL_EZ_description_str     = {};
+    static inline std::vector<node_property> INTERNAL_EZ_node_list = {};
+    static inline const char8_t* INTERNAL_EZ_description_str       = {};
 
     struct INTERNAL_EZ_description_replacer {
         INTERNAL_EZ_description_replacer(const char8_t* str) { INTERNAL_EZ_description_str = str; }
     };
 
-    std::list<node_property> const& properties() const override
-    {
-        return INTERNAL_EZ_node_list;
-    }
+    std::vector<node_property> const& properties() const override { return INTERNAL_EZ_node_list; }
 };
 
 /**
@@ -103,7 +104,7 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(std::atomic<node_property*>& pnewnode, std::list<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
+    object_inst_init(std::atomic_size_t& pnewnode, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
     {
         size += Align_ - 1;
         size -= size % Align_;
@@ -114,8 +115,8 @@ struct object_inst_init {
             if (pn.tag == tag) { throw cppmarkup::tag_duplication_exception{}; }
         }
 
+        pnewnode     = nodes.size();
         auto& n      = nodes.emplace_back();
-        pnewnode     = &n;
         n.tag        = tag;
         n.value_size = size;
         n.total_size = size;
@@ -129,7 +130,7 @@ struct object_inst_init {
 
 template <class UniqueClass_, size_t Align_>
 struct object_inst_attr_init {
-    object_inst_attr_init(std::list<node_property>& nodes, std::u8string_view attr_name, std::u8string_view default_value)
+    object_inst_attr_init(std::vector<node_property>& nodes, std::u8string_view attr_name, std::u8string_view default_value)
     {
         auto& n = nodes.back();
 
@@ -150,16 +151,19 @@ struct object_inst_attr_init {
 } // namespace cppmarkup::impl
 
 namespace cppmarkup::marshal {
-/**
- * TODO: 템플릿 함수, integral은 int64_t 읽어오는 함수로, 부동 소수점은 double로, 문자열은 
- */
-bool parse(int32_t& d, pugi::xml_node const& s) { return true; }
-bool parse(int64_t& d, pugi::xml_node const& s) { return true; }
-bool parse(int16_t& d, pugi::xml_node const& s) { return true; }
-bool parse(int8_t& d, pugi::xml_node const& s) { return true; }
-bool parse(float& d, pugi::xml_node const& s) { return true; }
-bool parse(double& d, pugi::xml_node const& s) { return true; }
-bool parse(std::u8string& d, pugi::xml_node const& s) { return true; }
-bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s) { return true; }
+// TODO: 템플릿 함수, integral은 int64_t 읽어오는 함수로, 부동 소수점은 double로, 문자열은 u8string으로,
+inline bool parse(int32_t& d, pugi::xml_node const& s) { return true; }
+inline bool parse(int64_t& d, pugi::xml_node const& s) { return true; }
+inline bool parse(int16_t& d, pugi::xml_node const& s) { return true; }
+inline bool parse(int8_t& d, pugi::xml_node const& s) { return true; }
+inline bool parse(float& d, pugi::xml_node const& s) { return true; }
+inline bool parse(double& d, pugi::xml_node const& s) { return true; }
+inline bool parse(std::u8string& d, pugi::xml_node const& s) { return true; }
+inline bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s) { return true; }
+
+// TODO: raw byte 배열 특수화, JSON 및 XML에는 base64 인코딩, BSON에는 바이너리 그대로
+inline bool parse(std::vector<std::byte>& d, pugi::xml_node const& s) { return true; }
 
 } // namespace cppmarkup::marshal
+
+static constexpr size_t INTERNAL_EZ_depth = 0;

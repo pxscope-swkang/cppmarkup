@@ -2,125 +2,79 @@
 
 c++ <-> json, xml 간 데이터 바인딩 라이브러리
 
+## Contraints
+
+XML은 <OuterTag>PlainText<InnerTag/></OuterTag>등과 같이, plain text와 tag를 혼용할 수 없음. 순서에 둔감함 (JSON과 호환)
+
 # 사용 예제
 
-```XML
-<Foo Date="2021-04-23"> <!-- 오브젝트 타입 with ATTR -->
-    <Vlah>33</Vlah> <!-- 값 타입 -->
-    <Trs D="as">[true, false, true, true, false]</Trs> <!-- 값 타입 with ATTR -->
-    <FooFoo Value="dae"/> <!-- ATTR 타입 -->
-    <Str>"hell, world!"</Str> <!-- 값 타입 -->
-    <Algh.Frl> <!-- 오브젝트 배열 타입 with or without ATTR -->
-        <_ELEM R="32344"> <!-- 배열 엔트리 -->
-            <A>3142</A>
-            <B>3222</B>
-        </_ELEM>
-        <_ELEM R="65433">
-            <A>3411</A>
-            <B>3324</B>
-        </_ELEM>
-    </Algh.Frl>
-    <Ddd> <!-- 인라인 오브젝트 타입 (템플릿 없음) -->
-        <Peua R="ds"> <!-- 위의 배열 엔트리 템플릿 재활용 -->
-            <A>0</A>
-            <B>0</B>
-        <Peua>
-    </Ddd>
-</Foo>
+```c++
+// 서술적 문법 ...
+// 등장 순서대로 빌드하며, 문맥은 컴파일 단위로 저장(단순 static 변수)
+EZDATA_OBJECT_TEMPLATE(template_type_name) 
+{
+    // <VoidName Value="3"/>
+    // 뒤쪽의 어트리뷰트는 attribute 구조체를 만들어 이를 상속하는 식으로 구현
+    EZDATA_ADD(
+        value_id_void, "VoidName", void,
+        EZDATA_ATTR(AttrName1, "DefaultValue1"),
+        EZDATA_ATTR(AttrName2, "DefaultValue2"));
+        
+    // 바로 아래 엘리먼트의 설명 작성
+    EZDATA_DESCRIPTION(
+        u8"lorem ipsum fa er .. qw.e.fdasdvccc ..."
+        u8"나랏말싸미 듕귁에 달아 ....");
+    
+    // <IntName>3</IntName>
+    EZDATA_ADD(value_id_int, "IntName", 3);
+    
+    // 내부에 중첩도 가능.
+    EZDATA_OBJECT_TEMPLATE(nested0)
+    {
+        
+    };
+    EZDATA_ADD(annonymous0, "Annonymous", nested0{});
+    
+    // 배열 표현, initializer_list로 표현할 수 있어야 함(타입 항상 동일)
+    EZDATA_ADD_ARRAY(array_id, "Array", {3, 4, 5, 6}, EZDATA_ATTR(a, "C"));
+    EZDATA_ADD_ARRAY(array_id2, "Array2", {nested0{}, nested0{}});
+};
+
+// 오브젝트 중첩 ...
+EZDATA_OBJECT_TEMPLATE(nested_object_type_name)
+{
+    EZDATA_ADD(
+        nested_id,
+        "NestedObj", 
+        template_type_name{
+            .value_id_void{.attributes{.AttrName1="Abc", .AttrName2="Def"}},
+            .value_id_int{.value=3}},
+        EZDATA_ATTR(AttrName1, "DefaultValue1"));
+};
+
 ```
 
-```json
-{ // note: bson으로도 가능
-    "Foo":{
-        "~@@ATTRS@@":{ // 어트리뷰트 없으면 이 엘리먼트만 단순 사라짐
-            "Date":"2021-04-23" // Attribute is always string
-        },
-        // 단순 값 타입
-        "Vlah": 33,
-        // 값 타입이 attribute를 가진 경우
-        "Trs": [true, false, true, true, false],
-        "Trs~@@ATTRS@@": { "D": "as" },
-        // Value 없이 Attr만 있는 경우 ...
-        "FooFoo~@@ATTRS@@": { "Value": "dae" }, 
-        // 오브젝트 배열 타입.
-        // 템플릿을 열거
-        "Algh.Frl": [
-            { "~@@ATTRS@@":{ "R": 32344 }, "A": 3142, "B": 3222 },
-            { "~@@ATTRS@@":{ "R": 32344 }, "A": 3142, "B": 3222 },
-        ],
-        "Ddd":{
-            "Peua":{
-                "~@@ATTRS@@":{ "R": "ds"},
-                "A":0,
-                "B":0
-            }
-        }
-    } 
-}
-```
+# 구현 노트
+
+오브젝트 템플릿은 단순히 새로운 구조체 타입을 정의 ... 파싱 및 덤프 될 수 있음
+
+기본적으로 파싱/덤핑 템플릿 함수로 동작, 그러나 ezdata_base_object를 상속하는 함수에 대한 특수화로 재귀적 파싱 구현
+
+`EZDATA_OBJECT_TEMPLATE`는 파싱 규칙 벡터를 멤버로 갖는 클래스를 상속, 현재 스코프에서 정적 인라인 변수 `node_list` 이름을 자신의 것으로 설정. (즉, 중첩이 가능)
+
+`EZDATA_ADD` 매크로는 등장 순서대로 `node_list`에 태그, 자기 구조체의 오프셋을 넣음.
+
+`EZDATA_ATTR` 매크로는 `EZDATA_ADD`가 푸시한 `node_list`의 가장 탑 엘리먼트의 `attrs` 배열에 자기 자신을 푸시하는 구조체를 생성. (매크로 각각 자신의 상대 오프셋을 집어넣음)
+
+`EZDATA_DESCRIPTION`은 다음 `node_list`에 대한 push에서 release되는 문자열을 설정. 다음 인스턴스 한 개에 설명을 덧붙임.
+
+`EZDATA_ADD_ARRAY`는 내부적으로 Tag 이름 밑에 중첩되는 다수의 `<elem>` 태그로 표현. 항상 `std::vector<std::decltype(std::initializer_list{ARR})::element_type>`
 
 ```c++
-// 출력 XML에 dscription 문자열 주석으로 포함 여부. Json 해당 없음.
-#define EZDATA_INCLUDE_DESCRIPTION_ON_OUTPUT_XML true
 
-EZDATA_OBJECT_TEMPLATE( // nested object type. generate agrregate constructor
-    some_vector,
-    "SomeVector", 
-    {{"R", ""}});
-{
-    EZDATA_VALUE(a, "A", 0);
-    EZDATA_VALUE(b, "B", 0);
-}
-// Generates aggregate initializer ... 
-// olla(map<u8string_view, u8string> attr, int _a, int _b) 
-
-EZDATA_OBJECT_TYPE(  // 가장 바깥쪽에 있는 게 바람직. 안쪽에 들어가도 상관은 없음
-    /*typename*/foo, // foo
-    /*default display name of most outer element*/"Foo", 
-    /*attributes:map<u8string_view, u8string>*/{{"Date", "2021-04-23"}},
-    /*description*/"@brief Object description written in Doxygen syntax")
-{
-    EZDATA_VALUE(
-        /*cpp member name*/vlah, // ezdata_value<int> ... sizeof vlah == sizeof(int)
-        /*display name*/"Vlah", 
-        /*default value, type deduction에도 사용*/33, 
-        /*description. attribute 없는 버전 overloaded*/
-        u8"@brief non-ascii 문자열은 u8 접두 필수");
-    
-    EZDATA_VALUE(
-        trs, // ezdata_value<std::vector<bool>>
-        "Trs", 
-        {true, false, true, true, false} // initializer_list 형태로 어레이 인식
-    ); // desciption까지 생략 가능 ... overloaded!
-    
-    EZDATA_ATTR_OBJECT(
-        foofoo, // foo::ezdata_object<foofoo_type>
-        "FooFoo", 
-        {{"Value", "dae"}}, 
-        "@brief ...");
-    
-    EZDATA_OBJECT_ARRAY(
-        algh_frl, 
-        "Algh.Frl", // 배열 이름
-        some_vector, // 배열 오브젝트 템플릿
-        {});
-        
-    EZDATA_INLINE_OBJECT_BEGIN(/* display name */"Ddd", /*[attr], [description]*/) 
-    { // 익명의 인라인 오브젝트
-        // 오브젝트 템플릿 인스턴스화
-        EZDATA_OBJECT(
-            /*template object type*/ some_vector,
-            /*member variable name*/ peua,
-            /*display name*/"Peua",
-            /*aggregate initializer*/ {},
-            /*optional: attributes, description*/);
-    } EZDATA_INLINE_OBJECT_END(ddd); // 인스턴스 네임 
-    
-};
 ```
 
 # References
 
 1. [`nlohmann/json`](https://github.com/nlohmann/json)
 2. [`zeux/pugixml`](https://github.com/zeux/pugixml)
-3. [`catchorg/Catch2`](https://github.com/catchorg/Catch2)

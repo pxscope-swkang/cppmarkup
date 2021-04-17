@@ -130,6 +130,7 @@ bool parse(float &d, pugi::xml_node const &s);
 bool parse(double &d, pugi::xml_node const &s);
 bool parse(std::u8string &d, pugi::xml_node const &s);
 bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
+
 } // namespace ezdata::marshal
 
 #define INTERNAL_EZDATA_OBJECT_TEMPLATE(template_type_name)                     \
@@ -177,11 +178,11 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
         __VA_ARGS__                                                                                        \
     } varname;
 
-#define EZDATA_ATTR(attr_name, default_value)                        \
-    std::u8string attr_name;                                         \
-    struct INTERNAL_EZ_ATTR_##attr_name {                            \
-        static inline ezdata::impl::object_inst_attr_init<           \
-            INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>              \
+#define EZDATA_ATTR(attr_name, default_value)                             \
+    std::u8string attr_name;                                              \
+    struct INTERNAL_EZ_ATTR_##attr_name {                                 \
+        static inline ezdata::impl::object_inst_attr_init<                \
+            INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>                   \
             _init{INTERNAL_EZ_node_list, u8## #attr_name, default_value}; \
     };
 
@@ -190,40 +191,42 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
 
 INTERNAL_EZDATA_OBJECT_TEMPLATE(some_type)
 {
-    //struct INTERNAL_EZ_INSTANCE_varname {
-    //    using value_type                                 = decltype(TEMP_DEFAULTVAL);
-    //    alignas(EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
+    /*
+    struct INTERNAL_EZ_INSTANCE_varname {
+        using value_type                                 = decltype(TEMP_DEFAULTVAL);
+        alignas(EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
 
-    //    static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, EZDATA_ALIGN> _init{
-    //        INTERNAL_EZ_node_list, u8"TagName", sizeof _value, &INTERNAL_EZ_description_str,
-    //        [](void *r, size_t size, pugi::xml_node const &s) -> bool {
-    //            assert(sizeof(value_type) == size);
-    //            return ezdata::marshal::parse(*(value_type *)r, s);
-    //        }};
+        static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, EZDATA_ALIGN> _init{
+            INTERNAL_EZ_node_list, u8"TagName", sizeof _value, &INTERNAL_EZ_description_str,
+            [](void *r, size_t size, pugi::xml_node const &s) -> bool {
+                assert(sizeof(value_type) == size);
+                return ezdata::marshal::parse(*(value_type *)r, s);
+            }};
 
-    //    operator value_type() const
-    //    {
-    //        return _value;
-    //    }
+        operator value_type() const
+        {
+            return _value;
+        }
 
-    //    INTERNAL_EZ_INSTANCE_varname(const INTERNAL_EZ_INSTANCE_varname &r) = default;
-    //    INTERNAL_EZ_INSTANCE_varname(INTERNAL_EZ_INSTANCE_varname &&r)      = default;
-    //    INTERNAL_EZ_INSTANCE_varname(value_type const &r = value_type{}) : _value(r) {}
-    //    INTERNAL_EZ_INSTANCE_varname(value_type &&r) : _value(std::move(r)) {}
-    //    INTERNAL_EZ_INSTANCE_varname &operator=(const INTERNAL_EZ_INSTANCE_varname &r) = default;
-    //    INTERNAL_EZ_INSTANCE_varname &operator=(INTERNAL_EZ_INSTANCE_varname &&r) = default;
+        INTERNAL_EZ_INSTANCE_varname(const INTERNAL_EZ_INSTANCE_varname &r) = default;
+        INTERNAL_EZ_INSTANCE_varname(INTERNAL_EZ_INSTANCE_varname &&r)      = default;
+        INTERNAL_EZ_INSTANCE_varname(value_type const &r = value_type{}) : _value(r) {}
+        INTERNAL_EZ_INSTANCE_varname(value_type &&r) : _value(std::move(r)) {}
+        INTERNAL_EZ_INSTANCE_varname &operator=(const INTERNAL_EZ_INSTANCE_varname &r) = default;
+        INTERNAL_EZ_INSTANCE_varname &operator=(INTERNAL_EZ_INSTANCE_varname &&r) = default;
 
-    //    INTERNAL_EZ_INSTANCE_varname &operator=(value_type const &r) { return _value = r, *this; }
-    //    INTERNAL_EZ_INSTANCE_varname &operator=(value_type &&r) { return _value = std::move(r), *this; }
+        INTERNAL_EZ_INSTANCE_varname &operator=(value_type const &r) { return _value = r, *this; }
+        INTERNAL_EZ_INSTANCE_varname &operator=(value_type &&r) { return _value = std::move(r), *this; }
 
-    //    // attribute
-    //    std::u8string Attr1;
-    //    struct INTERNAL_EZ_ATTR_Attr1 {
-    //        static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, EZDATA_ALIGN>
-    //            _init{
-    //                INTERNAL_EZ_node_list, u8"Attr1", u8"Attr1Default"};
-    //    };
-    //} d;
+        // attribute
+        std::u8string Attr1;
+        struct INTERNAL_EZ_ATTR_Attr1 {
+            static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, EZDATA_ALIGN>
+                _init{
+                    INTERNAL_EZ_node_list, u8"Attr1", u8"Attr1Default"};
+        };
+    } d;
+    */
 
     EZDATA_ADD(fooa, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
 };

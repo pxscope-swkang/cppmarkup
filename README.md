@@ -70,9 +70,9 @@ EZDATA_OBJECT_TEMPLATE(nested_object_type_name)
 
 `EZDATA_ADD_ARRAY`는 내부적으로 Tag 이름 밑에 중첩되는 다수의 `<elem>` 태그로 표현. 항상 `std::vector<std::decltype(std::initializer_list{ARR})::element_type>`
 
-```c++
+Array 파싱은 두 가지 전략이 있음.
 
-```
+하나는 모든 array parsing 시나리오에 대해 overload .. 다른 하나는 템플릿으로 공통 로직 뽑아내기.
 
 # References
 

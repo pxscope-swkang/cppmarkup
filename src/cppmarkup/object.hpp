@@ -5,7 +5,6 @@
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
-#include <pugixml.hpp>
 
 #include <atomic>
 #include <cassert>
@@ -33,6 +32,10 @@ struct tag_duplication_exception : std::exception {};
 struct attribute_duplication_exception : std::exception {};
 // clang-format on
 } // namespace cppmarkup
+
+namespace pugi {
+class xml_node;
+} // namespace pugi
 
 namespace cppmarkup::impl {
 

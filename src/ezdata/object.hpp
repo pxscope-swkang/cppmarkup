@@ -132,22 +132,24 @@ bool parse(std::u8string &d, pugi::xml_node const &s);
 bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
 } // namespace ezdata::marshal
 
-#define INTERNAL_EZDATA_OBJECT_TEMPLATE(template_type_name) \
-    class template_type_name : protected ezdata::impl::traits<template_type_name>
+#define INTERNAL_EZDATA_OBJECT_TEMPLATE(template_type_name)                     \
+    struct INTERNAL_EZ_SUPER_##template_type_name                               \
+        : public ezdata::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
+        using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;       \
+    };                                                                          \
+    struct template_type_name : public INTERNAL_EZ_SUPER_##template_type_name
 
-#define INTERNAL_EZDATA_ALIGN 8
+#ifndef EZDATA_ALIGN
+#define EZDATA_ALIGN 8
+#endif
 
-#define INTERNAL_EZDATA_GENERATE_BODY(template_type_name) \
-public:                                                   \
-    using INTERNAL_EZ_super = template_type_name
-
-#define INTERNAL_EZDATA_ADD(varname, tag, default_value, ...)                                              \
+#define EZDATA_ADD(varname, tag, default_value, ...)                                                       \
     struct INTERNAL_EZ_INSTANCE_##varname {                                                                \
-        using value_type                                 = decltype(default_value);                        \
-        alignas(INTERNAL_EZDATA_ALIGN) value_type _value = default_value;                                  \
+        using value_type                        = decltype(default_value);                                 \
+        alignas(EZDATA_ALIGN) value_type _value = default_value;                                           \
                                                                                                            \
         static inline ezdata::impl::object_inst_init<                                                      \
-            INTERNAL_EZ_INSTANCE_##varname, value_type, INTERNAL_EZDATA_ALIGN>                             \
+            INTERNAL_EZ_INSTANCE_##varname, value_type, EZDATA_ALIGN>                                      \
             _init{                                                                                         \
                 INTERNAL_EZ_node_list, tag, sizeof _value, &INTERNAL_EZ_description_str,                   \
                 [](void *r, size_t size, pugi::xml_node const &s) -> bool {                                \
@@ -175,21 +177,24 @@ public:                                                   \
         __VA_ARGS__                                                                                        \
     } varname;
 
+#define EZDATA_ATTR(attr_name, default_value)                        \
+    std::u8string attr_name;                                         \
+    struct INTERNAL_EZ_ATTR_##attr_name {                            \
+        static inline ezdata::impl::object_inst_attr_init<           \
+            INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>              \
+            _init{INTERNAL_EZ_node_list, u8## #attr_name, default_value}; \
+    };
+
 #define INTERNAL_EZDATA_ADD_ARRAY(template_type_name)
 #define INTERNAL_EZDATA_DESCRIPTION_BELOW(template_type_name)
-#define INTERNAL_EZDATA_ATTR(template_type_name)
 
 INTERNAL_EZDATA_OBJECT_TEMPLATE(some_type)
 {
-    INTERNAL_EZDATA_GENERATE_BODY(some_type);
-
-#define TEMP_DEFAULTVAL 3
-
     //struct INTERNAL_EZ_INSTANCE_varname {
     //    using value_type                                 = decltype(TEMP_DEFAULTVAL);
-    //    alignas(INTERNAL_EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
+    //    alignas(EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
 
-    //    static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, INTERNAL_EZDATA_ALIGN> _init{
+    //    static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, EZDATA_ALIGN> _init{
     //        INTERNAL_EZ_node_list, u8"TagName", sizeof _value, &INTERNAL_EZ_description_str,
     //        [](void *r, size_t size, pugi::xml_node const &s) -> bool {
     //            assert(sizeof(value_type) == size);
@@ -214,13 +219,13 @@ INTERNAL_EZDATA_OBJECT_TEMPLATE(some_type)
     //    // attribute
     //    std::u8string Attr1;
     //    struct INTERNAL_EZ_ATTR_Attr1 {
-    //        static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, INTERNAL_EZDATA_ALIGN>
+    //        static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, EZDATA_ALIGN>
     //            _init{
     //                INTERNAL_EZ_node_list, u8"Attr1", u8"Attr1Default"};
     //    };
     //} d;
 
-    INTERNAL_EZDATA_ADD(fooa, u8"Fooa", 3.141);
+    EZDATA_ADD(fooa, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
 };
 
 static void vo()

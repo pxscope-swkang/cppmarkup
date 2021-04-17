@@ -1,18 +1,9 @@
 #include "ezdata/object.hpp"
 
-static inline struct f {
-    f(int a, int b);
-} d{1, 2};
-
-namespace {
-
-// I_EZDATA_OBJECT_TEMPLATE_FULL(foo, {{u8"a", u8"b"}}, u8"hell, world!");
-
-
-void compile_test()
+std::u8string* ezdata::impl::node_property::get_attrib(void* element_base, size_t index) const
 {
-
-    std::u8string_view d;
+    auto str_base = reinterpret_cast<std::u8string*>(size + (char*)element_base);
+    assert(index <= (next_offset - offset + size) / sizeof(std::u8string));
+    assert((next_offset - offset + size) % sizeof(std::u8string) == attrib_default.size());
+    return str_base + index;
 }
-
-} // namespace

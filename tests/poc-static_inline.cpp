@@ -6,7 +6,7 @@ static std::string gc;
 static int i = 0;
 
 struct poc {
-    poc(const char *str) { std::cout << str << '\n'; }
+    poc(const char* str) { std::cout << str << '\n'; }
 };
 
 struct outer {

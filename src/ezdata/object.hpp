@@ -28,32 +28,29 @@
 namespace ezdata::impl {
 
 template <class source_type>
-using parse_fn_t = std::function<bool(void *, size_t, source_type const &)>;
+using parse_fn_t = std::function<bool(void*, size_t, source_type const&)>;
 template <class source_type>
-using dump_fn_t = std::function<bool(source_type &, void const *, size_t)>;
+using dump_fn_t = std::function<bool(source_type&, void const*, size_t)>;
 
 /**
  * 오브젝트 내에 embed 된 하나의 노드에 대한 파싱/덤프 프로퍼티
  */
 struct node_property {
     std::u8string_view tag;
+    std::u8string_view description; // 설명은 항상 문자열 리터럴 ...
+
     size_t offset;
     size_t next_offset;
-    size_t size;                    // 사이즈는 padding으로 인해 부정확한 정보 .. 어서션 용도로만 사용.
-    std::u8string_view description; // 설명은 항상 문자열 리터럴 ...
+    size_t size; // 사이즈는 padding으로 인해 부정확한 정보 .. 어서션 용도로만 사용.
+
+    std::vector<std::pair<std::u8string_view, std::u8string_view>> attrib_default;
+
     struct {
         parse_fn_t<pugi::xml_node> parser;
         dump_fn_t<pugi::xml_node> dumper;
     } xml;
-    std::vector<std::pair<std::u8string_view, std::u8string_view>> attrib_default;
 
-    std::u8string *get_attrib(void *element_base, size_t index) const
-    {
-        auto str_base = reinterpret_cast<std::u8string *>(size + (char *)element_base);
-        assert(index <= (next_offset - offset) / sizeof(std::u8string));
-        assert((next_offset - offset) % sizeof(std::u8string) == 0);
-        return str_base + index;
-    }
+    std::u8string* get_attrib(void* element_base, size_t index) const;
 };
 
 /**
@@ -74,10 +71,10 @@ public:
 template <typename Tmplt_>
 struct traits : object_base {
     static inline std::vector<node_property> INTERNAL_EZ_node_list = {};
-    static inline const char8_t *INTERNAL_EZ_description_str       = {};
+    static inline const char8_t* INTERNAL_EZ_description_str       = {};
 
     struct INTERNAL_EZ_description_replacer {
-        INTERNAL_EZ_description_replacer(const char8_t *str) { INTERNAL_EZ_description_str = str; }
+        INTERNAL_EZ_description_replacer(const char8_t* str) { INTERNAL_EZ_description_str = str; }
     };
 };
 
@@ -86,13 +83,13 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(node_property *&pnewnode, std::vector<node_property> &nodes, std::u8string_view tag, size_t size, const char8_t **descr, parse_fn_t<pugi::xml_node> &&f)
+    object_inst_init(node_property*& pnewnode, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
     {
         size_t offset = nodes.empty() ? 0 : nodes.back().next_offset;
         size += Align_ - 1;
         size -= size % Align_;
 
-        auto &n  = nodes.emplace_back();
+        auto& n  = nodes.emplace_back();
         pnewnode = &n;
         n.tag    = tag;
         n.size   = size;
@@ -109,9 +106,9 @@ struct object_inst_init {
 
 template <class UniqueClass_, size_t Align_>
 struct object_inst_attr_init {
-    object_inst_attr_init(std::vector<node_property> &nodes, std::u8string_view attr_name, std::u8string_view default_value)
+    object_inst_attr_init(std::vector<node_property>& nodes, std::u8string_view attr_name, std::u8string_view default_value)
     {
-        auto &n = nodes.back();
+        auto& n = nodes.back();
         n.attrib_default.emplace_back(attr_name, default_value);
 
         // u8string 크기만큼 오프셋을 뒤로 밈 ... 다음 엘리먼트가 정상적으로 위치하게
@@ -127,14 +124,15 @@ struct object_inst_attr_init {
 } // namespace ezdata::impl
 
 namespace ezdata::marshal {
-bool parse(int32_t &d, pugi::xml_node const &s);
-bool parse(int64_t &d, pugi::xml_node const &s);
-bool parse(int16_t &d, pugi::xml_node const &s);
-bool parse(int8_t &d, pugi::xml_node const &s);
-bool parse(float &d, pugi::xml_node const &s);
-bool parse(double &d, pugi::xml_node const &s);
-bool parse(std::u8string &d, pugi::xml_node const &s);
-bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
+
+bool parse(int32_t& d, pugi::xml_node const& s);
+bool parse(int64_t& d, pugi::xml_node const& s);
+bool parse(int16_t& d, pugi::xml_node const& s);
+bool parse(int8_t& d, pugi::xml_node const& s);
+bool parse(float& d, pugi::xml_node const& s);
+bool parse(double& d, pugi::xml_node const& s);
+bool parse(std::u8string& d, pugi::xml_node const& s);
+bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
 
 } // namespace ezdata::marshal
 
@@ -155,13 +153,13 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
                                                                                                            \
     private:                                                                                               \
         alignas(EZDATA_ALIGN) value_type _value = default_value;                                           \
-        static inline ezdata::impl::node_property *ptr;                                                    \
+        static inline ezdata::impl::node_property* ptr;                                                    \
                                                                                                            \
     public:                                                                                                \
-        static bool parse(void *r, size_t size, pugi::xml_node const &s)                                   \
+        static bool parse(void* r, size_t size, pugi::xml_node const& s)                                   \
         {                                                                                                  \
             assert(sizeof(value_type) == size);                                                            \
-            return ezdata::marshal::parse(*(value_type *)r, s);                                            \
+            return ezdata::marshal::parse(*(value_type*)r, s);                                             \
         }                                                                                                  \
                                                                                                            \
         static inline ezdata::impl::object_inst_init<                                                      \
@@ -179,7 +177,7 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
             return _value;                                                                                 \
         }                                                                                                  \
                                                                                                            \
-        INTERNAL_EZ_INSTANCE_##varname(void *owner_base)                                                   \
+        INTERNAL_EZ_INSTANCE_##varname(void* owner_base)                                                   \
         { /* Accurate offset is recalculated here. */                                                      \
             if (ptr)                                                                                       \
             {                                                                                              \
@@ -189,17 +187,17 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
             }                                                                                              \
         }                                                                                                  \
                                                                                                            \
-        INTERNAL_EZ_INSTANCE_##varname(const INTERNAL_EZ_INSTANCE_##varname &r) = default;                 \
-        INTERNAL_EZ_INSTANCE_##varname(INTERNAL_EZ_INSTANCE_##varname &&r)      = default;                 \
-        INTERNAL_EZ_INSTANCE_##varname(value_type const &r = value_type{}) : _value(r) {}                  \
-        INTERNAL_EZ_INSTANCE_##varname(value_type &&r) : _value(std::move(r)) {}                           \
-        INTERNAL_EZ_INSTANCE_##varname &operator=(const INTERNAL_EZ_INSTANCE_##varname &r) = default;      \
-        INTERNAL_EZ_INSTANCE_##varname &operator=(INTERNAL_EZ_INSTANCE_##varname &&r) = default;           \
+        INTERNAL_EZ_INSTANCE_##varname(const INTERNAL_EZ_INSTANCE_##varname& r) = default;                 \
+        INTERNAL_EZ_INSTANCE_##varname(INTERNAL_EZ_INSTANCE_##varname&& r)      = default;                 \
+        INTERNAL_EZ_INSTANCE_##varname(value_type const& r = value_type{}) : _value(r) {}                  \
+        INTERNAL_EZ_INSTANCE_##varname(value_type&& r) : _value(std::move(r)) {}                           \
+        INTERNAL_EZ_INSTANCE_##varname& operator=(const INTERNAL_EZ_INSTANCE_##varname& r) = default;      \
+        INTERNAL_EZ_INSTANCE_##varname& operator=(INTERNAL_EZ_INSTANCE_##varname&& r) = default;           \
                                                                                                            \
-        INTERNAL_EZ_INSTANCE_##varname &operator=(value_type const &r) { return _value = r, *this; }       \
-        INTERNAL_EZ_INSTANCE_##varname &operator=(value_type &&r) { return _value = std::move(r), *this; } \
-        auto &operator()() { return _value; }                                                              \
-        auto &operator()() const { return _value; }                                                        \
+        INTERNAL_EZ_INSTANCE_##varname& operator=(value_type const& r) { return _value = r, *this; }       \
+        INTERNAL_EZ_INSTANCE_##varname& operator=(value_type&& r) { return _value = std::move(r), *this; } \
+        auto& operator()() { return _value; }                                                              \
+        auto& operator()() const { return _value; }                                                        \
                                                                                                            \
         __VA_ARGS__                                                                                        \
     } varname{this};

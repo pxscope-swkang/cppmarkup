@@ -123,3 +123,4 @@ EZDATA_OBJECT_TYPE(  // 가장 바깥쪽에 있는 게 바람직. 안쪽에 들�
 
 1. [`nlohmann/json`](https://github.com/nlohmann/json)
 2. [`zeux/pugixml`](https://github.com/zeux/pugixml)
+3. [`catchorg/Catch2`](https://github.com/catchorg/Catch2)

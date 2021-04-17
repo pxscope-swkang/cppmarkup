@@ -7,3 +7,10 @@ std::u8string* cppmarkup::impl::node_property::get_attrib(void* element_base, si
     assert((next_offset - offset + value_size) % sizeof(std::u8string) == attrib_default.size());
     return str_base + index;
 }
+
+bool cppmarkup::marshal::parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s)
+{
+    // TODO
+
+    return false;
+}

@@ -150,20 +150,19 @@ struct object_inst_attr_init {
 
 } // namespace cppmarkup::impl
 
+namespace cppmarkup {
+enum compact_byte : uint8_t;
+using compact_binary = std::vector<compact_byte>;
+}
+
 namespace cppmarkup::marshal {
 // TODO: 템플릿 함수, integral은 int64_t 읽어오는 함수로, 부동 소수점은 double로, 문자열은 u8string으로,
-inline bool parse(int32_t& d, pugi::xml_node const& s) { return true; }
-inline bool parse(int64_t& d, pugi::xml_node const& s) { return true; }
-inline bool parse(int16_t& d, pugi::xml_node const& s) { return true; }
-inline bool parse(int8_t& d, pugi::xml_node const& s) { return true; }
-inline bool parse(float& d, pugi::xml_node const& s) { return true; }
-inline bool parse(double& d, pugi::xml_node const& s) { return true; }
-inline bool parse(std::u8string& d, pugi::xml_node const& s) { return true; }
-inline bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s) { return true; }
+template<typename Data_>
+bool parse(Data_& d, pugi::xml_node const& s) { return false; }
+bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s);
 
-// TODO: raw byte 배열 특수화, JSON 및 XML에는 base64 인코딩, BSON에는 바이너리 그대로
-inline bool parse(std::vector<std::byte>& d, pugi::xml_node const& s) { return true; }
-
+// TODO: 완전히 동일한 CPPMarkup 구조 사이에 데이터를 주고받기 위한 고속 바이너리 인터페이스. 보통 통신 전용
+inline bool parse(cppmarkup::impl::object_base& d, compact_binary const& s) { return true; }
 } // namespace cppmarkup::marshal
 
 static constexpr size_t INTERNAL_EZ_depth = 0;

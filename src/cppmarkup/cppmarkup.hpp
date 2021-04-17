@@ -52,7 +52,9 @@
                 ptr->offset      = (intptr_t)this - (intptr_t)owner_base;                                  \
                 ptr->next_offset = ptr->offset + sizeof *this;                                             \
                                                                                                            \
-                for (int i = 0; i < INTERNAL_EZ_depth; ++i) { putchar('\t'); }                             \
+                assert(ptr->total_size == sizeof *this);                                                   \
+                                                                                                           \
+                for (int i = 0; i < INTERNAL_EZ_depth; ++i) { printf("    "); }                            \
                 printf("[%s] ptr: %p ", (char*)ptr->tag.data(), ptr);                                      \
                 printf("offset: %llu ~ size: %llu\n", ptr->offset, ptr->total_size);                       \
             }                                                                                              \

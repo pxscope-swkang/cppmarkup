@@ -75,6 +75,10 @@ template <typename Tmplt_>
 struct traits : object_base {
     static inline std::vector<node_property> INTERNAL_EZ_node_list = {};
     static inline const char8_t *INTERNAL_EZ_description_str       = {};
+
+    struct INTERNAL_EZ_description_replacer {
+        INTERNAL_EZ_description_replacer(const char8_t *str) { INTERNAL_EZ_description_str = str; }
+    };
 };
 
 /**
@@ -82,15 +86,16 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(std::vector<node_property> &nodes, std::u8string_view tag, size_t size, const char8_t **descr, parse_fn_t<pugi::xml_node> &&f)
+    object_inst_init(node_property *&pnewnode, std::vector<node_property> &nodes, std::u8string_view tag, size_t size, const char8_t **descr, parse_fn_t<pugi::xml_node> &&f)
     {
         size_t offset = nodes.empty() ? 0 : nodes.back().next_offset;
         size += Align_ - 1;
         size -= size % Align_;
 
-        auto &n = nodes.emplace_back();
-        n.tag   = tag;
-        n.size  = size;
+        auto &n  = nodes.emplace_back();
+        pnewnode = &n;
+        n.tag    = tag;
+        n.size   = size;
 
         n.offset      = offset; // size를 8바이트에 align시켜서 오프셋 더함.
         n.next_offset = offset + size;
@@ -133,7 +138,7 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
 
 } // namespace ezdata::marshal
 
-#define INTERNAL_EZDATA_OBJECT_TEMPLATE(template_type_name)                     \
+#define EZDATA_OBJECT_TEMPLATE(template_type_name)                              \
     struct INTERNAL_EZ_SUPER_##template_type_name                               \
         : public ezdata::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
         using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;       \
@@ -146,21 +151,42 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
 
 #define EZDATA_ADD(varname, tag, default_value, ...)                                                       \
     struct INTERNAL_EZ_INSTANCE_##varname {                                                                \
-        using value_type                        = decltype(default_value);                                 \
+        using value_type = decltype(default_value);                                                        \
+                                                                                                           \
+    private:                                                                                               \
         alignas(EZDATA_ALIGN) value_type _value = default_value;                                           \
+        static inline ezdata::impl::node_property *ptr;                                                    \
+                                                                                                           \
+    public:                                                                                                \
+        static bool parse(void *r, size_t size, pugi::xml_node const &s)                                   \
+        {                                                                                                  \
+            assert(sizeof(value_type) == size);                                                            \
+            return ezdata::marshal::parse(*(value_type *)r, s);                                            \
+        }                                                                                                  \
                                                                                                            \
         static inline ezdata::impl::object_inst_init<                                                      \
             INTERNAL_EZ_INSTANCE_##varname, value_type, EZDATA_ALIGN>                                      \
             _init{                                                                                         \
-                INTERNAL_EZ_node_list, tag, sizeof _value, &INTERNAL_EZ_description_str,                   \
-                [](void *r, size_t size, pugi::xml_node const &s) -> bool {                                \
-                    assert(sizeof(value_type) == size);                                                    \
-                    return ezdata::marshal::parse(*(value_type *)r, s);                                    \
-                }};                                                                                        \
+                ptr,                                                                                       \
+                INTERNAL_EZ_node_list,                                                                     \
+                tag,                                                                                       \
+                sizeof _value,                                                                             \
+                &INTERNAL_EZ_description_str,                                                              \
+                &parse};                                                                                   \
                                                                                                            \
         operator value_type() const                                                                        \
         {                                                                                                  \
             return _value;                                                                                 \
+        }                                                                                                  \
+                                                                                                           \
+        INTERNAL_EZ_INSTANCE_##varname(void *owner_base)                                                   \
+        { /* Accurate offset is recalculated here. */                                                      \
+            if (ptr)                                                                                       \
+            {                                                                                              \
+                ptr->offset      = (intptr_t)this - (intptr_t)owner_base;                                  \
+                ptr->next_offset = ptr->offset + ptr->size;                                                \
+                ptr              = nullptr;                                                                \
+            }                                                                                              \
         }                                                                                                  \
                                                                                                            \
         INTERNAL_EZ_INSTANCE_##varname(const INTERNAL_EZ_INSTANCE_##varname &r) = default;                 \
@@ -176,20 +202,26 @@ bool parse(ezdata::impl::object_base &d, pugi::xml_node const &s);
         auto &operator()() const { return _value; }                                                        \
                                                                                                            \
         __VA_ARGS__                                                                                        \
-    } varname;
+    } varname{this};
 
 #define EZDATA_ATTR(attr_name, default_value)                             \
-    std::u8string attr_name;                                              \
+    alignas(EZDATA_ALIGN) std::u8string attr_name;                        \
     struct INTERNAL_EZ_ATTR_##attr_name {                                 \
         static inline ezdata::impl::object_inst_attr_init<                \
             INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>                   \
             _init{INTERNAL_EZ_node_list, u8## #attr_name, default_value}; \
     };
 
-#define INTERNAL_EZDATA_ADD_ARRAY(template_type_name)
-#define INTERNAL_EZDATA_DESCRIPTION_BELOW(template_type_name)
+#define EZDATA_ADD_ARRAY(template_type_name)
+#define EZDATA_DESCRIPTION_BELOW(description) \
+    static inline INTERNAL_EZ_description_replacer DESCRIPTION_##__LINE__{description};
 
-INTERNAL_EZDATA_OBJECT_TEMPLATE(some_type)
+#define EZDATA_NESTED_OBJECT(varname, tag, ...)               \
+    EZDATA_OBJECT_TEMPLATE(INTERNAL_EZ_##varname##_TEMPLATE){ \
+        __VA_ARGS__};                                         \
+    EZDATA_ADD(varname, tag, INTERNAL_EZ_##varname##_TEMPLATE{})
+
+EZDATA_OBJECT_TEMPLATE(some_type)
 {
     /*
     struct INTERNAL_EZ_INSTANCE_varname {
@@ -228,10 +260,24 @@ INTERNAL_EZDATA_OBJECT_TEMPLATE(some_type)
     } d;
     */
 
+    EZDATA_DESCRIPTION_BELOW(u8"");
     EZDATA_ADD(fooa, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
+
+    EZDATA_OBJECT_TEMPLATE(nested_type)
+    {
+        EZDATA_DESCRIPTION_BELOW(u8"");
+        EZDATA_ADD(fooale, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
+    };
+
+    EZDATA_ADD(poop, u8"Poop", nested_type{});
+
+    EZDATA_NESTED_OBJECT(
+        lod, u8"Lod",
+        EZDATA_ADD(laa, u8"Laa", 34));
 };
 
 static void vo()
 {
     some_type r;
+    r.poop().fooale();
 }

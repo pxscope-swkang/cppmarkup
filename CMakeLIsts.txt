@@ -7,6 +7,7 @@ add_subdirectory            (third)
 ## --------------------------- LIBRARY
 ## SOURCE ##
 set                         (ROOT_SRC_DIR               ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set                         (EZDATA_INCLUDE_DIR         ${ROOT_SRC_DIR})
 
 aux_source_directory        (${ROOT_SRC_DIR}          EZDATA_LIB_SOURCE)
 aux_source_directory        (${ROOT_SRC_DIR}/ezdata   EZDATA_LIB_SOURCE)
@@ -16,7 +17,7 @@ add_library                 (ezdata_lib     STATIC      ${EZDATA_LIB_SOURCE})
 add_library                 (ezdata::static ALIAS       ezdata_lib)
 
 target_compile_features     (ezdata_lib     PUBLIC      cxx_std_20)
-target_include_directories  (ezdata_lib     PUBLIC      ${ROOT_SOURCE_DIR}/public 
+target_include_directories  (ezdata_lib     PUBLIC      ${EZDATA_INCLUDE_DIR}
                                                         nlohmann_json::nlohmann_json
                                                         pugixml::static)
 target_link_libraries       (ezdata_lib     PUBLIC      nlohmann_json::nlohmann_json

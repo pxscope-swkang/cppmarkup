@@ -1,11 +1,13 @@
 #pragma once
 #include <functional>
+#include <list>
 #include <string>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
 #include <pugixml.hpp>
 
+#include <atomic>
 #include <cassert>
 
 /**
@@ -25,6 +27,13 @@
  *
  * Json 및 XML 오브젝트 트리 전체를 파싱 및 직렬화하는 인터페이스를 제공합니다. 
  */
+namespace ezdata {
+// clang-format off
+struct tag_duplication_exception : std::exception {};
+struct attribute_duplication_exception : std::exception {};
+// clang-format on
+} // namespace ezdata
+
 namespace ezdata::impl {
 
 template <class source_type>
@@ -41,7 +50,8 @@ struct node_property {
 
     size_t offset;
     size_t next_offset;
-    size_t size; // 사이즈는 padding으로 인해 부정확한 정보 .. 어서션 용도로만 사용.
+    size_t value_size; // 사이즈는 padding으로 인해 부정확한 정보 .. 어서션 용도로만 사용.
+    size_t total_size;
 
     std::vector<std::pair<std::u8string_view, std::u8string_view>> attrib_default;
 
@@ -60,6 +70,8 @@ struct node_property {
 class object_base
 {
 public:
+    virtual std::list<node_property> const& properties() const = 0;
+    virtual ~object_base()                                     = default;
 };
 
 /**
@@ -70,12 +82,17 @@ public:
  */
 template <typename Tmplt_>
 struct traits : object_base {
-    static inline std::vector<node_property> INTERNAL_EZ_node_list = {};
-    static inline const char8_t* INTERNAL_EZ_description_str       = {};
+    static inline std::list<node_property> INTERNAL_EZ_node_list = {};
+    static inline const char8_t* INTERNAL_EZ_description_str     = {};
 
     struct INTERNAL_EZ_description_replacer {
         INTERNAL_EZ_description_replacer(const char8_t* str) { INTERNAL_EZ_description_str = str; }
     };
+
+    std::list<node_property> const& properties() const override
+    {
+        return INTERNAL_EZ_node_list;
+    }
 };
 
 /**
@@ -83,19 +100,22 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(node_property*& pnewnode, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
+    object_inst_init(std::atomic<node_property*>& pnewnode, std::list<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
     {
-        size_t offset = nodes.empty() ? 0 : nodes.back().next_offset;
         size += Align_ - 1;
         size -= size % Align_;
+        printf("aligned_size %llu\n", size);
 
-        auto& n  = nodes.emplace_back();
-        pnewnode = &n;
-        n.tag    = tag;
-        n.size   = size;
+        for (auto& pn : nodes)
+        {
+            if (pn.tag == tag) { throw ezdata::tag_duplication_exception{}; }
+        }
 
-        n.offset      = offset; // size를 8바이트에 align시켜서 오프셋 더함.
-        n.next_offset = offset + size;
+        auto& n      = nodes.emplace_back();
+        pnewnode     = &n;
+        n.tag        = tag;
+        n.value_size = size;
+        n.total_size = size;
 
         n.description = *descr ? std::u8string_view(*descr) : std::u8string_view{};
         if (*descr) { *descr = nullptr; }
@@ -106,18 +126,21 @@ struct object_inst_init {
 
 template <class UniqueClass_, size_t Align_>
 struct object_inst_attr_init {
-    object_inst_attr_init(std::vector<node_property>& nodes, std::u8string_view attr_name, std::u8string_view default_value)
+    object_inst_attr_init(std::list<node_property>& nodes, std::u8string_view attr_name, std::u8string_view default_value)
     {
         auto& n = nodes.back();
-        n.attrib_default.emplace_back(attr_name, default_value);
 
-        // u8string 크기만큼 오프셋을 뒤로 밈 ... 다음 엘리먼트가 정상적으로 위치하게
+        for (auto& attr : n.attrib_default)
+        {
+            if (attr.first == attr_name) { throw attribute_duplication_exception{}; }
+        }
+
         auto size = sizeof(std::u8string);
         size += Align_ - 1;
         size -= size % Align_;
 
-        n.next_offset += size;
-        assert(n.next_offset - n.offset / sizeof(std::u8string) == n.attrib_default.size());
+        n.attrib_default.emplace_back(attr_name, default_value);
+        n.total_size += size;
     }
 };
 
@@ -125,22 +148,22 @@ struct object_inst_attr_init {
 
 namespace ezdata::marshal {
 
-bool parse(int32_t& d, pugi::xml_node const& s);
-bool parse(int64_t& d, pugi::xml_node const& s);
-bool parse(int16_t& d, pugi::xml_node const& s);
-bool parse(int8_t& d, pugi::xml_node const& s);
-bool parse(float& d, pugi::xml_node const& s);
-bool parse(double& d, pugi::xml_node const& s);
-bool parse(std::u8string& d, pugi::xml_node const& s);
-bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
+bool parse(int32_t& d, pugi::xml_node const& s) { return true; }
+bool parse(int64_t& d, pugi::xml_node const& s) { return true; }
+bool parse(int16_t& d, pugi::xml_node const& s) { return true; }
+bool parse(int8_t& d, pugi::xml_node const& s) { return true; }
+bool parse(float& d, pugi::xml_node const& s) { return true; }
+bool parse(double& d, pugi::xml_node const& s) { return true; }
+bool parse(std::u8string& d, pugi::xml_node const& s) { return true; }
+bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s) { return true; }
 
 } // namespace ezdata::marshal
 
-#define EZDATA_OBJECT_TEMPLATE(template_type_name)                              \
-    struct INTERNAL_EZ_SUPER_##template_type_name                               \
-        : public ezdata::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
-        using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;       \
-    };                                                                          \
+#define EZDATA_OBJECT_TEMPLATE(template_type_name)                                \
+    struct INTERNAL_EZ_SUPER_##template_type_name                                 \
+        : public ::ezdata::impl::traits<INTERNAL_EZ_SUPER_##template_type_name> { \
+        using INTERNAL_EZ_super = INTERNAL_EZ_SUPER_##template_type_name;         \
+    };                                                                            \
     struct template_type_name : public INTERNAL_EZ_SUPER_##template_type_name
 
 #ifndef EZDATA_ALIGN
@@ -152,20 +175,20 @@ bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
         using value_type = decltype(default_value);                                                        \
                                                                                                            \
     private:                                                                                               \
-        alignas(EZDATA_ALIGN) value_type _value = default_value;                                           \
-        static inline ezdata::impl::node_property* ptr;                                                    \
+        alignas(EZDATA_ALIGN) value_type _value                             = default_value;               \
+        static inline std::atomic<::ezdata::impl::node_property*> _node_ref = nullptr;                     \
                                                                                                            \
     public:                                                                                                \
         static bool parse(void* r, size_t size, pugi::xml_node const& s)                                   \
         {                                                                                                  \
             assert(sizeof(value_type) == size);                                                            \
-            return ezdata::marshal::parse(*(value_type*)r, s);                                             \
+            return ::ezdata::marshal::parse(*(value_type*)r, s);                                           \
         }                                                                                                  \
                                                                                                            \
-        static inline ezdata::impl::object_inst_init<                                                      \
+        static inline ::ezdata::impl::object_inst_init<                                                    \
             INTERNAL_EZ_INSTANCE_##varname, value_type, EZDATA_ALIGN>                                      \
             _init{                                                                                         \
-                ptr,                                                                                       \
+                _node_ref,                                                                                 \
                 INTERNAL_EZ_node_list,                                                                     \
                 tag,                                                                                       \
                 sizeof _value,                                                                             \
@@ -179,11 +202,12 @@ bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
                                                                                                            \
         INTERNAL_EZ_INSTANCE_##varname(void* owner_base)                                                   \
         { /* Accurate offset is recalculated here. */                                                      \
-            if (ptr)                                                                                       \
+            if (auto ptr = _node_ref.exchange(nullptr))                                                    \
             {                                                                                              \
+                printf("ptr: %p ", ptr);                                                                   \
                 ptr->offset      = (intptr_t)this - (intptr_t)owner_base;                                  \
-                ptr->next_offset = ptr->offset + ptr->size;                                                \
-                ptr              = nullptr;                                                                \
+                ptr->next_offset = ptr->offset + sizeof *this;                                             \
+                printf("offset: %llu ~ size: %llu\n", ptr->offset, ptr->total_size);                       \
             }                                                                                              \
         }                                                                                                  \
                                                                                                            \
@@ -205,7 +229,7 @@ bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
 #define EZDATA_ATTR(attr_name, default_value)                             \
     alignas(EZDATA_ALIGN) std::u8string attr_name;                        \
     struct INTERNAL_EZ_ATTR_##attr_name {                                 \
-        static inline ezdata::impl::object_inst_attr_init<                \
+        static inline ::ezdata::impl::object_inst_attr_init<              \
             INTERNAL_EZ_ATTR_##attr_name, EZDATA_ALIGN>                   \
             _init{INTERNAL_EZ_node_list, u8## #attr_name, default_value}; \
     };
@@ -218,64 +242,3 @@ bool parse(ezdata::impl::object_base& d, pugi::xml_node const& s);
     EZDATA_OBJECT_TEMPLATE(INTERNAL_EZ_##varname##_TEMPLATE){ \
         __VA_ARGS__};                                         \
     EZDATA_ADD(varname, tag, INTERNAL_EZ_##varname##_TEMPLATE{})
-
-EZDATA_OBJECT_TEMPLATE(some_type)
-{
-    /*
-    struct INTERNAL_EZ_INSTANCE_varname {
-        using value_type                                 = decltype(TEMP_DEFAULTVAL);
-        alignas(EZDATA_ALIGN) value_type _value = TEMP_DEFAULTVAL;
-
-        static inline ezdata::impl::object_inst_init<INTERNAL_EZ_INSTANCE_varname, value_type, EZDATA_ALIGN> _init{
-            INTERNAL_EZ_node_list, u8"TagName", sizeof _value, &INTERNAL_EZ_description_str,
-            [](void *r, size_t size, pugi::xml_node const &s) -> bool {
-                assert(sizeof(value_type) == size);
-                return ezdata::marshal::parse(*(value_type *)r, s);
-            }};
-
-        operator value_type() const
-        {
-            return _value;
-        }
-
-        INTERNAL_EZ_INSTANCE_varname(const INTERNAL_EZ_INSTANCE_varname &r) = default;
-        INTERNAL_EZ_INSTANCE_varname(INTERNAL_EZ_INSTANCE_varname &&r)      = default;
-        INTERNAL_EZ_INSTANCE_varname(value_type const &r = value_type{}) : _value(r) {}
-        INTERNAL_EZ_INSTANCE_varname(value_type &&r) : _value(std::move(r)) {}
-        INTERNAL_EZ_INSTANCE_varname &operator=(const INTERNAL_EZ_INSTANCE_varname &r) = default;
-        INTERNAL_EZ_INSTANCE_varname &operator=(INTERNAL_EZ_INSTANCE_varname &&r) = default;
-
-        INTERNAL_EZ_INSTANCE_varname &operator=(value_type const &r) { return _value = r, *this; }
-        INTERNAL_EZ_INSTANCE_varname &operator=(value_type &&r) { return _value = std::move(r), *this; }
-
-        // attribute
-        std::u8string Attr1;
-        struct INTERNAL_EZ_ATTR_Attr1 {
-            static inline ezdata::impl::object_inst_attr_init<INTERNAL_EZ_ATTR_Attr1, EZDATA_ALIGN>
-                _init{
-                    INTERNAL_EZ_node_list, u8"Attr1", u8"Attr1Default"};
-        };
-    } d;
-    */
-
-    EZDATA_DESCRIPTION_BELOW(u8"");
-    EZDATA_ADD(fooa, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
-
-    EZDATA_OBJECT_TEMPLATE(nested_type)
-    {
-        EZDATA_DESCRIPTION_BELOW(u8"");
-        EZDATA_ADD(fooale, u8"Fooa", 3.141, EZDATA_ATTR(Attr1, u8"Hell, world!"));
-    };
-
-    EZDATA_ADD(poop, u8"Poop", nested_type{});
-
-    EZDATA_NESTED_OBJECT(
-        lod, u8"Lod",
-        EZDATA_ADD(laa, u8"Laa", 34));
-};
-
-static void vo()
-{
-    some_type r;
-    r.poop().fooale();
-}

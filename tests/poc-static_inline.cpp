@@ -3,41 +3,30 @@
 using namespace std;
 
 static std::string gc;
+static int i = 0;
 
-struct poca {
-    poca() { gc = "A", cout << "hell, world! " << gc << "\n"; }
+struct poc {
+    poc(const char *str) { std::cout << str << '\n'; }
 };
 
-struct pocb {
-    pocb() { gc = "B", cout << "hell, world! " << gc << "\n"; }
-};
+struct outer {
+    static inline poc _0{"1. outer"};
 
-struct upper {
-    int a, b;
-};
+    struct inner {
+        static inline poc _1{"2. inner"};
+        static inline poc _2{"3. inner"};
 
-struct lower {
-    upper a;
-    int c, d;
-};
+        struct in_inner {
+            static inline poc _3{"4. in_inner"};
+        };
 
-struct bottom {
-    lower g;
-    int r;
-};
+        static inline poc _4{"5. inner"};
+    };
 
-struct ANNONYMOUS {
-    static inline poca a;
-    static inline pocb b;
+    static inline poc _1{"6. outer"};
 };
 
 int main(void)
 {
-    bottom c = {
-        .g = {
-            .a = {
-                .a = 1,
-                .b = 2}}};
-
     return 0;
 }

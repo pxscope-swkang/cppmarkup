@@ -75,6 +75,7 @@ public:
 template <typename Ty_>
 class marshaller : public marshaller_base
 {
+    // TODO: bool parse(Ty_&, pugi::xml_node  const&) 와 같이 덕스피킹 가능하게 ...
 };
 } // namespace cppmarkup
 
@@ -130,6 +131,11 @@ public:
     // How it works ...
     // object t; t.t0.t1의 서브 오브젝트를 가질 때, t.dump(&t.t0.t1, markup_node)와 같이
     //멤버 엘리먼트에 대해 오버로드 된
+
+    // TODO: 모든 자식 노드를 순회합니다. 후위 순회 ... 부모의 오프셋만 획득 가능.
+    // void (void* owner, node_property const* owner_prop,void* current,  node_property const* current_prop)
+    template <typename Fn_>
+    void for_each(Fn_&&) { throw; }
 };
 
 /**

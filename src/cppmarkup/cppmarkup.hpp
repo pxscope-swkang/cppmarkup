@@ -21,9 +21,8 @@
     private:                                                                                                \
         alignas(CPPMARKUP_ALIGNMENT) value_type _value;                                                     \
         static inline std::atomic_size_t _node_ref = -1;                                                    \
-        static inline ::cppmarkup::marshaller<value_type> marshal;                                          \
+        static inline ::cppmarkup::marshaller<value_type> _marshal;                                          \
                                                                                                             \
-    public:                                                                                                 \
         static inline ::cppmarkup::impl::object_inst_init<                                                  \
             INTERNAL_EZ_INSTANCE_##varname, value_type, CPPMARKUP_ALIGNMENT>                                \
             _init{                                                                                          \
@@ -32,13 +31,14 @@
                 tagstr,                                                                                     \
                 sizeof _value,                                                                              \
                 &INTERNAL_EZ_description_str,                                                               \
-                &marshal,                                                                                   \
+                &_marshal,                                                                                   \
                 ::cppmarkup::get_node_type<value_type>(),                                                   \
                 [](void* v, size_t s) {                                                                     \
                     assert(s >= sizeof(value_type));                                                        \
                     *(value_type*)v = default_value;                                                        \
                 }};                                                                                         \
                                                                                                             \
+    public:                                                                                                 \
         operator value_type() const                                                                         \
         {                                                                                                   \
             return _value;                                                                                  \

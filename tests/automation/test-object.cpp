@@ -34,27 +34,45 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
             CPPMARKUP_ADD2(iotttp, 34);));
 
     struct INTERNAL_EZ_varname_INSTANCE {
-    public:
-        struct _attr_type
-        {
-            /*__VA_ARGS__*/
-        };
-    public:
-        struct _internal_type
-        /*MACRO_BEGIN*/
-        {
-        };
-        /*MACRO_END*/
     private:
-        _internal_type _value;
+        static auto constexpr INTERNAL_EZ_tagstr = u8"tagstr";
 
     public:
-        _attr_type attribute;
+        struct _attr_type {
+            /*__VA_ARGS__*/
+            CPPMARKUP_ATTR3(Allbi);
+        };
+
+    public:
+        CPPMARKUP_OBJECT_TEMPLATE(_internal_type)
+        /*MACRO_BEGIN*/
+        {};
+        /*MACRO_END*/
+    private:
+        static inline std::atomic_size_t _node_ref = -1;
+        static inline ::cppmarkup::marshaller<_internal_type> _marshal;
+        static inline ::cppmarkup::impl::object_inst_init<
+            INTERNAL_EZ_varname_INSTANCE, _internal_type, CPPMARKUP_ALIGNMENT>
+            _init{
+                _node_ref,
+                INTERNAL_EZ_node_list,
+                INTERNAL_EZ_tagstr,
+                sizeof(_internal_type),
+                &INTERNAL_EZ_description_str,
+                &_marshal,
+                ::cppmarkup::get_node_type<_internal_type>(),
+                [](void* v, size_t s) { *(_internal_type*)v = {}; }};
+
+    private:
+        alignas(CPPMARKUP_ALIGNMENT) _internal_type _value;
+
+    public:
+        alignas(CPPMARKUP_ALIGNMENT) _attr_type attribute;
 
     public:
         _internal_type& operator()() { return _value; }
         _internal_type const& operator()() const { return _value; }
-    };
+    } varname;
 };
 
 TEST_CASE("instanciation")
@@ -63,6 +81,8 @@ TEST_CASE("instanciation")
     std::atomic<void*> k;
     r.AdminPw.Attr2 = u8"df";
     r.AdminPw()     = 3;
+
+    r.varname.attribute.Allbi = u8"ere";
 }
 
 TEST_CASE("type")

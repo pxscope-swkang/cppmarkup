@@ -35,6 +35,11 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
 
     struct INTERNAL_EZ_varname_INSTANCE {
     public:
+        struct _attr_type
+        {
+            /*__VA_ARGS__*/
+        };
+    public:
         struct _internal_type
         /*MACRO_BEGIN*/
         {
@@ -42,6 +47,9 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
         /*MACRO_END*/
     private:
         _internal_type _value;
+
+    public:
+        _attr_type attribute;
 
     public:
         _internal_type& operator()() { return _value; }

@@ -107,6 +107,7 @@ struct node_property {
     std::u8string* get_attrib(void* element_base, size_t index) const;
 
     marshaller_base const* pmarshal;
+    void (*value_init)(void*, size_t); // 기본값 초기화자
 };
 
 /**
@@ -120,6 +121,9 @@ public:
 
     virtual std::vector<node_property> const& properties() const = 0;
     virtual size_t depth() const                                 = 0;
+
+    // TODO: 서브오브젝트 iterate하여 기본값 초기화 호출 추가
+    void set_default() { throw; }
 
     // TODO: 여기에 DUMP 및 PARSE 함수성 추가
     // TODO: 파싱, 덤프 시 노드의 일부분만 갱신하는 기능
@@ -151,7 +155,7 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(std::atomic_size_t& new_node_idx, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, marshaller_base const* marshal, cppmarkup::node_type type)
+    object_inst_init(std::atomic_size_t& new_node_idx, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, marshaller_base const* marshal, node_type type, void (*value_init)(void*, size_t))
     {
         size += Align_ - 1;
         size -= size % Align_;
@@ -173,6 +177,7 @@ struct object_inst_init {
         n.value_size = size;
         n.total_size = size;
         n.pmarshal   = marshal;
+        n.value_init = value_init;
 
         n.description = *descr ? std::u8string_view(*descr) : std::u8string_view{};
         if (*descr) { *descr = nullptr; }

@@ -19,8 +19,8 @@
         using value_type = decltype(default_value);                                                         \
                                                                                                             \
     private:                                                                                                \
-        alignas(CPPMARKUP_ALIGNMENT) value_type _value = default_value;                                     \
-        static inline std::atomic_size_t _node_ref     = -1;                                                \
+        alignas(CPPMARKUP_ALIGNMENT) value_type _value;                                                     \
+        static inline std::atomic_size_t _node_ref = -1;                                                    \
         static inline ::cppmarkup::marshaller<value_type> marshal;                                          \
                                                                                                             \
     public:                                                                                                 \
@@ -33,7 +33,11 @@
                 sizeof _value,                                                                              \
                 &INTERNAL_EZ_description_str,                                                               \
                 &marshal,                                                                                   \
-                ::cppmarkup::get_node_type<value_type>()};                                                  \
+                ::cppmarkup::get_node_type<value_type>(),                                                   \
+                [](void* v, size_t s) {                                                                     \
+                    assert(s >= sizeof(value_type));                                                        \
+                    *(value_type*)v = default_value;                                                        \
+                }};                                                                                         \
                                                                                                             \
         operator value_type() const                                                                         \
         {                                                                                                   \

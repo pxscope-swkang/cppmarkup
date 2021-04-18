@@ -10,8 +10,8 @@
     };                                                                                   \
     struct template_type_name : public INTERNAL_EZ_SUPER_##template_type_name
 
-#ifndef CPPMARKUP_ALIGN
-#define CPPMARKUP_ALIGN 8
+#ifndef CPPMARKUP_ALIGNMENT
+#define CPPMARKUP_ALIGNMENT 8
 #endif
 
 #define CPPMARKUP_ADD(varname, tagstr, default_value, ...)                                                 \
@@ -19,8 +19,8 @@
         using value_type = decltype(default_value);                                                        \
                                                                                                            \
     private:                                                                                               \
-        alignas(CPPMARKUP_ALIGN) value_type _value = default_value;                                        \
-        static inline std::atomic_size_t _node_ref = -1;                                                   \
+        alignas(CPPMARKUP_ALIGNMENT) value_type _value = default_value;                                    \
+        static inline std::atomic_size_t _node_ref     = -1;                                               \
                                                                                                            \
     public:                                                                                                \
         static bool parse(void* r, size_t size, pugi::xml_node const& s)                                   \
@@ -30,14 +30,15 @@
         }                                                                                                  \
                                                                                                            \
         static inline ::cppmarkup::impl::object_inst_init<                                                 \
-            INTERNAL_EZ_INSTANCE_##varname, value_type, CPPMARKUP_ALIGN>                                   \
+            INTERNAL_EZ_INSTANCE_##varname, value_type, CPPMARKUP_ALIGNMENT>                               \
             _init{                                                                                         \
                 _node_ref,                                                                                 \
                 INTERNAL_EZ_node_list,                                                                     \
                 tagstr,                                                                                    \
                 sizeof _value,                                                                             \
                 &INTERNAL_EZ_description_str,                                                              \
-                &parse};                                                                                   \
+                &parse,                                                                                    \
+                ::cppmarkup::get_node_type<value_type>()};                                                 \
                                                                                                            \
         operator value_type() const                                                                        \
         {                                                                                                  \
@@ -76,10 +77,10 @@
     } varname{this};
 
 #define CPPMARKUP_ATTR(varname, attr_name, default_value)           \
-    alignas(CPPMARKUP_ALIGN) std::u8string varname;                 \
+    alignas(CPPMARKUP_ALIGNMENT) std::u8string varname;             \
     struct INTERNAL_EZ_ATTR_##varname {                             \
         static inline ::cppmarkup::impl::object_inst_attr_init<     \
-            INTERNAL_EZ_ATTR_##varname, CPPMARKUP_ALIGN>            \
+            INTERNAL_EZ_ATTR_##varname, CPPMARKUP_ALIGNMENT>        \
             _init{INTERNAL_EZ_node_list, attr_name, default_value}; \
     };
 

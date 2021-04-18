@@ -10,7 +10,7 @@ set                         (ROOT_SRC_DIR                   ${CMAKE_CURRENT_SOUR
 set                         (CPPMARKUP_INCLUDE_DIR          ${ROOT_SRC_DIR})
 
 aux_source_directory        (${ROOT_SRC_DIR}              CPPMARKUP_LIB_SOURCE)
-aux_source_directory        (${ROOT_SRC_DIR}/cppmarkup       CPPMARKUP_LIB_SOURCE)
+aux_source_directory        (${ROOT_SRC_DIR}/cppmarkup    CPPMARKUP_LIB_SOURCE)
 
 ## TARGET LIBRARY ##
 add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOURCE})

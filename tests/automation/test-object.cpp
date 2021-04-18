@@ -40,4 +40,19 @@ TEST_CASE("instanciation")
     std::atomic<void*> k;
     r.AdminPw.Attr2 = u8"df";
 }
+
+TEST_CASE("type")
+{
+    static_assert(::cppmarkup::get_node_type<int>() == ::cppmarkup::node_type::integral_number);
+    static_assert(::cppmarkup::get_node_type<float>() == ::cppmarkup::node_type::real_number);
+    static_assert(::cppmarkup::get_node_type<some_type>() == ::cppmarkup::node_type::object);
+    static_assert(::cppmarkup::get_node_type<std::vector<int>>() == ::cppmarkup::node_type::array);
+    static_assert(::cppmarkup::get_node_type<std::vector<float>>() == ::cppmarkup::node_type::array);
+    static_assert(::cppmarkup::get_node_type<std::vector<double>>() == ::cppmarkup::node_type::array);
+    static_assert(::cppmarkup::get_node_type<std::vector<some_type>>() == ::cppmarkup::node_type::array);
+    static_assert(::cppmarkup::get_node_type<nullptr_t>() == ::cppmarkup::node_type::null);
+    static_assert(::cppmarkup::get_node_type<std::u8string>() == ::cppmarkup::node_type::string);
+    static_assert(::cppmarkup::get_node_type<std::wstring>() == ::cppmarkup::node_type::string);
+    static_assert(::cppmarkup::get_node_type<std::string>() == ::cppmarkup::node_type::string);
+}
 } // namespace test::cppmarkup::objects

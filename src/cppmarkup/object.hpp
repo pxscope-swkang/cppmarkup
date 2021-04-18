@@ -2,29 +2,17 @@
 #include <functional>
 #include <list>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <nlohmann/json_fwd.hpp>
 
+#include "hash.hpp"
 #include <atomic>
 #include <cassert>
 
 /**
- * string -> raw_memory(offset, size)
- * raw_memory -> string
- *
- * 오브젝트는 내부에 포함된 인스턴스의 파싱 및 직렬화를 수행하기 위한 기저 클래스입니다.
- * 오브젝트 자체는 데이터를 담지 않으며, 파싱 및 직렬화 순서는 모두 CRTP 인스턴스의 static inline
- *vector에 저장됩니다.
- * 각각의 데이터 타입을 파싱하기 위해 오브젝트에 쓰이는 모든 데이터 형식은 bool(std::span<std::byte>,
- *std::string_view)을 제공해야 합니다. 직렬화를 위해선 void(std::string, std::span<const std::byte>)
- *함수가 제공되어야 합니다.
- *
- * 기본적으로, cppmarkup::marshal 네임스페이스의 parse 및 serialize 함수를 찾습니다.
- *
- * 파싱에 실패할 경우 예외를 던지거나, 단순히 실패 구조체를 반환할 수 있습니다. (optional)
- *
- * Json 및 XML 오브젝트 트리 전체를 파싱 및 직렬화하는 인터페이스를 제공합니다. 
+ * Json 및 XML 오브젝트 트리 전체 또는 부분을 파싱 및 직렬화하는 인터페이스를 제공합니다.
  */
 namespace cppmarkup {
 // clang-format off
@@ -37,6 +25,21 @@ namespace pugi {
 class xml_node;
 } // namespace pugi
 
+namespace cppmarkup {
+enum class node_type
+{
+    object,
+    integral_number,
+    real_number,
+    string,
+    array,
+    table,
+    null,
+    none,
+    MAX_NODE_TYPE
+};
+}
+
 namespace cppmarkup::impl {
 
 template <class source_type>
@@ -48,6 +51,12 @@ using dump_fn_t = std::function<bool(source_type&, void const*, size_t)>;
  * 오브젝트 내에 embed 된 하나의 노드에 대한 파싱/덤프 프로퍼티
  */
 struct node_property {
+    // 노드 해쉬. 전체 오브젝트의 일부분을 직렬화할 경우, 해쉬를 통해 일부 데이터의
+    //정확한 루트 노드를 찾는 데 사용합니다. 태그로부터 고정된 알고리즘을 사용해
+    //구조가 동일한 경우 반드시 같은 해쉬 반환해야 합니다.
+    uint64_t hash;
+    node_type type;
+
     std::u8string_view tag;
     std::u8string_view description; // 설명은 항상 문자열 리터럴 ...
 
@@ -78,7 +87,11 @@ public:
     virtual std::vector<node_property> const& properties() const = 0;
     virtual size_t depth() const                                 = 0;
 
-    // TODO: 여기에 DUMP 및 PARSE 함수성 추가.
+    // TODO: 여기에 DUMP 및 PARSE 함수성 추가
+    // TODO: 파싱, 덤프 시 노드의 일부분만 갱신하는 기능
+    // How it works ...
+    // object t; t.t0.t1의 서브 오브젝트를 가질 때, t.dump(&t.t0.t1, markup_node)와 같이
+    //멤버 엘리먼트에 대해 오버로드 된
 };
 
 /**
@@ -104,7 +117,7 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(std::atomic_size_t& pnewnode, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f)
+    object_inst_init(std::atomic_size_t& new_node_idx, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f, cppmarkup::node_type type)
     {
         size += Align_ - 1;
         size -= size % Align_;
@@ -115,9 +128,14 @@ struct object_inst_init {
             if (pn.tag == tag) { throw cppmarkup::tag_duplication_exception{}; }
         }
 
-        pnewnode     = nodes.size();
-        auto& n      = nodes.emplace_back();
+        auto seed    = nodes.empty() ? 0 : nodes.back().hash;
+        new_node_idx = nodes.size();
+
+        auto& n = nodes.emplace_back();
+        n.hash  = get_hash(tag, seed);
+
         n.tag        = tag;
+        n.type       = type;
         n.value_size = size;
         n.total_size = size;
 
@@ -153,11 +171,39 @@ struct object_inst_attr_init {
 namespace cppmarkup {
 enum compact_byte : uint8_t;
 using compact_binary = std::vector<compact_byte>;
+using object         = impl::object_base;
+
+namespace impl {
+    // https://stackoverflow.com/questions/31762958/check-if-class-is-a-template-specialization
+    template <class T, template <class...> class Template>
+    struct is_specialization : std::false_type {
+    };
+
+    template <template <class...> class Template, class... Args>
+    struct is_specialization<Template<Args...>, Template> : std::true_type {
+    };
+
+    // TODO: Map support, map/unordered_map<std::u8string, Ty_> ... only u8string key!
+    // XML  <MapTag> <KeyA>Value</KeyA><KeyB><Value><KeyB> </MapTag>
+    // JSON { "MapTag" : { "KeyA": Value, "KeyB": Value } }
+} // namespace impl
+
+template <typename Ty_>
+constexpr node_type get_node_type()
+{
+    if constexpr (std::is_base_of_v<impl::object_base, Ty_>) { return node_type::object; }
+    if constexpr (std::is_integral_v<Ty_>) { return node_type::integral_number; }
+    if constexpr (std::is_floating_point_v<Ty_>) { return node_type::real_number; }
+    if constexpr (impl::is_specialization<Ty_, std::basic_string>{}.value) { return node_type::string; }
+    if constexpr (impl::is_specialization<Ty_, std::vector>{}.value) { return node_type::array; }
+    if constexpr (std::is_same_v<Ty_, nullptr_t>) { return node_type::null; }
+    return node_type::none;
 }
+} // namespace cppmarkup
 
 namespace cppmarkup::marshal {
 // TODO: 템플릿 함수, integral은 int64_t 읽어오는 함수로, 부동 소수점은 double로, 문자열은 u8string으로,
-template<typename Data_>
+template <typename Data_>
 bool parse(Data_& d, pugi::xml_node const& s) { return false; }
 bool parse(cppmarkup::impl::object_base& d, pugi::xml_node const& s);
 

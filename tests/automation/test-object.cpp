@@ -63,6 +63,23 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
                 ::cppmarkup::get_node_type<_internal_type>(),
                 [](void* v, size_t s) { *(_internal_type*)v = {}; }};
 
+    public:
+        INTERNAL_EZ_varname_INSTANCE(void* owner_base)
+        {
+            if (auto idx = _node_ref.exchange(-1); idx != -1)
+            {
+                auto ptr         = INTERNAL_EZ_node_list.data() + idx;
+                ptr->offset      = (intptr_t)this - (intptr_t)owner_base;
+                ptr->next_offset = ptr->offset + sizeof *this;
+
+                assert(ptr->total_size == sizeof *this);
+
+                for (int i = 0; i < INTERNAL_EZ_depth; ++i) { printf("    "); }
+                printf("[%s] ptr: %p ", (char*)ptr->tag.data(), ptr);
+                printf("offset: %llu ~ size: %llu\n", ptr->offset, ptr->total_size);
+            }
+        }
+
     private:
         alignas(CPPMARKUP_ALIGNMENT) _internal_type _value;
 
@@ -72,7 +89,7 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
     public:
         _internal_type& operator()() { return _value; }
         _internal_type const& operator()() const { return _value; }
-    } varname;
+    } varname{this};
 };
 
 TEST_CASE("instanciation")

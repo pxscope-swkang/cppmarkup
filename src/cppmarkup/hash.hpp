@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace cppmarkup {
+namespace kangsw {
 
 template <typename Char_>
 constexpr uint64_t get_hash(std::basic_string_view<Char_> str, uint64_t seed = 0)
@@ -16,4 +16,4 @@ constexpr uint64_t get_hash(std::basic_string_view<Char_> str, uint64_t seed = 0
     return hash;
 }
 
-} // namespace cppmarkup
+} // namespace kangsw

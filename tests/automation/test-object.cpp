@@ -1,119 +1,170 @@
+#define CPPMARKUP_BUILD_WITH_DESCRIPTION
 #include "catch.hpp"
-#include "cppmarkup/cppmarkup.hpp"
+#include "cppmarkup/impl_macros.hpp"
 
-namespace test::cppmarkup::objects {
-CPPMARKUP_OBJECT_TEMPLATE(some_type)
+#include <cppmarkup.hpp>
+#include <list>
+
+namespace test::kangsw::markup {
+
+constexpr auto default_value     = 3.141;
+constexpr auto tag_name_str      = u8"tagname";
+constexpr auto attribute_name    = u8"attrname";
+constexpr static auto desciption = "desc";
+
+// CPPMARKUP_OBJECT_TEMPLATE(tname)
+struct tname : ::kangsw::markup::impl::object_base<tname>
+// ~CPPMARKUP_OBJECT_TEMPLATE(tname)
 {
-    CPPMARKUP_DESCRIPTION_BELOW(u8"");
-    CPPMARKUP_ADD(fooa, u8"Fooa", 3.141, CPPMARKUP_ATTR2(Attr1, u8"Hell, world!"));
-    CPPMARKUP_ADD(grr, u8"EOFO", 2);
+    // CPPMARKUP_OBJECT_TEMPLATE_BODY(tname)
+private:
+    void should_declare_CPPMARKUP_OBJECT_TEMPLATE_BODY_first() override {}
 
-    CPPMARKUP_ADD2(AdminPw, 0x864321, CPPMARKUP_ATTR3(Attr1); CPPMARKUP_ATTR3(Attr2));
-
-    CPPMARKUP_NESTED_OBJECT(
-        lod, u8"Lod",
-        CPPMARKUP_ADD(laa, u8"Laa", 34);
-        CPPMARKUP_ADD2(lapa, 34);
-        CPPMARKUP_ADD2(lapua, 34);
-        CPPMARKUP_ADD2(lapuwa, 34);
-        CPPMARKUP_ADD2(lapuwtra, 34);
-        CPPMARKUP_ADD2(lapuwtrtta, 34);
-        CPPMARKUP_ADD2(lapuwtrttwea, 34);
-        CPPMARKUP_ADD2(lapuw2trttwea, 34);
-        CPPMARKUP_NESTED_OBJECT(
-            vlad, u8"Vlad",
-            CPPMARKUP_ADD2(abar, 34ll);
-            CPPMARKUP_ADD2(cpa, 34);
-            CPPMARKUP_ADD2(rooe, 34);
-            CPPMARKUP_ADD2(qut, 34);
-            CPPMARKUP_ADD2(quti32o, 34);
-            CPPMARKUP_ADD2(quti321o, 34);
-            CPPMARKUP_ADD2(quti32115o, 34);
-            CPPMARKUP_ADD2(qutio, 34);
-            CPPMARKUP_ADD2(iottt, 34);
-            CPPMARKUP_ADD2(iotttp, 34);));
-
-    struct INTERNAL_EZ_varname_INSTANCE {
-    private:
-        static auto constexpr INTERNAL_EZ_tagstr = u8"tagstr";
-
-    public:
-        struct _attr_type {
-            /*__VA_ARGS__*/
-            CPPMARKUP_ATTR3(Allbi);
-        };
-
-    public:
-        CPPMARKUP_OBJECT_TEMPLATE(_internal_type)
-        /*MACRO_BEGIN*/
-        {};
-        /*MACRO_END*/
-    private:
-        static inline std::atomic_size_t _node_ref = -1;
-        static inline ::cppmarkup::marshaller<_internal_type> _marshal;
-        static inline ::cppmarkup::impl::object_inst_init<
-            INTERNAL_EZ_varname_INSTANCE, _internal_type, CPPMARKUP_ALIGNMENT>
-            _init{
-                _node_ref,
-                INTERNAL_EZ_node_list,
-                INTERNAL_EZ_tagstr,
-                sizeof(_internal_type),
-                &INTERNAL_EZ_description_str,
-                &_marshal,
-                ::cppmarkup::get_node_type<_internal_type>(),
-                [](void* v, size_t s) { *(_internal_type*)v = {}; }};
-
-    public:
-        INTERNAL_EZ_varname_INSTANCE(void* owner_base)
+    static inline struct INTERNAL_BODY_tname {
+        INTERNAL_BODY_tname()
         {
-            if (auto idx = _node_ref.exchange(-1); idx != -1)
+            tname autogen = {};
+        }
+    } INTERNAL_BODY_INIT_tname;
+    // ~CPPMARKUP_OBJECT_TEMPLATE_BODY(tname)
+
+    // CPPMARKUP_DESCRIPTION_BELOW(description)
+private:
+    static inline struct INTERNAL_description_assignment_type___LINE__ {
+        INTERNAL_description_assignment_type___LINE__() { INTERNAL_next_description = desciption; }
+    } INTERNAL_description_assignment;
+
+public:
+    // ~CPPMARKUP_DESCRIPTION_BELOW
+
+    // CPPMARKUP_ADD(varname, tag_name_str, default_value, ...);
+    // INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ...ATTRIBs)
+    class INTERNAL_TYPE_varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_varname>
+    {
+    private:
+        static constexpr auto _tagstr = tag_name_str;
+
+        static inline struct _internal_description_assignment {
+            _internal_description_assignment()
             {
-                auto ptr         = INTERNAL_EZ_node_list.data() + idx;
-                ptr->offset      = (intptr_t)this - (intptr_t)owner_base;
-                ptr->next_offset = ptr->offset + sizeof *this;
-
-                assert(ptr->total_size == sizeof *this);
-
-                for (int i = 0; i < INTERNAL_EZ_depth; ++i) { printf("    "); }
-                printf("[%s] ptr: %p ", (char*)ptr->tag.data(), ptr);
-                printf("offset: %llu ~ size: %llu\n", ptr->offset, ptr->total_size);
+                _description              = INTERNAL_next_description;
+                INTERNAL_next_description = {};
             }
+        } _description_assignment;
+
+    private:
+        static inline std::vector<::kangsw::markup::property::attribute_representation> _attribs;
+
+    public:
+        // ATTRIBUTES <
+        // __VA_ARGS__ ...
+        // CPPMARKUP_ATTRIBUTE(attr_varname, attr_name, default_value)
+        struct INTERNAL_ATTR_attr_varname : ::kangsw::markup::impl::attribute_base {
+            using attr_value_type = std::remove_const_t<decltype(default_value)>;
+            static inline ::kangsw::markup::impl::marshaller_instance<attr_value_type> _marshal;
+
+            INTERNAL_ATTR_attr_varname(INTERNAL_TYPE_varname* base)
+            {
+                // 각 1회 ... 생성자에서 _attribs에
+                if (!INTERNAL_is_first_entry) { return; }
+
+                INTERNAL_attrbase_init(
+                    base, attribute_name, _attribs,
+                    sizeof *this, &_marshal,
+                    [](void* v) { *(attr_value_type*)v = default_value; });
+            }
+
+        private:
+            attr_value_type _value;
+
+        public:
+            auto& operator()() { return _value; }
+            auto& operator()() const { return _value; }
+        } attr_varname{this /* 어트리뷰트 오프셋 / 사이즈 계산용, 최초 1회 */};
+        // ~CPPMARKUP_ATTRIBUTE()
+        // ATTRIBUTES >
+
+    private:
+        // ~INTERNAL_CPPMARKUP_INSTANCE_FORMER
+        // << 이 위로 UPPER 매크로
+        // >>>> IF TARGET IS NESTED OBJECT
+        // TODO .. nested object 정의 여기에
+        // >>>> ELSE (TARGET IS SIMPLE TYPE)
+        // nested object이면 value_type = INTERNAL_nested_object_instance
+        using value_type = std::remove_const_t<decltype(default_value)>;
+        value_type _value;
+        // >>>> ENDIF
+
+        // >> 이 아래로 LOWER 매크로
+        // INTERNAL_CPPMARKUP_INSTANCE_LATER(varname)
+        static inline ::kangsw::markup::impl::marshaller_instance<value_type> _marshal;
+
+    public:
+        INTERNAL_TYPE_varname(::kangsw::markup::object* base)
+        {
+            if (!INTERNAL_is_first_entry) { return; } // 최초 1회만 진입 .. 어차피 정적 생성이므로 1스레드 1회 호출 보장
+
+            printf("FooFOo\n");
+
+            INTERNAL_elembase_init(
+                ::kangsw::markup::get_element_type<value_type>(),
+                base, _tagstr, _description,
+                offsetof(INTERNAL_TYPE_varname, _value),
+                sizeof _value, sizeof *this, &_marshal,
+                [](void* v) { *(value_type*)v = default_value; },
+                _attribs);
+
+            // TODO: INITIALIZE ATTRIBUTES !!! 방법 생각해보기
         }
 
-    private:
-        alignas(CPPMARKUP_ALIGNMENT) _internal_type _value;
-
-    public:
-        alignas(CPPMARKUP_ALIGNMENT) _attr_type attribute;
-
-    public:
-        _internal_type& operator()() { return _value; }
-        _internal_type const& operator()() const { return _value; }
+        auto& operator()() { return _value; }
+        auto& operator()() const { return _value; }
     } varname{this};
+    // ~INTERNAL_CPPMARKUP_INSTANCE_LATER
 };
 
-TEST_CASE("instanciation")
-{
-    some_type r;
-    std::atomic<void*> k;
-    r.AdminPw.Attr2 = u8"df";
-    r.AdminPw()     = 3;
+static inline struct tttest {
+    tttest()
+    {
+        {
+            decltype(::kangsw::markup::impl::deduce_fn(142)) r;
+            puts(typeid(r).name());
+        }
+        {
+            decltype(::kangsw::markup::impl::deduce_fn("Reawrwr")) r;
+            puts(typeid(r).name());
+        }
+        {
+            decltype(::kangsw::markup::impl::deduce_fn({134, 21, 541})) r;
+            puts(typeid(r).name());
+        }
+    }
+} g_UNUSED_TEST_TT;
 
-    r.varname.attribute.Allbi = u8"ere";
+CPPMARKUP_OBJECT_TEMPLATE(obj)
+{
+    CPPMARKUP_OBJECT_GENERATE_BODY(obj);
+
+    CPPMARKUP_DESCRIPTION_BELOW(u8"설명 설명 설명");
+    CPPMARKUP_ADD(
+        ShouldRefreshEveryReceive, 0.432,
+        CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+};
+
+CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(superobj, obj, Body);
+
+TEST_CASE("CppMarkup", "Object body Template")
+{
+    obj r;
+    r.ShouldRefreshEveryReceive()            = true;
+    r.ShouldRefreshEveryReceive.IntervalMs() = 7;
+
+    superobj o;
+    o.Body().ShouldRefreshEveryReceive() = false;
+
+    auto p = r.props();
+
+    REQUIRE(r.ShouldRefreshEveryReceive());
 }
 
-TEST_CASE("type")
-{
-    static_assert(::cppmarkup::get_node_type<int>() == ::cppmarkup::node_type::integral_number);
-    static_assert(::cppmarkup::get_node_type<float>() == ::cppmarkup::node_type::real_number);
-    static_assert(::cppmarkup::get_node_type<some_type>() == ::cppmarkup::node_type::object);
-    static_assert(::cppmarkup::get_node_type<std::vector<int>>() == ::cppmarkup::node_type::array);
-    static_assert(::cppmarkup::get_node_type<std::vector<float>>() == ::cppmarkup::node_type::array);
-    static_assert(::cppmarkup::get_node_type<std::vector<double>>() == ::cppmarkup::node_type::array);
-    static_assert(::cppmarkup::get_node_type<std::vector<some_type>>() == ::cppmarkup::node_type::array);
-    static_assert(::cppmarkup::get_node_type<nullptr_t>() == ::cppmarkup::node_type::null);
-    static_assert(::cppmarkup::get_node_type<std::u8string>() == ::cppmarkup::node_type::string);
-    static_assert(::cppmarkup::get_node_type<std::wstring>() == ::cppmarkup::node_type::string);
-    static_assert(::cppmarkup::get_node_type<std::string>() == ::cppmarkup::node_type::string);
-}
-} // namespace test::cppmarkup::objects
+} // namespace test::kangsw::markup

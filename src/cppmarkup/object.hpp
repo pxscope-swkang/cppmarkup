@@ -18,6 +18,7 @@ namespace cppmarkup {
 // clang-format off
 struct tag_duplication_exception : std::exception {};
 struct attribute_duplication_exception : std::exception {};
+struct undefined_marshaller_exception : std::exception {};
 // clang-format on
 } // namespace cppmarkup
 
@@ -26,8 +27,10 @@ class xml_node;
 } // namespace pugi
 
 namespace cppmarkup {
-enum class node_type
-{
+/**
+ *
+ */
+enum class node_type {
     object,
     integral_number,
     real_number,
@@ -38,14 +41,49 @@ enum class node_type
     none,
     MAX_NODE_TYPE
 };
-}
+
+/**
+ * 빠르게 cppmarkup 오브젝트를 바이너리로 직렬화하는 인터페이스를 제공합니다.
+ * 호환성은 없는 자체 포맷으로, 직렬 통신에서 빠르게 cppmarkup 오브젝트를
+ *동기시킬 필요가 있을 때 사용합니다. (BSON의 커스텀 구현)
+ */
+enum compact_byte : uint8_t;
+using compact_binary = std::vector<compact_byte>;
+
+/**
+ * 타입에 대한 파싱, 덤프 로직을 제공하는 마셜링 클래스입니다.
+ * 각 타입에 대한 파싱 로직은 marshaller 내의 함수에 정의되어야 합니다.
+ */
+class marshaller_base
+{
+public:
+    virtual ~marshaller_base() = default;
+
+    virtual bool parse(void*, size_t, pugi::xml_node const&) const { throw undefined_marshaller_exception{}; }
+    virtual bool parse(void*, size_t, nlohmann::json const&) const { throw undefined_marshaller_exception{}; }
+    virtual bool parse(void*, size_t, compact_binary const&) const { throw undefined_marshaller_exception{}; }
+
+    virtual bool dump(pugi::xml_node const&, void*, size_t) const { throw undefined_marshaller_exception{}; }
+    virtual bool dump(nlohmann::json const&, void*, size_t) const { throw undefined_marshaller_exception{}; }
+    virtual bool dump(compact_binary const&, void*, size_t) const { throw undefined_marshaller_exception{}; }
+};
+
+/**
+ * 인스턴스화되는 마샬러 클래스입니다.
+ * marshaller_base에 정의된 로직 중 필요한 부분을 overrride하고, 반드시 marshaller_base를 상속해야 합니다.
+ */
+template <typename Ty_>
+class marshaller : public marshaller_base
+{
+};
+} // namespace cppmarkup
 
 namespace cppmarkup::impl {
 
 template <class source_type>
-using parse_fn_t = std::function<bool(void*, size_t, source_type const&)>;
+using parse_fn_t = bool (*)(void*, size_t, source_type const&);
 template <class source_type>
-using dump_fn_t = std::function<bool(source_type&, void const*, size_t)>;
+using dump_fn_t = bool (*)(source_type&, void const*, size_t);
 
 /**
  * 오브젝트 내에 embed 된 하나의 노드에 대한 파싱/덤프 프로퍼티
@@ -66,13 +104,9 @@ struct node_property {
     size_t total_size;
 
     std::vector<std::pair<std::u8string_view, std::u8string_view>> attrib_default;
-
-    struct {
-        parse_fn_t<pugi::xml_node> parser;
-        dump_fn_t<pugi::xml_node> dumper;
-    } xml;
-
     std::u8string* get_attrib(void* element_base, size_t index) const;
+
+    marshaller_base const* pmarshal;
 };
 
 /**
@@ -117,7 +151,7 @@ struct traits : object_base {
  */
 template <class Crtp_, typename Val_, size_t Align_>
 struct object_inst_init {
-    object_inst_init(std::atomic_size_t& new_node_idx, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, parse_fn_t<pugi::xml_node>&& f, cppmarkup::node_type type)
+    object_inst_init(std::atomic_size_t& new_node_idx, std::vector<node_property>& nodes, std::u8string_view tag, size_t size, const char8_t** descr, marshaller_base const* marshal, cppmarkup::node_type type)
     {
         size += Align_ - 1;
         size -= size % Align_;
@@ -138,11 +172,10 @@ struct object_inst_init {
         n.type       = type;
         n.value_size = size;
         n.total_size = size;
+        n.pmarshal   = marshal;
 
         n.description = *descr ? std::u8string_view(*descr) : std::u8string_view{};
         if (*descr) { *descr = nullptr; }
-
-        n.xml.parser = std::move(f);
     }
 };
 
@@ -169,9 +202,7 @@ struct object_inst_attr_init {
 } // namespace cppmarkup::impl
 
 namespace cppmarkup {
-enum compact_byte : uint8_t;
-using compact_binary = std::vector<compact_byte>;
-using object         = impl::object_base;
+using object = impl::object_base;
 
 namespace impl {
     // https://stackoverflow.com/questions/31762958/check-if-class-is-a-template-specialization
@@ -194,8 +225,8 @@ constexpr node_type get_node_type()
     if constexpr (std::is_base_of_v<impl::object_base, Ty_>) { return node_type::object; }
     if constexpr (std::is_integral_v<Ty_>) { return node_type::integral_number; }
     if constexpr (std::is_floating_point_v<Ty_>) { return node_type::real_number; }
-    if constexpr (impl::is_specialization<Ty_, std::basic_string>{}.value) { return node_type::string; }
-    if constexpr (impl::is_specialization<Ty_, std::vector>{}.value) { return node_type::array; }
+    if constexpr (impl::is_specialization<Ty_, std::basic_string>::value) { return node_type::string; }
+    if constexpr (impl::is_specialization<Ty_, std::vector>::value) { return node_type::array; }
     if constexpr (std::is_same_v<Ty_, nullptr_t>) { return node_type::null; }
     return node_type::none;
 }

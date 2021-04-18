@@ -14,3 +14,4 @@ bool cppmarkup::marshal::parse(cppmarkup::impl::object_base& d, pugi::xml_node c
 
     return false;
 }
+

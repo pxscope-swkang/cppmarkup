@@ -32,6 +32,21 @@ CPPMARKUP_OBJECT_TEMPLATE(some_type)
             CPPMARKUP_ADD2(qutio, 34);
             CPPMARKUP_ADD2(iottt, 34);
             CPPMARKUP_ADD2(iotttp, 34);));
+
+    struct INTERNAL_EZ_varname_INSTANCE {
+    public:
+        struct _internal_type
+        /*MACRO_BEGIN*/
+        {
+        };
+        /*MACRO_END*/
+    private:
+        _internal_type _value;
+
+    public:
+        _internal_type& operator()() { return _value; }
+        _internal_type const& operator()() const { return _value; }
+    };
 };
 
 TEST_CASE("instanciation")
@@ -39,6 +54,7 @@ TEST_CASE("instanciation")
     some_type r;
     std::atomic<void*> k;
     r.AdminPw.Attr2 = u8"df";
+    r.AdminPw()     = 3;
 }
 
 TEST_CASE("type")

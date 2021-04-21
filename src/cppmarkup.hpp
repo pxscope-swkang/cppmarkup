@@ -53,7 +53,6 @@
 
 /** */
 #define CPPMARKUP_OBJECT_TEMPLATE(type_name)      INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(type_name)
-#define CPPMARKUP_OBJECT_GENERATE_BODY(type_name) INTERNAL_CPPMARKUP_OBJECT_TEMPLATE_BODY(type_name)
 
 /** */
 #define CPPMARKUP_ADD(tag, default_value, ... /*ATTRIBUTES*/) \
@@ -87,3 +86,6 @@
 
 /** */
 #define CPPMARKUP_DESCRIPTION_BELOW(u8description) INTERNAL_CPPMARKUP_DESCRIPTION(u8description)
+
+/** initializer_list wrapper */
+#define CPPMARKUP_ARRAY(...) std::initializer_list({__VA_ARGS__})

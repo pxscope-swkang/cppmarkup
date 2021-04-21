@@ -1,6 +1,7 @@
 #define CPPMARKUP_BUILD_WITH_DESCRIPTION
 #include "catch.hpp"
 #include "cppmarkup/impl_macros.hpp"
+#include "cppmarkup/object.hpp"
 
 #include <cppmarkup.hpp>
 #include <list>
@@ -18,8 +19,6 @@ struct tname : ::kangsw::markup::impl::object_base<tname>
 {
     // CPPMARKUP_OBJECT_TEMPLATE_BODY(tname)
 private:
-    void should_declare_CPPMARKUP_OBJECT_TEMPLATE_BODY_first() override {}
-
     static inline struct INTERNAL_BODY_tname {
         INTERNAL_BODY_tname()
         {
@@ -39,8 +38,7 @@ public:
 
     // CPPMARKUP_ADD(varname, tag_name_str, default_value, ...);
     // INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ...ATTRIBs)
-    class INTERNAL_TYPE_varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_varname>
-    {
+    class INTERNAL_TYPE_varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_varname> {
     private:
         static constexpr auto _tagstr = tag_name_str;
 
@@ -143,28 +141,37 @@ static inline struct tttest {
 
 CPPMARKUP_OBJECT_TEMPLATE(obj)
 {
-    CPPMARKUP_OBJECT_GENERATE_BODY(obj);
-
     CPPMARKUP_DESCRIPTION_BELOW(u8"설명 설명 설명");
-    CPPMARKUP_ADD(
-        ShouldRefreshEveryReceive, 0.432,
-        CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+    CPPMARKUP_ADD(ShouldRefreshEveryReceive, 0.432,
+                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+
+    CPPMARKUP_ADD(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
 };
 
 CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(superobj, obj, Body);
 
+CPPMARKUP_OBJECT_TEMPLATE(elser)
+{
+    CPPMARKUP_EMBED_OBJECT_begin(hell)
+    {
+    }
+    CPPMARKUP_EMBED_OBJECT_end(hell);
+};
+
 TEST_CASE("CppMarkup", "Object body Template")
 {
     obj r;
-    r.ShouldRefreshEveryReceive()            = true;
-    r.ShouldRefreshEveryReceive.IntervalMs() = 7;
+    r.ShouldRefreshEveryReceive            = true;
+    r.ShouldRefreshEveryReceive.IntervalMs = 7;
 
     superobj o;
-    o.Body().ShouldRefreshEveryReceive() = false;
+    o.Body->ShouldRefreshEveryReceive = 25;
 
     auto p = r.props();
 
-    REQUIRE(r.ShouldRefreshEveryReceive());
+    elser car;
+
+    REQUIRE(r.ShouldRefreshEveryReceive);
 }
 
 } // namespace test::kangsw::markup

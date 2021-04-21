@@ -2,12 +2,16 @@
 #include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
+#include <typeinfo>
 #include <vector>
 
 #include "hash.hpp"
+#include "marshal_defaults.hpp"
 #include "template_utils.hxx"
+#include "typedefs.hpp"
 
 /*
 - References - 
@@ -46,29 +50,7 @@
     최초 인스턴스 생성 시 수행, 자연스럽게 가장 내부의 오브젝트부터 구성됨 (멤버 초기화자)
  */
 
-/** 포워딩 */
-namespace kangsw::markup::impl {
-class basic_marshaller;
-template <typename> class element_template_base;
-class element_base;
-} // namespace kangsw::markup::impl
-namespace nlohmann {
-class json;
-}
-namespace pugi {
-class xml_node;
-class xml_attribute;
-} // namespace pugi
-
 namespace kangsw::markup {
-#if __cplusplus > 202000
-using u8string      = std::u8string;
-using u8string_view = std::u8string_view;
-#else
-using u8string      = std::string;
-using u8string_view = std::string_view;
-#endif
-
 /**
  * 노드의 형식을 나타냅니다. 오브젝트 ~ 비 오브젝트, 어레이를 구별하는 용도롱만 사용.
  */
@@ -148,51 +130,65 @@ struct property {
     std::vector<attribute_representation> attributes;
 };
 
-/** 데이터 고속 송수신을 위한 바이너리 표현입니다. */
-enum class compact_byte : uint8_t;
-using compact_binary = std::vector<compact_byte>;
-
-/**
- * 파싱과 덤프를 위한 기본적인 인터페이스입니다.
- * 각 타입의 파싱 로직은  
- */
-template <typename Ty_, typename Markup_> bool parse(Ty_& o, Markup_ const& i)
-{
-    return false;
-}
-template <typename Ty_, typename Markup_> bool dump(Ty_ const& o, Markup_& i)
-{
-    return false;
-}
+using extended_parse_fn_t = bool (*)(void*, size_t, void const*);
+using extended_dump_fn_t  = bool (*)(void const*, size_t, void*);
 
 namespace impl {
-    class basic_marshaller
-    {
+    class basic_marshaller {
     public:
-        virtual ~basic_marshaller()                                          = default;
-        virtual bool parse(void* v, size_t n, nlohmann::json const& s) const = 0;
-        virtual bool parse(void* v, size_t n, pugi::xml_node const& s) const = 0;
-        virtual bool parse(void* v, size_t n, u8string const& s) const       = 0;
-        virtual bool parse(void* v, size_t n, compact_binary const& s) const = 0;
-        virtual bool dump(void const* v, size_t n, nlohmann::json& s) const  = 0;
-        virtual bool dump(void const* v, size_t n, pugi::xml_node& s) const  = 0;
-        virtual bool dump(void const* v, size_t n, u8string& s) const        = 0;
-        virtual bool dump(void const* v, size_t n, compact_binary& s) const  = 0;
+        virtual ~basic_marshaller()                                         = default;
+        virtual bool parse(void* v, size_t n, u8string_view s) const        = 0;
+        virtual bool parse(void* v, size_t n, compact_binary_view s) const  = 0;
+        virtual bool dump(void const* v, size_t n, u8string& s) const       = 0;
+        virtual bool dump(void const* v, size_t n, compact_binary& s) const = 0;
+
+        template <typename Markup_>
+        bool parse_by(void* v, size_t n, Markup_ const& s) const
+        {
+            return _parse_by(v, n, &s, typeid(Markup_).hash_code());
+        }
+
+        template <typename Markup_>
+        bool dump_by(void const* v, size_t n, Markup_& s) const
+        {
+            return _dump_by(v, n, &s, typeid(Markup_).hash_code());
+        }
+
+    protected:
+        virtual bool _parse_by(void* v, size_t n, void const* s, size_t markup_hash) const = 0;
+        virtual bool _dump_by(void const* v, size_t n, void* s, size_t markup_hash) const  = 0;
     };
 
     template <typename Ty_>
-    class marshaller_instance : public basic_marshaller
-    {
+    class marshaller_instance : public basic_marshaller {
     public:
-        bool parse(void* v, size_t n, nlohmann::json const& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
-        bool parse(void* v, size_t n, pugi::xml_node const& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
-        bool parse(void* v, size_t n, u8string const& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
-        bool parse(void* v, size_t n, compact_binary const& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
+        bool parse(void* v, size_t n, u8string_view s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
+        bool parse(void* v, size_t n, compact_binary_view s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
 
-        bool dump(void const* v, size_t n, nlohmann::json& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
-        bool dump(void const* v, size_t n, pugi::xml_node& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
         bool dump(void const* v, size_t n, u8string& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
         bool dump(void const* v, size_t n, compact_binary& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
+
+        bool _parse_by(void* v, size_t n, void const* s, size_t markup_hash) const override
+        {
+            auto fit = _ext_marshal.find(markup_hash);
+            if (fit == _ext_marshal.end()) { return false; }
+
+            return fit->second.first(v, n, s);
+        }
+
+        bool _dump_by(void const* v, size_t n, void* s, size_t markup_hash) const override
+        {
+            auto fit = _ext_marshal.find(markup_hash);
+            if (fit == _ext_marshal.end()) { return false; }
+
+            return fit->second.second(v, n, s);
+        };
+
+    private:
+        static inline std::map<
+            size_t /*source type hash code*/,
+            std::pair<extended_parse_fn_t, extended_dump_fn_t>>
+            _ext_marshal;
     };
 } // namespace impl
 
@@ -200,8 +196,7 @@ namespace impl {
  * XML, 또는 JSON 오브젝트를 나타냅니다.
  * 다른 오브젝트 또는 데이터의 컨테이너입니다.
  */
-class object
-{
+class object {
 public:
     virtual ~object()                                  = default;
     virtual std::vector<property> const& props() const = 0;
@@ -209,15 +204,16 @@ public:
 
     // TODO: 부분적 marshalling, 엄격/느슨 타입체크 marshalling, 부분적 엄격/느슨 타입체크 marshalling
 
-private:
-    virtual void should_declare_CPPMARKUP_OBJECT_TEMPLATE_BODY_first() = 0;
-
 private: // 내부 노출 전용 //
     friend class impl::element_base;
 
     virtual std::vector<property>& _props() = 0;
     virtual uint64_t& _structure_hash()     = 0;
 };
+
+/** 오브젝트 마셜링 특수화 */
+template <> bool parse<object>(object& o, u8string_view i);
+template <> bool dump(object const& o, u8string& i);
 
 /**
  * 오브젝트 타입을 반환
@@ -260,6 +256,11 @@ namespace impl {
     public:
         std::vector<property> const& props() const override { return INTERNAL_props; }
         uint64_t structure_hash() const override { return INTERNAL_structure_hash; }
+
+    private:
+        static inline struct _init_t {
+            _init_t() { ObjClass_{}; }
+        } _exec;
     };
 
     /**
@@ -267,8 +268,7 @@ namespace impl {
      * 최초 생성 시
      * @tparam TempClassId_ 임시 클래스 이름으로, CRTP 적용하여 각 엘리먼트에 정적 플래그 부여
      */
-    class element_base
-    {
+    class element_base {
     protected:
         void INTERNAL_elembase_init(element_type type, object* base, u8string_view tag, u8string& description, size_t value_offset, size_t value_size, size_t total_size, basic_marshaller* pmarshal, void (*pinit)(void*), std::vector<property::attribute_representation>& attrs)
         {
@@ -301,8 +301,7 @@ namespace impl {
     /**
      * 인스턴싱되는 어트리뷰트가 상속하는 클래스.
      */
-    class attribute_base
-    {
+    class attribute_base {
     protected:
         void INTERNAL_attrbase_init(element_base* base, u8string_view name, std::vector<property::attribute_representation>& attrs, size_t attr_size, basic_marshaller* marshaller, void (*pinit)(void*))
         {
@@ -317,8 +316,7 @@ namespace impl {
 
     /** 각 엘리먼트 인스턴스에 대해 고유한 스태틱 변수를 할당하기 위한 클래스 */
     template <typename TempClassId_>
-    class element_template_base : protected element_base
-    {
+    class element_template_base : protected element_base {
     protected:
         static inline u8string _description;
     };

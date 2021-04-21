@@ -9,37 +9,25 @@
 #define INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(tname) \
     struct tname : ::kangsw::markup::impl::object_base<tname>
 
-#define INTERNAL_CPPMARKUP_OBJECT_TEMPLATE_BODY(tname)                     \
-private:                                                                   \
-    void should_declare_CPPMARKUP_OBJECT_TEMPLATE_BODY_first() override {} \
-                                                                           \
-    static inline struct INTERNAL_BODY_##tname {                           \
-        INTERNAL_BODY_##tname()                                            \
-        {                                                                  \
-            tname autogen = {};                                            \
-        }                                                                  \
-    } INTERNAL_BODY_INIT_##tname;
-
-#define INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ... /*ATTRIBUTES*/)                      \
-public:                                                                                                    \
-    class INTERNAL_TYPE_##varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_##varname> \
-    {                                                                                                      \
-    private:                                                                                               \
-        using self_type               = INTERNAL_TYPE_##varname;                                           \
-        static constexpr auto _tagstr = tag_name_str;                                                      \
-                                                                                                           \
-        static inline struct _internal_description_assignment {                                            \
-            _internal_description_assignment()                                                             \
-            {                                                                                              \
-                _description              = INTERNAL_next_description;                                     \
-                INTERNAL_next_description = {};                                                            \
-            }                                                                                              \
-        } _description_assignment;                                                                         \
-                                                                                                           \
-    private:                                                                                               \
-        static inline std::vector<::kangsw::markup::property::attribute_representation> _attribs;          \
-                                                                                                           \
-    public:                                                                                                \
+#define INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ... /*ATTRIBUTES*/)                        \
+public:                                                                                                      \
+    class INTERNAL_TYPE_##varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_##varname> { \
+    private:                                                                                                 \
+        using self_type               = INTERNAL_TYPE_##varname;                                             \
+        static constexpr auto _tagstr = tag_name_str;                                                        \
+                                                                                                             \
+        static inline struct _internal_description_assignment {                                              \
+            _internal_description_assignment()                                                               \
+            {                                                                                                \
+                _description              = INTERNAL_next_description;                                       \
+                INTERNAL_next_description = {};                                                              \
+            }                                                                                                \
+        } _description_assignment;                                                                           \
+                                                                                                             \
+    private:                                                                                                 \
+        static inline std::vector<::kangsw::markup::property::attribute_representation> _attribs;            \
+                                                                                                             \
+    public:                                                                                                  \
         /*ATTRIBUTES will be placed here */ __VA_ARGS__
 
 namespace kangsw::markup::impl {
@@ -77,8 +65,17 @@ public:                                                                         
         attr_value_type _value;                                                              \
                                                                                              \
     public:                                                                                  \
-        auto& operator()() { return _value; }                                                \
-        auto& operator()() const { return _value; }                                          \
+        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) : _value(v) {}                \
+        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) : _value(std::move(v)) {}          \
+                                                                                             \
+        auto& value() { return _value; }                                                     \
+        auto& value() const { return _value; }                                               \
+        auto operator->() { return &_value; }                                                \
+        auto operator->() const { return &_value; }                                          \
+        template <typename N_> auto& operator[](N_ i) { return _value[i]; }                  \
+        template <typename N_> auto& operator[](N_ i) const { return _value[i]; }            \
+        operator attr_value_type&() { return _value; }                                       \
+        operator attr_value_type const &() const { return _value; }                          \
     } attr_varname{this /* 어트리뷰트 오프셋 / 사이즈 계산용, 최초 1회 */};
 
 #define INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)                   \
@@ -100,8 +97,17 @@ public:                                                                         
             _attribs);                                                              \
     }                                                                               \
                                                                                     \
-    auto& operator()() { return _value; }                                           \
-    auto& operator()() const { return _value; }                                     \
+    INTERNAL_TYPE_##varname(value_type const& v) : _value(v) {}                     \
+    INTERNAL_TYPE_##varname(value_type&& v) : _value(std::move(v)) {}               \
+                                                                                    \
+    auto& value() { return _value; }                                                \
+    auto& value() const { return _value; }                                          \
+    auto operator->() { return &_value; }                                           \
+    auto operator->() const { return &_value; }                                     \
+    operator value_type&() { return _value; }                                       \
+    operator value_type const &() const { return _value; }                          \
+    template <typename N_> auto& operator[](N_ i) { return _value[i]; }             \
+    template <typename N_> auto& operator[](N_ i) const { return _value[i]; }       \
     }                                                                               \
     varname { this }
 
@@ -110,31 +116,31 @@ public:                                                                         
     using value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value)); \
     INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)
 
+// TODO... 작업 중!
 #define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(varname, tag_name, ...)     \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__); \
-    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(TEMPLATE_##varname)                \
-    {                                                                     \
-        INTERNAL_CPPMARKUP_OBJECT_TEMPLATE_BODY(TEMPLATE_##varname);
+    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(TEMPLATE_##varname)
 
 #define INTERNAL_CPPMARKUP_EMBED_OBJECT_end(varname) \
-    INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, TEMPLATE_##varname{});
+    ;                                                \
+    using value_type = TEMPLATE_##varname;           \
+    INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, value_type{})
 
 #define INTERNAL_CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(wrapper_type, body_type, varname, tag, ...) \
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(wrapper_type)                                           \
     {                                                                                          \
-        INTERNAL_CPPMARKUP_OBJECT_TEMPLATE_BODY(wrapper_type);                                 \
         INTERNAL_CPPMARKUP_ADD(varname, tag, body_type(), ##__VA_ARGS__);                      \
         auto& operator()() { return varname; }                                                 \
         auto& operator()() const { return varname; }                                           \
     }
 
 #ifdef CPPMARKUP_BUILD_WITH_DESCRIPTION
-#define INTERNAL_CPPMARKUP_DESCRIPTION(description)                                                   \
-private:                                                                                              \
-    static inline struct INTERNAL_description_assignment_type_##__LINE__ {                            \
+#define INTERNAL_CPPMARKUP_DESCRIPTION(description)                                                    \
+private:                                                                                               \
+    static inline struct INTERNAL_description_assignment_type_##__LINE__ {                             \
         INTERNAL_description_assignment_type_##__LINE__() { INTERNAL_next_description = description; } \
-    } INTERNAL_description_assignment;                                                                \
-                                                                                                      \
+    } INTERNAL_description_assignment;                                                                 \
+                                                                                                       \
 public:
 
 #else

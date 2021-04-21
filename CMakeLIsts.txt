@@ -17,11 +17,9 @@ add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOUR
 add_library                 (cppmarkup::static  ALIAS       CPPMARKUP_lib)
 
 target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_17)
-target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR}
-                                                            nlohmann_json::nlohmann_json
-                                                            pugixml::static)
-target_link_libraries       (CPPMARKUP_lib      PUBLIC      nlohmann_json::nlohmann_json
-                                                            pugixml::static)
+target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR})
+#target_link_libraries       (CPPMARKUP_lib      PUBLIC      nlohmann_json::nlohmann_json
+#                                                            pugixml::static)
 
 ## INSTALLATIONS ##
 

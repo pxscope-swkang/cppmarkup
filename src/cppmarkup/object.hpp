@@ -13,6 +13,8 @@
 #include "template_utils.hxx"
 #include "typedefs.hpp"
 
+#include <functional>
+
 /*
 - References - 
 
@@ -51,25 +53,43 @@
  */
 
 namespace kangsw::markup {
+namespace impl {
+    class element_base;
+}
+
 /**
- * 노드의 형식을 나타냅니다. 오브젝트 ~ 비 오브젝트, 어레이를 구별하는 용도롱만 사용.
+ * Array access 구조체. Object 배열의 경우 vector<ActualObjectType>으로 표현되지만, 리플렉션을 수행하는
+ *코드에서는 실제 타입을 알 수 없습니다. vector<object>와 같은 식으로 표현하는 것도 불가하므로, 하기하는
+ *콜백 함수에 실제 메모리의 manipulator를 저장합니다.
+ * 단, 아래 함수는 반드시 대상 메모리가 object array 형식일 때에만 사용되어야 합니다.
  */
-enum class element_type : uint8_t {
-    null,
-    boolean,
-    integer,
-    floating_point,
-    string,
-    object,
+struct object_vector_manip {
+    virtual ~object_vector_manip() = default;
 
-    number = 0x10,
-
-    map   = 0x40,
-    array = 0x80,
+    virtual size_t size(void const*) const                    = 0;
+    virtual object const* at(void const*, size_t index) const = 0;
+    virtual object* at(void*, size_t index) const             = 0;
+    virtual size_t append(void*, object** out) const          = 0;
+    virtual void clear(void*) const                           = 0;
+    virtual void swap(void*, size_t a, size_t b) const        = 0;
+    virtual void pop_back(void*) const                        = 0;
+    virtual size_t erase(void*, size_t from, size_t to) const = 0;
 };
 
-inline element_type operator&(element_type a, element_type b) { return element_type((uint8_t)a & (uint8_t)b); }
-inline element_type operator|(element_type a, element_type b) { return element_type((uint8_t)a | (uint8_t)b); }
+/**
+ * Map access 구조체. Array access 구조체와 같은 역할을 하며, 맵을 지정합니다.
+ * TODO: 인터페이스 보강
+ */
+struct object_map_manip {
+    virtual ~object_map_manip() = default;
+
+    virtual size_t size(void*) const                              = 0;
+    virtual object* at(void*, u8string_view) const                = 0;
+    virtual bool insert(void*, u8string_view, object** out) const = 0; // returns is_newly_inserted
+    virtual bool contains(void*, u8string_view) const             = 0;
+
+    virtual void for_each(void*, std::function<void(u8string_view, object*)>) const = 0;
+};
 
 /**
  * 오브젝트, 또는 데이터의 메타데이터 하나를 나타내는 프로퍼티입니다.
@@ -106,7 +126,7 @@ struct property {
         size_t value_size;
 
         /** Owner 오브젝트에 대한 지역 오프셋 */
-        size_t local_offset;
+        size_t elem_offset;
 
         // /** 루트 오브젝트에 대한 전역 오프셋 */
         // size_t global_offset; // TODO 필요성 논의
@@ -117,6 +137,9 @@ struct property {
 
     /** 단일 어트리뷰트 표현 */
     struct attribute_representation {
+        /** 어트리뷰트 타입 */
+        element_type type;
+
         /** 어트리뷰트 이름 */
         u8string_view name;
 
@@ -132,25 +155,32 @@ struct property {
 
     /** 어트리뷰트 목록 */
     std::vector<attribute_representation> attributes;
-};
 
-/**
- * 마셜링 에러 코드
- */
-enum class marshalerr_t : intptr_t {
-    ok,
-    fail = std::numeric_limits<intptr_t>::min(), // 0x10000000'00000000...
+    /** 어레이 매니퓰레이터 획득 */
+    auto as_array() const { return _vector_manip; }
+
+    /** 맵 매니퓰레이터 획득 */
+    auto as_map() const { return _map_manip; }
+
+private:
+    friend class impl::element_base;
+
+    /** 벡터 매니퓰레이터 */
+    object_vector_manip const* _vector_manip;
+
+    /** 맵 매니퓰레이터 */
+    object_map_manip const* _map_manip;
 };
 
 /**
  * 마샬러 기본 템플릿 인터페이스.
+ * 특수화되지 않은 함수의 사용은 항상 실패합니다.
  */
 template <typename Markup_>
-class marshal {
-public:
-    marshalerr_t parse(object& to, Markup_ const& from) const { return marshalerr_t::fail; }
-    marshalerr_t dump(Markup_& to, object const& from) const { return marshalerr_t::fail; }
-};
+marshalerr_t parse(object& to, Markup_ const& from) { static_assert(false); }
+
+template <typename Markup_>
+marshalerr_t dump(Markup_& to, object const& from) { static_assert(false); }
 
 /**
  * XML, 또는 JSON 오브젝트를 나타냅니다.
@@ -214,7 +244,7 @@ namespace impl {
      * 현재 스코프에서 현재 클래스 프로퍼티의 노드 리스트가 보이게 합니다.
      */
     template <typename ObjClass_>
-    struct object_base : object {
+    struct object_base : public object {
         static inline std::vector<property> INTERNAL_props;
         static inline u8string INTERNAL_next_description;
         static inline bool INTERNAL_is_first_entry     = true;
@@ -250,8 +280,20 @@ namespace impl {
      */
     class element_base {
     protected:
-        void INTERNAL_elembase_init(element_type type, object* base, u8string_view tag, u8string& description, size_t value_offset, size_t value_size, size_t total_size, void (*pinit)(void*), std::vector<property::attribute_representation>& attrs)
+        void INTERNAL_elembase_init(
+            element_type type,
+            object* base,
+            u8string_view tag,
+            u8string& description,
+            size_t value_offset,
+            size_t value_size,
+            size_t total_size,
+            void (*pinit)(void*),
+            std::vector<property::attribute_representation>& attrs,
+            object_vector_manip const* vmanip,
+            object_map_manip const* mmanip)
         {
+            printf("Initializing %s ...\n", tag.data());
             // struct hash 계산.
             auto seed        = base->_props().empty() ? 0 : base->_props().back().offset_hash;
             auto offset_hash = get_hash(tag, seed);
@@ -259,17 +301,21 @@ namespace impl {
             auto& structure_hash = base->_structure_hash();
             structure_hash       = get_hash(tag, structure_hash + value_offset + (value_size << 32));
 
-            auto& n = base->_props().emplace_back();
-            n.tag   = tag;
-            n.type  = type;
+            auto& array = base->_props();
+            auto& n     = array.emplace_back();
+            n.tag       = tag;
+            n.type      = type;
 
-            n.memory.local_offset       = (intptr_t)this - (intptr_t)base;
+            n.memory.elem_offset       = (intptr_t)this - (intptr_t)base;
             n.memory.value_offset       = value_offset;
             n.memory.total_element_size = total_size;
             n.memory.value_size         = value_size;
             n.offset_hash               = offset_hash;
             n.description               = &description;
             n.pinitializer              = pinit;
+
+            n._vector_manip = vmanip;
+            n._map_manip    = mmanip;
 
             n.attributes.assign(attrs.begin(), attrs.end());
             attrs.clear();
@@ -282,9 +328,10 @@ namespace impl {
      */
     class attribute_base {
     protected:
-        void INTERNAL_attrbase_init(element_base* base, u8string_view name, std::vector<property::attribute_representation>& attrs, size_t attr_size, void (*pinit)(void*))
+        void INTERNAL_attrbase_init(element_base* base, u8string_view name, element_type type, std::vector<property::attribute_representation>& attrs, size_t attr_size, void (*pinit)(void*))
         {
             auto& n        = attrs.emplace_back();
+            n.type         = type;
             n.offset       = (intptr_t)this - (intptr_t)base;
             n.size         = attr_size;
             n.name         = name;
@@ -299,7 +346,89 @@ namespace impl {
         static inline u8string _description;
     };
 
-    /** 내부의 어트리뷰트가 상속하는 베이스 클래스입니다. */
+    /** Ty_가 컨테이너 타입이고, element_type이 object인지 확인 */
+    enum class container_type {
+        other,
+        object_array,
+        object_map,
+    };
+
+    template <typename Ty_>
+    constexpr container_type check_object_container()
+    {
+        if constexpr (templates::is_specialization<Ty_, std::vector>::value) {
+            return std::is_base_of_v<object, typename Ty_::value_type>
+                       ? container_type::object_array
+                       : container_type::other;
+        }
+        else if constexpr (templates::is_specialization<Ty_, std::map>::value) {
+            return std::is_base_of_v<object, typename Ty_::mapped_type>
+                       ? container_type::object_map
+                       : container_type::other;
+        }
+        else {
+            return container_type::other;
+        }
+    }
+
+    /** value type이 오브젝트 어레이일 때만 유효한 매니퓰레이터 레퍼런스를 반환 */
+    template <typename Ty_> struct object_array_instance {
+        struct manip : object_vector_manip {
+            using container_type = Ty_;
+            static_assert(std::is_base_of_v<object, typename container_type::value_type>);
+
+            size_t size(void const* m) const override { return ((container_type*)m)->size(); }
+            object* at(void* m, size_t index) const override { return &((container_type*)m)->operator[](index); }
+            object const* at(void const* m, size_t index) const override { return &((container_type*)m)->operator[](index); }
+            void clear(void* m) const override { return ((container_type*)m)->clear(); }
+            void pop_back(void* m) const override { return ((container_type*)m)->pop_back(); }
+            size_t erase(void* m, size_t from, size_t to) const override
+            {
+                auto& v = *(container_type*)m;
+                auto it = v.erase(v.begin() + from, v.begin() + to);
+                return it - v.begin();
+            }
+            void swap(void* m, size_t a, size_t b) const override
+            {
+                auto& v = *(container_type*)m;
+                std::swap(v[a], v[b]);
+            }
+            size_t append(void* m, object** out) const override
+            {
+                auto& v  = *(container_type*)m;
+                auto idx = v.size();
+                if (out) { *out = &v.emplace_back(); }
+                return idx;
+            }
+        };
+
+        static object_vector_manip const* get()
+        {
+            if constexpr (check_object_container<Ty_>() != container_type::object_array) {
+                return nullptr;
+            }
+            else {
+                static manip m;
+                return &m;
+            }
+        }
+    };
+
+    template <typename Ty_> struct object_map_instance {
+        struct manip : object_map_manip {};
+
+        static object_map_manip const* get()
+        {
+            if constexpr (check_object_container<Ty_>() != container_type::object_array) {
+                return nullptr;
+            }
+            else {
+                //static manip m;
+                // return &m; TODO: map_manip 구현
+                return nullptr;
+            }
+        }
+    };
 
 } // namespace impl
 

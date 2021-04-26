@@ -74,7 +74,6 @@ decltype(auto) deduce_map(KTy_&& a, Ty_&& b, Args_&&... args)
 public:                                                                                                    \
     struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {                         \
         using attr_value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value));                \
-        static inline ::kangsw::markup::impl::marshaller_instance<attr_value_type> _marshal;               \
                                                                                                            \
         INTERNAL_ATTR_##attr_varname(self_type* base)                                                      \
         {                                                                                                  \
@@ -82,7 +81,7 @@ public:                                                                         
                                                                                                            \
             INTERNAL_attrbase_init(                                                                        \
                 base, attr_name, _attribs,                                                                 \
-                sizeof *this, &_marshal,                                                                   \
+                sizeof *this,                                                                              \
                 [](void* v) { *(attr_value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }); \
         }                                                                                                  \
                                                                                                            \
@@ -105,7 +104,6 @@ public:                                                                         
 
 #define INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)                                \
 private:                                                                                         \
-    static inline ::kangsw::markup::impl::marshaller_instance<value_type> _marshal;              \
     value_type _value;                                                                           \
                                                                                                  \
 public:                                                                                          \
@@ -117,7 +115,7 @@ public:                                                                         
             ::kangsw::markup::get_element_type<value_type>(),                                    \
             base, _tagstr, _description,                                                         \
             offsetof(INTERNAL_TYPE_##varname, _value),                                           \
-            sizeof _value, sizeof *this, &_marshal,                                              \
+            sizeof _value, sizeof *this,                                                         \
             [](void* v) { *(value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }, \
             _attribs);                                                                           \
     }                                                                                            \

@@ -59,7 +59,6 @@ public:
         // CPPMARKUP_ATTRIBUTE(attr_varname, attr_name, default_value)
         struct INTERNAL_ATTR_attr_varname : ::kangsw::markup::impl::attribute_base {
             using attr_value_type = std::remove_const_t<decltype(default_value)>;
-            static inline ::kangsw::markup::impl::marshaller_instance<attr_value_type> _marshal;
 
             INTERNAL_ATTR_attr_varname(INTERNAL_TYPE_varname* base)
             {
@@ -68,7 +67,7 @@ public:
 
                 INTERNAL_attrbase_init(
                     base, attribute_name, _attribs,
-                    sizeof *this, &_marshal,
+                    sizeof *this,
                     [](void* v) { *(attr_value_type*)v = default_value; });
             }
 
@@ -95,7 +94,6 @@ public:
 
         // >> 이 아래로 LOWER 매크로
         // INTERNAL_CPPMARKUP_INSTANCE_LATER(varname)
-        static inline ::kangsw::markup::impl::marshaller_instance<value_type> _marshal;
 
     public:
         INTERNAL_TYPE_varname(::kangsw::markup::object* base)
@@ -108,7 +106,7 @@ public:
                 ::kangsw::markup::get_element_type<value_type>(),
                 base, _tagstr, _description,
                 offsetof(INTERNAL_TYPE_varname, _value),
-                sizeof _value, sizeof *this, &_marshal,
+                sizeof _value, sizeof *this,
                 [](void* v) { *(value_type*)v = default_value; },
                 _attribs);
 

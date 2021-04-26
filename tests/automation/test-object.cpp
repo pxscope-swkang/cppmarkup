@@ -146,6 +146,9 @@ CPPMARKUP_OBJECT_TEMPLATE(obj)
                   CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
 
     CPPMARKUP_ADD(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
+    CPPMARKUP_ADD(TestBoolean, CPPMARKUP_ARRAY(false, true));
+    CPPMARKUP_ADD(TestStrArray, CPPMARKUP_ARRAY("a, b, c, d..."));
+    CPPMARKUP_ADD(TestBoolMap, CPPMARKUP_MAP(u8"Hell,", true, u8"Abc", false));
 };
 
 CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(superobj, obj, Body);
@@ -154,22 +157,38 @@ CPPMARKUP_OBJECT_TEMPLATE(elser)
 {
     CPPMARKUP_EMBED_OBJECT_begin(hell)
     {
+        CPPMARKUP_ADD(TestObjArray, CPPMARKUP_MAP(u8"Hell", obj{}, u8"Abc", obj{}));
     }
     CPPMARKUP_EMBED_OBJECT_end(hell);
 };
 
+template <typename Ty_>
+decltype(auto) ddf(std::map<std::string, Ty_>&& args)
+{
+    return std::move(args);
+}
+
 TEST_CASE("CppMarkup", "Object body Template")
 {
+    std::map<std::string, bool> ar{{"abs", true}};
+
     obj r;
     r.ShouldRefreshEveryReceive            = true;
     r.ShouldRefreshEveryReceive.IntervalMs = 7;
+    auto g                                 = r.ShouldRefreshEveryReceive.value();
 
     superobj o;
     o.Body->ShouldRefreshEveryReceive = 25;
 
+    auto& vv = r.TestStrArray.value();
+
     auto p = r.props();
 
+    auto c = r.TestBoolMap.value();
+
     elser car;
+
+    auto ras = car.hell->TestObjArray[u8"faer"];
 
     REQUIRE(r.ShouldRefreshEveryReceive);
 }

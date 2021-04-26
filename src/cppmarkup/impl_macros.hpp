@@ -33,82 +33,107 @@ public:                                                                         
 namespace kangsw::markup::impl {
 
 template <typename Ty_>
-decltype(auto) deduce_fn(Ty_&&) { return Ty_{}; }
+decltype(auto) deduce_fn(Ty_&& v)
+{
+    if constexpr (std::is_same_v<Ty_, bool>) { return bool(v); }
+    if constexpr (std::is_integral_v<Ty_> && !std::is_same_v<Ty_, bool>) { return int64_t{v}; }
+    if constexpr (std::is_floating_point_v<Ty_>) { return double{v}; }
+    if constexpr (templates::is_specialization<Ty_, std::basic_string>::value) { return u8string{v.begin(), v.end()}; }
+    if constexpr (std::is_base_of_v<object, Ty_>) { return Ty_(std::move(v)); }
+    if constexpr (std::is_same_v<Ty_, u8string::const_pointer>) { return u8string{v}; }
+}
 
 template <typename Ty_, size_t N>
-decltype(auto) deduce_fn(Ty_ (&)[N]) { return std::basic_string<std::remove_const_t<Ty_>>{}; }
+decltype(auto) deduce_fn(Ty_ (&v)[N]) { return u8string{v}; }
 
 template <typename Ty_>
-decltype(auto) deduce_fn(std::initializer_list<Ty_>&&) { return std::vector<Ty_>{}; }
+decltype(auto) deduce_fn(std::initializer_list<Ty_>&& v)
+{
+    return std::vector<decltype(deduce_fn(Ty_{}))>(v.begin(), v.end());
+}
+
+template <typename Ty_>
+decltype(auto) deduce_fn(std::map<u8string, Ty_>&& v)
+{
+    return std::map<u8string, decltype(deduce_fn(Ty_{}))>(std::move(v));
+}
+
+template <typename KTy_, typename Ty_, typename... Args_>
+decltype(auto) deduce_map(KTy_&& a, Ty_&& b, Args_&&... args)
+{
+    std::map<u8string, decltype(deduce_fn(Ty_{}))> map;
+
+    return map;
+}
 
 } // namespace kangsw::markup::impl
 
 /* TODO decltype(default_value) -> deduce_type<decltype(default_value)>::type으로 변경
  * initializer_list -> vector로 인식하게 */
-#define INTERNAL_CPPMARKUP_ATTRIBUTE(attr_varname, attr_name, default_value)                 \
-public:                                                                                      \
-    struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {           \
-        using attr_value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value));  \
-        static inline ::kangsw::markup::impl::marshaller_instance<attr_value_type> _marshal; \
-                                                                                             \
-        INTERNAL_ATTR_##attr_varname(self_type* base)                                        \
-        {                                                                                    \
-            if (!INTERNAL_is_first_entry) { return; }                                        \
-                                                                                             \
-            INTERNAL_attrbase_init(                                                          \
-                base, attr_name, _attribs,                                                   \
-                sizeof *this, &_marshal,                                                     \
-                [](void* v) { *(attr_value_type*)v = default_value; });                      \
-        }                                                                                    \
-                                                                                             \
-    private:                                                                                 \
-        attr_value_type _value;                                                              \
-                                                                                             \
-    public:                                                                                  \
-        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) : _value(v) {}                \
-        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) : _value(std::move(v)) {}          \
-                                                                                             \
-        auto& value() { return _value; }                                                     \
-        auto& value() const { return _value; }                                               \
-        auto operator->() { return &_value; }                                                \
-        auto operator->() const { return &_value; }                                          \
-        template <typename N_> auto& operator[](N_ i) { return _value[i]; }                  \
-        template <typename N_> auto& operator[](N_ i) const { return _value[i]; }            \
-        operator attr_value_type&() { return _value; }                                       \
-        operator attr_value_type const &() const { return _value; }                          \
+#define INTERNAL_CPPMARKUP_ATTRIBUTE(attr_varname, attr_name, default_value)                               \
+public:                                                                                                    \
+    struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {                         \
+        using attr_value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value));                \
+        static inline ::kangsw::markup::impl::marshaller_instance<attr_value_type> _marshal;               \
+                                                                                                           \
+        INTERNAL_ATTR_##attr_varname(self_type* base)                                                      \
+        {                                                                                                  \
+            if (!INTERNAL_is_first_entry) { return; }                                                      \
+                                                                                                           \
+            INTERNAL_attrbase_init(                                                                        \
+                base, attr_name, _attribs,                                                                 \
+                sizeof *this, &_marshal,                                                                   \
+                [](void* v) { *(attr_value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }); \
+        }                                                                                                  \
+                                                                                                           \
+    private:                                                                                               \
+        attr_value_type _value;                                                                            \
+                                                                                                           \
+    public:                                                                                                \
+        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) : _value(v) {}                              \
+        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) : _value(std::move(v)) {}                        \
+                                                                                                           \
+        auto& value() { return _value; }                                                                   \
+        auto& value() const { return _value; }                                                             \
+        auto operator->() { return &_value; }                                                              \
+        auto operator->() const { return &_value; }                                                        \
+        template <typename N_> auto& operator[](N_ i) { return _value[i]; }                                \
+        template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                          \
+        operator attr_value_type&() { return _value; }                                                     \
+        operator attr_value_type const &() const { return _value; }                                        \
     } attr_varname{this /* 어트리뷰트 오프셋 / 사이즈 계산용, 최초 1회 */};
 
-#define INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)                   \
-private:                                                                            \
-    static inline ::kangsw::markup::impl::marshaller_instance<value_type> _marshal; \
-    value_type _value;                                                              \
-                                                                                    \
-public:                                                                             \
-    INTERNAL_TYPE_##varname(::kangsw::markup::object* base)                         \
-    {                                                                               \
-        if (!INTERNAL_is_first_entry) { return; }                                   \
-                                                                                    \
-        INTERNAL_elembase_init(                                                     \
-            ::kangsw::markup::get_element_type<value_type>(),                       \
-            base, _tagstr, _description,                                            \
-            offsetof(INTERNAL_TYPE_##varname, _value),                              \
-            sizeof _value, sizeof *this, &_marshal,                                 \
-            [](void* v) { *(value_type*)v = default_value; },                       \
-            _attribs);                                                              \
-    }                                                                               \
-                                                                                    \
-    INTERNAL_TYPE_##varname(value_type const& v) : _value(v) {}                     \
-    INTERNAL_TYPE_##varname(value_type&& v) : _value(std::move(v)) {}               \
-                                                                                    \
-    auto& value() { return _value; }                                                \
-    auto& value() const { return _value; }                                          \
-    auto operator->() { return &_value; }                                           \
-    auto operator->() const { return &_value; }                                     \
-    operator value_type&() { return _value; }                                       \
-    operator value_type const &() const { return _value; }                          \
-    template <typename N_> auto& operator[](N_ i) { return _value[i]; }             \
-    template <typename N_> auto& operator[](N_ i) const { return _value[i]; }       \
-    }                                                                               \
+#define INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)                                \
+private:                                                                                         \
+    static inline ::kangsw::markup::impl::marshaller_instance<value_type> _marshal;              \
+    value_type _value;                                                                           \
+                                                                                                 \
+public:                                                                                          \
+    INTERNAL_TYPE_##varname(::kangsw::markup::object* base)                                      \
+    {                                                                                            \
+        if (!INTERNAL_is_first_entry) { return; }                                                \
+                                                                                                 \
+        INTERNAL_elembase_init(                                                                  \
+            ::kangsw::markup::get_element_type<value_type>(),                                    \
+            base, _tagstr, _description,                                                         \
+            offsetof(INTERNAL_TYPE_##varname, _value),                                           \
+            sizeof _value, sizeof *this, &_marshal,                                              \
+            [](void* v) { *(value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }, \
+            _attribs);                                                                           \
+    }                                                                                            \
+                                                                                                 \
+    INTERNAL_TYPE_##varname(value_type const& v) : _value(v) {}                                  \
+    INTERNAL_TYPE_##varname(value_type&& v) : _value(std::move(v)) {}                            \
+                                                                                                 \
+    auto& value() { return _value; }                                                             \
+    auto& value() const { return _value; }                                                       \
+    auto operator->() { return &_value; }                                                        \
+    auto operator->() const { return &_value; }                                                  \
+    operator value_type&() { return _value; }                                                    \
+    operator value_type const &() const { return _value; }                                       \
+    template <typename N_> auto& operator[](N_ i) { return _value[i]; }                          \
+    template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                    \
+    }                                                                                            \
     varname { this }
 
 #define INTERNAL_CPPMARKUP_ADD(varname, tag_name, default_value, ...)              \
@@ -116,7 +141,6 @@ public:                                                                         
     using value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value)); \
     INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)
 
-// TODO... 작업 중!
 #define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(varname, tag_name, ...)     \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__); \
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(TEMPLATE_##varname)

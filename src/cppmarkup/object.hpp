@@ -54,12 +54,22 @@ namespace kangsw::markup {
 /**
  * 노드의 형식을 나타냅니다. 오브젝트 ~ 비 오브젝트, 어레이를 구별하는 용도롱만 사용.
  */
-enum class element_type {
+enum class element_type : uint8_t {
     null,
+    boolean,
+    integer,
+    floating_point,
+    string,
     object,
-    array,
-    data,
+
+    number = 0x10,
+
+    map   = 0x40,
+    array = 0x80,
 };
+
+inline element_type operator&(element_type a, element_type b) { return element_type((uint8_t)a & (uint8_t)b); }
+inline element_type operator|(element_type a, element_type b) { return element_type((uint8_t)a | (uint8_t)b); }
 
 /**
  * 오브젝트, 또는 데이터의 메타데이터 하나를 나타내는 프로퍼티입니다.
@@ -219,12 +229,36 @@ template <> bool dump(object const& o, u8string& i);
  * 오브젝트 타입을 반환
  */
 template <typename Ty_>
-element_type get_element_type()
+constexpr element_type get_element_type()
 {
-    if constexpr (std::is_base_of_v<object, Ty_>) { return element_type::object; }
-    if constexpr (templates::is_specialization<Ty_, std::vector>::value) { return element_type::array; }
-    if constexpr (std::is_same_v<nullptr_t, Ty_>) { return element_type::null; }
-    return element_type::data;
+    if constexpr (std::is_base_of_v<object, Ty_>) {
+        return element_type::object;
+    }
+    else if constexpr (std::is_same_v<Ty_, bool>) {
+        return element_type::boolean;
+    }
+    else if constexpr (std::is_same_v<Ty_, int64_t>) {
+        return element_type::integer | element_type::number;
+    }
+    else if constexpr (std::is_same_v<Ty_, double>) {
+        return element_type::floating_point | element_type::number;
+    }
+    else if constexpr (std::is_same_v<nullptr_t, Ty_>) {
+        return element_type::null;
+    }
+    else if constexpr (std::is_same_v<Ty_, u8string>) {
+        return element_type::string;
+    }
+    else if constexpr (templates::is_specialization<Ty_, std::vector>::value) {
+        return get_element_type<typename Ty_::value_type>() | element_type::array;
+    }
+    else if constexpr (templates::is_specialization<Ty_, std::map>::value) {
+        return get_element_type<typename Ty_::mapped_type>() | element_type::map;
+    }
+    else {
+        static_assert(false, "Not a valid element type");
+        return element_type::null; // warning suppression
+    }
 }
 
 /** internals 구현 */

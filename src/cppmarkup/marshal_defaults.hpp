@@ -2,6 +2,7 @@
 #include "template_utils.hxx"
 #include "typedefs.hpp"
 #include <cstdint>
+#include <map>
 #include <type_traits>
 
 /**
@@ -10,6 +11,8 @@
 namespace kangsw::markup {
 template <typename Ty_> bool parse_array(std::vector<Ty_>& out, u8string_view in);
 template <typename Ty_> bool dump_array(std::vector<Ty_> const& in, u8string& out);
+template <typename Ty_> bool parse_map(std::map<u8string, Ty_>& out, u8string_view in);
+template <typename Ty_> bool dump_map(std::map<u8string, Ty_> const& in, u8string& out);
 
 /**
  * JSON ÆÄ½Ì ¼½¼Ç ... 
@@ -38,6 +41,10 @@ template <typename Ty_> bool parse(Ty_& out, u8string_view in)
     {
         return parse_array(out, in);
     }
+    else if constexpr (templates::is_specialization<Ty_, std::map>::value)
+    {
+        return parse_map(out, in);
+    }
     else
     {
         static_assert(false);
@@ -63,6 +70,10 @@ template <typename Ty_> bool dump(Ty_ const& in, u8string& out)
     {
         return dump_array(in, out);
     }
+    else if constexpr (templates::is_specialization<Ty_, std::map>::value)
+    {
+        return dump_map(in, out);
+    }
     else
     {
         static_assert(false);
@@ -83,6 +94,16 @@ template <typename Ty_> bool parse_array(std::vector<Ty_>& out, u8string_view in
 }
 
 template <typename Ty_> bool dump_array(std::vector<Ty_> const& in, u8string& out)
+{
+    return false;
+}
+
+template <typename Ty_> bool parse_map(std::map<u8string, Ty_>& out, u8string_view in)
+{
+    return false;
+}
+
+template <typename Ty_> bool dump_map(std::map<u8string, Ty_> const& in, u8string& out)
 {
     return false;
 }

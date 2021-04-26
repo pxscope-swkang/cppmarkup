@@ -54,12 +54,22 @@ namespace kangsw::markup {
 /**
  * 노드의 형식을 나타냅니다. 오브젝트 ~ 비 오브젝트, 어레이를 구별하는 용도롱만 사용.
  */
-enum class element_type {
+enum class element_type : uint8_t {
     null,
+    boolean,
+    integer,
+    floating_point,
+    string,
     object,
-    array,
-    data,
+
+    number = 0x10,
+
+    map   = 0x40,
+    array = 0x80,
 };
+
+inline element_type operator&(element_type a, element_type b) { return element_type((uint8_t)a & (uint8_t)b); }
+inline element_type operator|(element_type a, element_type b) { return element_type((uint8_t)a | (uint8_t)b); }
 
 /**
  * 오브젝트, 또는 데이터의 메타데이터 하나를 나타내는 프로퍼티입니다.
@@ -105,9 +115,6 @@ struct property {
         size_t total_element_size;
     } memory;
 
-    /** 요소 마샬러 */
-    impl::basic_marshaller const* pmarshal;
-
     /** 단일 어트리뷰트 표현 */
     struct attribute_representation {
         /** 어트리뷰트 이름 */
@@ -119,9 +126,6 @@ struct property {
         /** 크기 */
         size_t size;
 
-        /** 어트리뷰트 타입 마샬러 */
-        impl::basic_marshaller const* pmarshal;
-
         /** 어트리뷰트 기본 초기화자*/
         void (*pinitializer)(void*);
     };
@@ -130,67 +134,23 @@ struct property {
     std::vector<attribute_representation> attributes;
 };
 
-using extended_parse_fn_t = bool (*)(void*, size_t, void const*);
-using extended_dump_fn_t  = bool (*)(void const*, size_t, void*);
+/**
+ * 마셜링 에러 코드
+ */
+enum class marshalerr_t : intptr_t {
+    ok,
+    fail = std::numeric_limits<intptr_t>::min(), // 0x10000000'00000000...
+};
 
-namespace impl {
-    class basic_marshaller {
-    public:
-        virtual ~basic_marshaller()                                         = default;
-        virtual bool parse(void* v, size_t n, u8string_view s) const        = 0;
-        virtual bool parse(void* v, size_t n, compact_binary_view s) const  = 0;
-        virtual bool dump(void const* v, size_t n, u8string& s) const       = 0;
-        virtual bool dump(void const* v, size_t n, compact_binary& s) const = 0;
-
-        template <typename Markup_>
-        bool parse_by(void* v, size_t n, Markup_ const& s) const
-        {
-            return _parse_by(v, n, &s, typeid(Markup_).hash_code());
-        }
-
-        template <typename Markup_>
-        bool dump_by(void const* v, size_t n, Markup_& s) const
-        {
-            return _dump_by(v, n, &s, typeid(Markup_).hash_code());
-        }
-
-    protected:
-        virtual bool _parse_by(void* v, size_t n, void const* s, size_t markup_hash) const = 0;
-        virtual bool _dump_by(void const* v, size_t n, void* s, size_t markup_hash) const  = 0;
-    };
-
-    template <typename Ty_>
-    class marshaller_instance : public basic_marshaller {
-    public:
-        bool parse(void* v, size_t n, u8string_view s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
-        bool parse(void* v, size_t n, compact_binary_view s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::parse(*(Ty_*)v, s); }
-
-        bool dump(void const* v, size_t n, u8string& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
-        bool dump(void const* v, size_t n, compact_binary& s) const override { return assert(sizeof(Ty_) == n), ::kangsw::markup::dump(*(Ty_*)v, s); }
-
-        bool _parse_by(void* v, size_t n, void const* s, size_t markup_hash) const override
-        {
-            auto fit = _ext_marshal.find(markup_hash);
-            if (fit == _ext_marshal.end()) { return false; }
-
-            return fit->second.first(v, n, s);
-        }
-
-        bool _dump_by(void const* v, size_t n, void* s, size_t markup_hash) const override
-        {
-            auto fit = _ext_marshal.find(markup_hash);
-            if (fit == _ext_marshal.end()) { return false; }
-
-            return fit->second.second(v, n, s);
-        };
-
-    private:
-        static inline std::map<
-            size_t /*source type hash code*/,
-            std::pair<extended_parse_fn_t, extended_dump_fn_t>>
-            _ext_marshal;
-    };
-} // namespace impl
+/**
+ * 마샬러 기본 템플릿 인터페이스.
+ */
+template <typename Markup_>
+class marshal {
+public:
+    marshalerr_t parse(object& to, Markup_ const& from) const { return marshalerr_t::fail; }
+    marshalerr_t dump(Markup_& to, object const& from) const { return marshalerr_t::fail; }
+};
 
 /**
  * XML, 또는 JSON 오브젝트를 나타냅니다.
@@ -202,7 +162,7 @@ public:
     virtual std::vector<property> const& props() const = 0;
     virtual uint64_t structure_hash() const            = 0;
 
-    // TODO: 부분적 marshalling, 엄격/느슨 타입체크 marshalling, 부분적 엄격/느슨 타입체크 marshalling
+    // TODO: 구조 해시를 통한 compact martialing method ... Key 마셜링 없이 고속으로 value만 마셜 수행
 
 private: // 내부 노출 전용 //
     friend class impl::element_base;
@@ -211,20 +171,40 @@ private: // 내부 노출 전용 //
     virtual uint64_t& _structure_hash()     = 0;
 };
 
-/** 오브젝트 마셜링 특수화 */
-template <> bool parse<object>(object& o, u8string_view i);
-template <> bool dump(object const& o, u8string& i);
-
 /**
  * 오브젝트 타입을 반환
  */
 template <typename Ty_>
-element_type get_element_type()
+constexpr element_type get_element_type()
 {
-    if constexpr (std::is_base_of_v<object, Ty_>) { return element_type::object; }
-    if constexpr (templates::is_specialization<Ty_, std::vector>::value) { return element_type::array; }
-    if constexpr (std::is_same_v<nullptr_t, Ty_>) { return element_type::null; }
-    return element_type::data;
+    if constexpr (std::is_base_of_v<object, Ty_>) {
+        return element_type::object;
+    }
+    else if constexpr (std::is_same_v<Ty_, bool>) {
+        return element_type::boolean;
+    }
+    else if constexpr (std::is_same_v<Ty_, int64_t>) {
+        return element_type::integer | element_type::number;
+    }
+    else if constexpr (std::is_same_v<Ty_, double>) {
+        return element_type::floating_point | element_type::number;
+    }
+    else if constexpr (std::is_same_v<nullptr_t, Ty_>) {
+        return element_type::null;
+    }
+    else if constexpr (std::is_same_v<Ty_, u8string>) {
+        return element_type::string;
+    }
+    else if constexpr (templates::is_specialization<Ty_, std::vector>::value) {
+        return get_element_type<typename Ty_::value_type>() | element_type::array;
+    }
+    else if constexpr (templates::is_specialization<Ty_, std::map>::value) {
+        return get_element_type<typename Ty_::mapped_type>() | element_type::map;
+    }
+    else {
+        static_assert(false, "Not a valid element type");
+        return element_type::null; // warning suppression
+    }
 }
 
 /** internals 구현 */
@@ -270,7 +250,7 @@ namespace impl {
      */
     class element_base {
     protected:
-        void INTERNAL_elembase_init(element_type type, object* base, u8string_view tag, u8string& description, size_t value_offset, size_t value_size, size_t total_size, basic_marshaller* pmarshal, void (*pinit)(void*), std::vector<property::attribute_representation>& attrs)
+        void INTERNAL_elembase_init(element_type type, object* base, u8string_view tag, u8string& description, size_t value_offset, size_t value_size, size_t total_size, void (*pinit)(void*), std::vector<property::attribute_representation>& attrs)
         {
             // struct hash 계산.
             auto seed        = base->_props().empty() ? 0 : base->_props().back().offset_hash;
@@ -288,7 +268,6 @@ namespace impl {
             n.memory.total_element_size = total_size;
             n.memory.value_size         = value_size;
             n.offset_hash               = offset_hash;
-            n.pmarshal                  = pmarshal;
             n.description               = &description;
             n.pinitializer              = pinit;
 
@@ -303,13 +282,12 @@ namespace impl {
      */
     class attribute_base {
     protected:
-        void INTERNAL_attrbase_init(element_base* base, u8string_view name, std::vector<property::attribute_representation>& attrs, size_t attr_size, basic_marshaller* marshaller, void (*pinit)(void*))
+        void INTERNAL_attrbase_init(element_base* base, u8string_view name, std::vector<property::attribute_representation>& attrs, size_t attr_size, void (*pinit)(void*))
         {
             auto& n        = attrs.emplace_back();
             n.offset       = (intptr_t)this - (intptr_t)base;
             n.size         = attr_size;
             n.name         = name;
-            n.pmarshal     = marshaller;
             n.pinitializer = pinit;
         }
     };

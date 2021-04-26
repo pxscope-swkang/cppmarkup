@@ -52,7 +52,7 @@
 */
 
 /** */
-#define CPPMARKUP_OBJECT_TEMPLATE(type_name)      INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(type_name)
+#define CPPMARKUP_OBJECT_TEMPLATE(type_name) INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(type_name)
 
 /** */
 #define CPPMARKUP_ADD(tag, default_value, ... /*ATTRIBUTES*/) \
@@ -89,3 +89,6 @@
 
 /** initializer_list wrapper */
 #define CPPMARKUP_ARRAY(...) std::initializer_list({__VA_ARGS__})
+
+/** map wrapper */
+#define CPPMARKUP_MAP(...) ::kangsw::markup::impl::deduce_map(__VA_ARGS__)

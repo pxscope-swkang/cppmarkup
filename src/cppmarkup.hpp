@@ -6,48 +6,7 @@
 -----------------------------------------------------------------------------------
  Usage
 -----------------------------------------------------------------------------------
-    XML:
-        <Body>
-            <Inner1 Attr1="AttrValue1" Attr2="2341">
-                <IInner1 Attr1="IAttrValue">abcd eeeffg</IInner1>
-                <IInner2>13<IInner2>
-            <Inner1>
-        </Body>
------------------------------------------------------------------------------------
-    Json: {
-        "Body": {
-            "Inner1": {
-                "IInner1": "abcd eeeffg",
-                "IInner1~@@ATTR@@": { "Attr1": "IAttrValue" },
-                "IInner2": 13
-            },
-            "Inner1~@@ATTR@@": {
-                "Attr1": "AttrValue1",
-                "Attr2": 2341
-            }
-        }
-    }
------------------------------------------------------------------------------------
-    CppMarkup:
-        CPPMARKUP_OBJECT_TEMPLATE(body_type) {
-            CPPMARKUP_OBJECT_GENERATE_BODY(body_type);
 
-            CPPMARKUP_EMBED_OBJECT_begin(
-                inner1, u8"Inner1",
-                CPPMARKUP_ATTRIBUTE(attr1, u8"AttrValue1");
-                CPPMARKUP_ATTRIBUTE(attr2, 2341));
-
-                CPPMARKUP_ADD(
-                    iinner1, u8"IInner1", u8"abcd eeeffg",
-                    CPPMARKUP_ATTRIBUTE(attr1, u8"Attr1", u8"IAttrValue"));
-
-                CPPMARKUP_ADD(iinner2, u8"IInner2", 2341);
-                
-            CPPMARKUP_EMBED_OBJECT_end(inner1);
-        }
-
-        // This macro will create <Body></Body> wrapper.
-        CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(body_type_wrapper, body_type, u8"Body");
 -----------------------------------------------------------------------------------
 */
 

@@ -1,27 +1,27 @@
 cmake_minimum_required(VERSION 3.1)
 project(cppmarkup)
 
-## THIRD ------------------------------------------------------------------------------------------
+## === THIRD --------------------------------------------------------------------------------------
 add_subdirectory            (third)
 
-## TARGET -----------------------------------------------------------------------------------------
-## SOURCE ##
+## === TARGET: CPPMARKUP --------------------------------------------------------------------------
+# -- SOURCE 
 set                         (ROOT_SRC_DIR                   ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set                         (CPPMARKUP_INCLUDE_DIR          ${ROOT_SRC_DIR})
 
 aux_source_directory        (${ROOT_SRC_DIR}              CPPMARKUP_LIB_SOURCE)
 aux_source_directory        (${ROOT_SRC_DIR}/cppmarkup    CPPMARKUP_LIB_SOURCE)
 
-## TARGET LIBRARY ##
+# -- TARGET LIBRARY
 add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOURCE})
 add_library                 (cppmarkup::static  ALIAS       CPPMARKUP_lib)
 
 target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_17)
 target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR})
-#target_link_libraries       (CPPMARKUP_lib      PUBLIC      nlohmann_json::nlohmann_json
-#                                                            pugixml::static)
 
-## INSTALLATIONS ##
+# -- INSTALLATIONS
 
-## TEST -------------------------------------------------------------------------------------------
+## === TARGET: EXTENSIONS -------------------------------------------------------------------------
+
+## === TEST ---------------------------------------------------------------------------------------
 add_subdirectory(tests)

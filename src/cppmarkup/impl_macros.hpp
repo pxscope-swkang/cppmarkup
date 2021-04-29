@@ -157,12 +157,12 @@ public:                                                                         
 #define INTERNAL_CPPMARKUP_EMBED_OBJECT_end(varname) \
     ;                                                \
     using value_type = TEMPLATE_##varname;           \
-    INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, value_type{})
+    INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, value_type::get_default())
 
 #define INTERNAL_CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(wrapper_type, body_type, varname, tag, ...) \
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(wrapper_type)                                           \
     {                                                                                          \
-        INTERNAL_CPPMARKUP_ADD(varname, tag, body_type(), ##__VA_ARGS__);                      \
+        INTERNAL_CPPMARKUP_ADD(varname, tag, body_type::get_default(), ##__VA_ARGS__);                      \
         auto& operator()() { return varname; }                                                 \
         auto& operator()() const { return varname; }                                           \
     }

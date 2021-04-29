@@ -301,7 +301,7 @@ namespace impl {
             object_vector_manip const* vmanip,
             object_map_manip const* mmanip)
         {
-            printf("Initializing %s ...\n", tag.data());
+            // printf("Initializing %s ...\n", tag.data());
             // struct hash °è»ê.
             auto seed        = base->_props().empty() ? 0 : base->_props().back().offset_hash;
             auto offset_hash = get_hash(tag, seed);

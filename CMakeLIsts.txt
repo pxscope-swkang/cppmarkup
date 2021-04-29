@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 project(cppmarkup)
 
-## --------------------------- THIRD
+## THIRD ------------------------------------------------------------------------------------------
 add_subdirectory            (third)
 
-## --------------------------- LIBRARY
+## TARGET -----------------------------------------------------------------------------------------
 ## SOURCE ##
 set                         (ROOT_SRC_DIR                   ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set                         (CPPMARKUP_INCLUDE_DIR          ${ROOT_SRC_DIR})
@@ -23,5 +23,5 @@ target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_
 
 ## INSTALLATIONS ##
 
-## --------------------------- TEST
+## TEST -------------------------------------------------------------------------------------------
 add_subdirectory(tests)

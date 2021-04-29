@@ -1,5 +1,5 @@
-#include <cppmarkup/marshal_json.hpp>
-#include <cppmarkup/object.hpp>
+#include "marshal_json.hpp"
+#include "object.hpp"
 #include <iomanip>
 #include <iostream>
 

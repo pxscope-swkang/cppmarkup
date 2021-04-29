@@ -7,7 +7,7 @@
 #define INTERNAL_CPPMARKUP_STRINGFY(X)  INTERNAL_CPPMARKUP_STRINGFY2(X)
 
 #define INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(tname) \
-    struct tname : ::kangsw::markup::impl::object_base<tname>
+    struct tname : public ::kangsw::markup::impl::object_base<tname>
 
 #define INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ... /*ATTRIBUTES*/)                        \
 public:                                                                                                      \
@@ -25,7 +25,11 @@ public:                                                                         
         } _description_assignment;                                                                           \
                                                                                                              \
     private:                                                                                                 \
-        static inline std::vector<::kangsw::markup::property::attribute_representation> _attribs;            \
+        static auto attribs()                                                                                \
+        {                                                                                                    \
+            static std::vector<::kangsw::markup::property::attribute_representation> _attribs;               \
+            return _attribs;                                                                                 \
+        }                                                                                                    \
                                                                                                              \
     public:                                                                                                  \
         /*ATTRIBUTES will be placed here */ __VA_ARGS__
@@ -74,13 +78,17 @@ decltype(auto) deduce_map(KTy_&& a, Ty_&& b, Args_&&... args)
 public:                                                                                                    \
     struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {                         \
         using attr_value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value));                \
+        static_assert(!::kangsw::markup::get_element_type<attr_value_type>().is_array() &&                 \
+                      !::kangsw::markup::get_element_type<attr_value_type>().is_map());                    \
                                                                                                            \
         INTERNAL_ATTR_##attr_varname(self_type* base)                                                      \
         {                                                                                                  \
             if (!INTERNAL_is_first_entry) { return; }                                                      \
                                                                                                            \
             INTERNAL_attrbase_init(                                                                        \
-                base, attr_name, _attribs,                                                                 \
+                base, attr_name,                                                                           \
+                ::kangsw::markup::get_element_type<attr_value_type>(),                                     \
+                attribs(),                                                                                 \
                 sizeof *this,                                                                              \
                 [](void* v) { *(attr_value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }); \
         }                                                                                                  \
@@ -109,6 +117,7 @@ private:                                                                        
 public:                                                                                          \
     INTERNAL_TYPE_##varname(::kangsw::markup::object* base)                                      \
     {                                                                                            \
+                                                                                                 \
         if (!INTERNAL_is_first_entry) { return; }                                                \
                                                                                                  \
         INTERNAL_elembase_init(                                                                  \
@@ -117,7 +126,9 @@ public:                                                                         
             offsetof(INTERNAL_TYPE_##varname, _value),                                           \
             sizeof _value, sizeof *this,                                                         \
             [](void* v) { *(value_type*)v = ::kangsw::markup::impl::deduce_fn(default_value); }, \
-            _attribs);                                                                           \
+            attribs(),                                                                           \
+            ::kangsw::markup::impl::object_array_instance<value_type>::get(),                    \
+            ::kangsw::markup::impl::object_map_instance<value_type>::get());                     \
     }                                                                                            \
                                                                                                  \
     INTERNAL_TYPE_##varname(value_type const& v) : _value(v) {}                                  \
@@ -133,7 +144,7 @@ public:                                                                         
     template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                    \
     }                                                                                            \
     varname { this }
-
+ 
 #define INTERNAL_CPPMARKUP_ADD(varname, tag_name, default_value, ...)              \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__);          \
     using value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value)); \

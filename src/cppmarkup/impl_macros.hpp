@@ -19,8 +19,8 @@ public:                                                                         
         static inline struct _internal_description_assignment {                                              \
             _internal_description_assignment()                                                               \
             {                                                                                                \
-                _description              = INTERNAL_next_description;                                       \
-                INTERNAL_next_description = {};                                                              \
+                _description                = INTERNAL_next_description();                                   \
+                INTERNAL_next_description() = {};                                                            \
             }                                                                                                \
         } _description_assignment;                                                                           \
                                                                                                              \
@@ -144,7 +144,7 @@ public:                                                                         
     template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                    \
     }                                                                                            \
     varname { this }
- 
+
 #define INTERNAL_CPPMARKUP_ADD(varname, tag_name, default_value, ...)              \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__);          \
     using value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value)); \
@@ -168,12 +168,12 @@ public:                                                                         
     }
 
 #ifdef CPPMARKUP_BUILD_WITH_DESCRIPTION
-#define INTERNAL_CPPMARKUP_DESCRIPTION(description)                                                    \
-private:                                                                                               \
-    static inline struct INTERNAL_description_assignment_type_##__LINE__ {                             \
-        INTERNAL_description_assignment_type_##__LINE__() { INTERNAL_next_description = description; } \
-    } INTERNAL_description_assignment;                                                                 \
-                                                                                                       \
+#define INTERNAL_CPPMARKUP_DESCRIPTION(description)                                                      \
+private:                                                                                                 \
+    static inline struct INTERNAL_description_assignment_type_##__LINE__ {                               \
+        INTERNAL_description_assignment_type_##__LINE__() { INTERNAL_next_description() = description; } \
+    } INTERNAL_description_assignment;                                                                   \
+                                                                                                         \
 public:
 
 #else

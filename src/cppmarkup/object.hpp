@@ -245,9 +245,14 @@ namespace impl {
      */
     template <typename ObjClass_>
     struct object_base : public object {
-        static inline u8string INTERNAL_next_description;
         static inline bool INTERNAL_is_first_entry     = true;
         static inline uint64_t INTERNAL_structure_hash = 0;
+
+        static auto& INTERNAL_next_description()
+        {
+            static u8string _value;
+            return _value;
+        };
 
         object_base() // 가장 먼저 호출 보장
         {
@@ -309,7 +314,7 @@ namespace impl {
             n.tag       = tag;
             n.type      = type;
 
-            n.memory.elem_offset       = (intptr_t)this - (intptr_t)base;
+            n.memory.elem_offset        = (intptr_t)this - (intptr_t)base;
             n.memory.value_offset       = value_offset;
             n.memory.total_element_size = total_size;
             n.memory.value_size         = value_size;

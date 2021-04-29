@@ -190,6 +190,14 @@ CPPMARKUP_OBJECT_TEMPLATE(elser)
                       CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveF, 0.432,
                       CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFc, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFg, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFrr, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFqe, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
     }
     CPPMARKUP_EMBED_OBJECT_end(hell);
 };

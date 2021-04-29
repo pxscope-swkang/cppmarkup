@@ -245,7 +245,6 @@ namespace impl {
      */
     template <typename ObjClass_>
     struct object_base : public object {
-        static inline std::vector<property> INTERNAL_props;
         static inline u8string INTERNAL_next_description;
         static inline bool INTERNAL_is_first_entry     = true;
         static inline uint64_t INTERNAL_structure_hash = 0;
@@ -260,11 +259,15 @@ namespace impl {
         }
 
     private:
-        std::vector<property>& _props() override { return INTERNAL_props; }
+        std::vector<property>& _props() override { return (std::vector<property>&)props(); }
         uint64_t& _structure_hash() override { return INTERNAL_structure_hash; }
 
     public:
-        std::vector<property> const& props() const override { return INTERNAL_props; }
+        std::vector<property> const& props() const override
+        {
+            static std::vector<property> INTERNAL_props;
+            return INTERNAL_props;
+        }
         uint64_t structure_hash() const override { return INTERNAL_structure_hash; }
 
     private:

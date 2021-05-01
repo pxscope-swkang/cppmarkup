@@ -29,6 +29,11 @@ namespace kangsw::markup {
 using u8string            = std::string;
 using u8string_view       = std::string_view;
 
+/** 명시적인 바이너리 타입을 나타냅니다. Markup에는 base64로 인코딩 됨. */
+struct binary_chunk {
+    std::vector<std::byte> data;
+};
+
 /** 데이터 고속 송수신을 위한 바이너리 표현입니다. */
 enum class compact_byte : uint8_t;
 using compact_binary = std::vector<compact_byte>;
@@ -73,6 +78,7 @@ struct element_type {
         floating_point,
         string,
         object,
+        binary,
 
         number = 0x10,
 

@@ -158,6 +158,8 @@ CPPMARKUP_OBJECT_TEMPLATE(obj)
     CPPMARKUP_ADD(ShouldRefreshEveryReceiveEF, 0.432);
     CPPMARKUP_ADD(ShouldRefreshEveryReceiveEG, 0.432);
     CPPMARKUP_ADD(ShouldRefreshEveryReceiveEH, 0.432);
+
+    CPPMARKUP_ADD(SomeChnk, ::kangsw::markup::binary_chunk{});
 };
 
 CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(superobj, obj, Body);

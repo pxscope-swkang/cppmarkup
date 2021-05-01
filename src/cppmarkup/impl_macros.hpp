@@ -39,6 +39,7 @@ namespace kangsw::markup::impl {
 template <typename Ty_>
 decltype(auto) deduce_fn(Ty_&& v)
 {
+    if constexpr (std::is_same_v<Ty_, binary_chunk>) { return binary_chunk(std::move(v)); }
     if constexpr (std::is_same_v<Ty_, bool>) { return bool(v); }
     if constexpr (std::is_integral_v<Ty_> && !std::is_same_v<Ty_, bool>) { return int64_t{v}; }
     if constexpr (std::is_floating_point_v<Ty_>) { return double{v}; }
@@ -162,7 +163,7 @@ public:                                                                         
 #define INTERNAL_CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(wrapper_type, body_type, varname, tag, ...) \
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(wrapper_type)                                           \
     {                                                                                          \
-        INTERNAL_CPPMARKUP_ADD(varname, tag, body_type::get_default(), ##__VA_ARGS__);                      \
+        INTERNAL_CPPMARKUP_ADD(varname, tag, body_type::get_default(), ##__VA_ARGS__);         \
         auto& operator()() { return varname; }                                                 \
         auto& operator()() const { return varname; }                                           \
     }

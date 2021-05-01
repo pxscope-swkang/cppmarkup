@@ -80,8 +80,8 @@ public:                                                                         
     struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {                         \
         using attr_value_type = decltype(::kangsw::markup::impl::deduce_fn(default_value));                \
         static_assert(!::kangsw::markup::get_element_type<attr_value_type>().is_array() &&                 \
-                      !::kangsw::markup::get_element_type<attr_value_type>().is_map());                    \
-                                                                                                           \
+                      !::kangsw::markup::get_element_type<attr_value_type>().is_map() &&                   \
+                      !::kangsw::markup::get_element_type<attr_value_type>().is_object());                 \
         INTERNAL_ATTR_##attr_varname(self_type* base)                                                      \
         {                                                                                                  \
             if (!INTERNAL_is_first_entry) { return; }                                                      \

@@ -90,6 +90,8 @@ struct element_type {
     constexpr bool is_array() const { return value & array; }
     constexpr bool is_map() const { return value & map; }
 
+    constexpr bool is_object() const { return value_type() == object; }
+
     constexpr type value_type() const { return type(value & ~(map | array | number)); }
 };
 

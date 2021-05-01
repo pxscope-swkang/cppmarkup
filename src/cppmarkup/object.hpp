@@ -211,6 +211,8 @@ public:
 
     void reset();
 
+    property const* find_property(u8string_view name);
+
     // TODO: 구조 해시를 통한 compact martialing method ... Key 마셜링 없이 고속으로 value만 마셜 수행
 
 private: // 내부 노출 전용 //

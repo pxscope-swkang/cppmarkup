@@ -20,13 +20,14 @@ class object;
 } // namespace kangsw::markup
 
 namespace kangsw::markup {
-#if __cplusplus > 202000
-using u8string      = std::u8string;
-using u8string_view = std::u8string_view;
-#else
+// #if __cplusplus > 202000
+// using u8string      = std::u8string;
+// using u8string_view = std::u8string_view;
+// #else
+// #endif
+
 using u8string            = std::string;
 using u8string_view       = std::string_view;
-#endif
 
 /** 데이터 고속 송수신을 위한 바이너리 표현입니다. */
 enum class compact_byte : uint8_t;
@@ -44,7 +45,12 @@ using compact_binary_view = std::vector<compact_byte> const&;
 struct marshalerr_t {
     enum type : intptr_t {
         ok,
+
         fail = std::numeric_limits<std::underlying_type_t<type>>::min(), // 0x10000000'00000000...
+        invalid_format = -1,
+        invalid_type = -2,
+        missing_matching_brace = -3,
+
     } value;
 
     // clang-format off

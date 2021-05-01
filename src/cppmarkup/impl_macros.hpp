@@ -73,8 +73,6 @@ decltype(auto) deduce_map(KTy_&& a, Ty_&& b, Args_&&... args)
 
 } // namespace kangsw::markup::impl
 
-/* TODO decltype(default_value) -> deduce_type<decltype(default_value)>::type으로 변경
- * initializer_list -> vector로 인식하게 */
 #define INTERNAL_CPPMARKUP_ATTRIBUTE(attr_varname, attr_name, default_value)                               \
 public:                                                                                                    \
     struct INTERNAL_ATTR_##attr_varname : ::kangsw::markup::impl::attribute_base {                         \

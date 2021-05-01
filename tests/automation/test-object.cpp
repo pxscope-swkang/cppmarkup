@@ -87,7 +87,6 @@ constexpr static auto desciption = "desc";
 //        // ~INTERNAL_CPPMARKUP_INSTANCE_FORMER
 //        // << 이 위로 UPPER 매크로
 //        // >>>> IF TARGET IS NESTED OBJECT
-//        // TODO .. nested object 정의 여기에
 //        // >>>> ELSE (TARGET IS SIMPLE TYPE)
 //        // nested object이면 value_type = INTERNAL_nested_object_instance
 //        using value_type = std::remove_const_t<decltype(default_value)>;
@@ -112,7 +111,6 @@ constexpr static auto desciption = "desc";
 //                [](void* v) { *(value_type*)v = default_value; },
 //                _attribs);
 //
-//            // TODO: INITIALIZE ATTRIBUTES !!! 방법 생각해보기
 //        }
 //
 //        auto& operator()() { return _value; }
@@ -177,7 +175,6 @@ CPPMARKUP_OBJECT_TEMPLATE(elser)
 {
     CPPMARKUP_EMBED_OBJECT_begin(hell)
     {
-        // BUG Nested object 프로퍼티 제대로 생성 안 됨 !!! 일정 개수 이상부터 생기는 희한한 버그 ...
         CPPMARKUP_ADD(TestObjMap, CPPMARKUP_MAP("Hell", obj{}, "Abc", obj{}));
         CPPMARKUP_ADD(TestObjArray, CPPMARKUP_ARRAY(obj::get_default(), obj::get_default()));
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,

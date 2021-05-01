@@ -1,6 +1,6 @@
 #include "marshal_json.hpp"
-#include "object.hpp"
 #include "base64.hxx"
+#include "object.hpp"
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -45,6 +45,8 @@ void break_indent(json_dump& to, indent_dir dir)
     }
 }
 
+void to_json_value_from_object(json_dump& to, void const* m, property const& prop);
+
 #define DO_GENERATE(ty)                                      \
     if (prop.type.is_array())                                \
         to_json_value(to, *(std::vector<ty>*)memory);        \
@@ -53,8 +55,6 @@ void break_indent(json_dump& to, indent_dir dir)
     else                                                     \
         to_json_value(to, *(ty*)memory);                     \
     break;
-
-void to_json_value_from_object(json_dump& to, void const* m, property const& prop);
 
 template <> void to_json_value(json_dump& to, kangsw::markup::object const& from)
 {
@@ -94,6 +94,7 @@ template <> void to_json_value(json_dump& to, kangsw::markup::object const& from
     break_indent(to, indent_dir::apply);
     out << '}';
 }
+#undef DO_GENERATE
 
 template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v)
 {
@@ -113,7 +114,7 @@ template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v)
         to.dest << ']';
     }
     else if constexpr (kangsw::templates::is_specialization<Ty_, std::map>::value) {
-        // TODO
+        // TODO map 처리
     }
     else {
         to.dest << v;
@@ -141,7 +142,7 @@ void to_json_value_from_object(json_dump& to, void const* m, property const& pro
         to.dest << ']';
     }
     else if (prop.type.is_map()) {
-        // TODO
+        // TODO: map 처리
     }
     else {
         to_json_value(to, *(object const*)m);
@@ -200,8 +201,31 @@ marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& f
     return {};
 }
 
-#undef DO_GENERATE
-#define DO_GENERATE(Ty) break
+marshalerr_t parse_memory(parser_context& context, element_type const& ty, void* memory, u8string_view& ss)
+{
+#define PEWPEW(type)                                           \
+    if (ty.is_array())                                         \
+        parse_array(context, *(std::vector<type>*)memory, ss); \
+    else                                                       \
+        parse_value(context, *(type*)memory, ss);              \
+    break
+
+    // clang-format off
+    switch (ty.value_type()) {
+        case element_type::null: break;
+        case element_type::boolean:         PEWPEW(bool);
+        case element_type::integer:         PEWPEW(int64_t);
+        case element_type::floating_point:  PEWPEW(double);
+        case element_type::string:          PEWPEW(u8string);
+        case element_type::binary:          PEWPEW(binary_chunk);
+        case element_type::object:
+            // TODO: object는 따로 처리 
+        default:;
+    }
+    // clang-format on
+
+    return marshalerr_t::ok;
+}
 
 template <>
 marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
@@ -240,22 +264,32 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             ss = ss.substr(comma_pos + 1);
         }
 
-        // 2.5. 태그가 Attribute인지 판별, Attribute이면 ~@@ATTRS@@ suffix 떼고 태그명 검색 후 어트리뷰트 파싱 
+        // 2.5. 태그가 Attribute인지 판별, Attribute이면 ~@@ATTRS@@ suffix 떼고 태그명 검색 후 어트리뷰트 파싱
+        auto attr_suffix_pos = tag.rfind("~@@ATTRS@@");
+        if (attr_suffix_pos != npos) {
+            tag        = tag.substr(attr_suffix_pos);
+            auto pprop = to.find_property(tag);
+            if (pprop == nullptr) { continue; } // 없으면 그냥 무시
 
-        // 3. 태그에 대응되는 프로퍼티 찾기
-        auto pprop = to.find_property(tag);
-        if (pprop == nullptr) { continue; } // 없으면 그냥 무시
+            auto prop_memory = pprop->get(&to);
+            auto& attrs      = pprop->attributes;
 
-        // 4. 해당 엘리먼트에 대해 파서 돌리기
-        switch (pprop->type.value_type()) {
-            case element_type::null:    DO_GENERATE(nullptr_t);
-            case element_type::boolean: DO_GENERATE(bool);
-            case element_type::integer: DO_GENERATE(int64_t);
-            case element_type::floating_point: DO_GENERATE(double);
-            case element_type::string: DO_GENERATE(u8string);
-            case element_type::binary: DO_GENERATE(binary_chunk);
-            case element_type::object:
-            default:;
+            // 2.5.1 각 어트리뷰트에 대해 파서 돌리기
+            for (auto& attr : attrs) {
+                auto memory = attr.get(prop_memory);
+
+                auto parse_result = parse_memory(context, pprop->type, memory, ss);
+                if (parse_result != marshalerr_t::ok) { return parse_result; }
+            }
+        }
+        else { // attr suffix 못 찾으면 그냥 태그임 ...
+            // 3. 태그에 대응되는 프로퍼티 찾기
+            auto pprop = to.find_property(tag);
+            if (pprop == nullptr) { continue; } // 없으면 그냥 무시
+            auto memory = pprop->get(&to);
+
+            auto parse_result = parse_memory(context, pprop->type, memory, ss);
+            if (parse_result != marshalerr_t::ok) { return parse_result; }
         }
     }
 
@@ -268,7 +302,6 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
 kangsw::markup::marshalerr_t
 kangsw::markup::parse(object& to, json_parse const& from)
 {
-    // TODO: 파서 기능 구현하기
     // 앞에서부터 캐릭터 하나씩 iterate ...
     // 푸시다운 오토마타로 구현 ...
     auto view = from.source;

@@ -13,15 +13,15 @@ using namespace kangsw::markup;
 namespace {
 /** TO_STRING과 유사한 역할 수행 */
 template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v);
-template <> void to_json_value(json_dump& to, bool const& v) { to.dest << (v ? u8"true" : u8"false"); }
-template <> void to_json_value(json_dump& to, kangsw::markup::u8string const& v) { to.dest << u8'"' << v << u8'"'; }
+template <> void to_json_value(json_dump& to, bool const& v) { to.dest << (v ? "true" : "false"); }
+template <> void to_json_value(json_dump& to, kangsw::markup::u8string const& v) { to.dest << '"' << v << '"'; }
 
 template <> void to_json_value(json_dump& to, binary_chunk const& v)
 {
-    to.dest << u8'"';
+    to.dest << '"';
     // base64 encoding
     kangsw::base64::encode(v.data.data(), v.data.size(), std::ostream_iterator<char>{to.dest});
-    to.dest << u8'"';
+    to.dest << '"';
 }
 
 enum class indent_dir {
@@ -36,8 +36,8 @@ void break_indent(json_dump& to, indent_dir dir)
 
     switch (dir) {
         case indent_dir::apply:
-            to.dest << u8'\n'
-                    << std::setw(to.initial_indent) << u8"";
+            to.dest << '\n'
+                    << std::setw(to.initial_indent) << "";
             break;
         case indent_dir::conf_fwd: to.initial_indent += to.indent; break;
         case indent_dir::conf_bwd: to.initial_indent -= to.indent; break;
@@ -60,7 +60,7 @@ template <> void to_json_value(json_dump& to, kangsw::markup::object const& from
 {
     auto& props = from.props();
     auto& out   = to.dest;
-    out << u8'{';
+    out << '{';
     break_indent(to, indent_dir::conf_fwd);
 
     for (int i = 0; i < props.size(); ++i) {
@@ -73,11 +73,11 @@ template <> void to_json_value(json_dump& to, kangsw::markup::object const& from
         }
 
         break_indent(to, indent_dir::apply);
-        out << u8'"' << prop.tag << u8"\": ";
+        out << '"' << prop.tag << "\": ";
 
         // 오브젝트 타입별로 다른 동작
         switch (prop.type.value_type()) {
-            case element_type::null: out << u8"null"; break;
+            case element_type::null: out << "null"; break;
             case element_type::boolean: DO_GENERATE(bool);
             case element_type::integer: DO_GENERATE(int64_t);
             case element_type::floating_point: DO_GENERATE(double);
@@ -87,30 +87,30 @@ template <> void to_json_value(json_dump& to, kangsw::markup::object const& from
             default:;
         }
 
-        if (i + 1 < props.size()) { out << u8','; }
+        if (i + 1 < props.size()) { out << ','; }
     }
 
     break_indent(to, indent_dir::conf_bwd);
     break_indent(to, indent_dir::apply);
-    out << u8'}';
+    out << '}';
 }
 
 template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v)
 {
     if constexpr (kangsw::templates::is_specialization<Ty_, std::vector>::value) {
-        to.dest << u8'[';
+        to.dest << '[';
         break_indent(to, indent_dir::conf_fwd);
 
         for (size_t i = 0, iend = v.size(); i < iend; ++i) {
             break_indent(to, indent_dir::apply);
             to_json_value(to, v[i]);
 
-            if (i + 1 < iend) { to.dest << u8','; }
+            if (i + 1 < iend) { to.dest << ','; }
         }
 
         break_indent(to, indent_dir::conf_bwd);
         break_indent(to, indent_dir::apply);
-        to.dest << u8']';
+        to.dest << ']';
     }
     else if constexpr (kangsw::templates::is_specialization<Ty_, std::map>::value) {
         // TODO
@@ -126,19 +126,19 @@ void to_json_value_from_object(json_dump& to, void const* m, property const& pro
         auto fn = prop.as_array();
         assert(fn);
 
-        to.dest << u8'[';
+        to.dest << '[';
         break_indent(to, indent_dir::conf_fwd);
 
         for (size_t i = 0, iend = fn->size(m); i < iend; ++i) {
             break_indent(to, indent_dir::apply);
 
             to_json_value(to, *fn->at(m, i));
-            if (i + 1 < iend) { to.dest << u8','; }
+            if (i + 1 < iend) { to.dest << ','; }
         }
 
         break_indent(to, indent_dir::conf_bwd);
         break_indent(to, indent_dir::apply);
-        to.dest << u8']';
+        to.dest << ']';
     }
     else if (prop.type.is_map()) {
         // TODO
@@ -165,7 +165,7 @@ kangsw::markup::dump(json_dump& to, object const& from)
  *         입력받은 u8string_view를 문자열을 파싱한 만큼 전진시켜, 새로운 substr로 갱신
  */
 namespace {
-u8string_view constexpr spacer_chars = u8" \t\n\r";
+u8string_view constexpr spacer_chars = " \t\n\r";
 
 struct parser_context {
     std::match_results<u8string_view::const_iterator> _match_result_memory;
@@ -201,7 +201,7 @@ marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& f
 }
 
 #undef DO_GENERATE
-#define DO_GENERATE(Ty_)
+#define DO_GENERATE(Ty) break
 
 template <>
 marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
@@ -209,7 +209,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     auto constexpr npos = u8string_view::npos;
 
     // 1. 여는 중괄호
-    if (auto init_br_pos = find_initial_char(ss, spacer_chars, u8"{");
+    if (auto init_br_pos = find_initial_char(ss, spacer_chars, "{");
         init_br_pos != ss.npos) //
     {
         ss = ss.substr(init_br_pos);
@@ -219,7 +219,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     }
 
     for (bool do_continue = true; do_continue;) {
-        static const std::regex regex_tag{u8R"_(\s*"((?:[^"\\]|\\.)*)"\s*:)_"};
+        static const std::regex regex_tag{R"_(\s*"((?:[^"\\]|\\.)*)"\s*:)_"};
         auto& result = context._match_result_memory;
 
         // 2. 태그 찾기
@@ -230,7 +230,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
         auto tag = u8string_view{&*result[1].first, (size_t)result[1].length()}; // 1번 그룹에 문자열 저장됨
 
         // 콤마 찾기 ...
-        auto comma_pos = find_initial_char(ss, spacer_chars, u8",");
+        auto comma_pos = find_initial_char(ss, spacer_chars, ",");
         if (comma_pos == npos) {
             // 콤마 없으면 다음 엘리먼트에 이탈
             do_continue = false;
@@ -240,18 +240,21 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             ss = ss.substr(comma_pos + 1);
         }
 
+        // 2.5. 태그가 Attribute인지 판별, Attribute이면 ~@@ATTRS@@ suffix 떼고 태그명 검색 후 어트리뷰트 파싱 
+
         // 3. 태그에 대응되는 프로퍼티 찾기
         auto pprop = to.find_property(tag);
         if (pprop == nullptr) { continue; } // 없으면 그냥 무시
 
         // 4. 해당 엘리먼트에 대해 파서 돌리기
         switch (pprop->type.value_type()) {
-            case element_type::null: break;
-            case element_type::boolean: break;
-            case element_type::integer: break;
-            case element_type::floating_point: break;
-            case element_type::string: break;
-            case element_type::object: break;
+            case element_type::null:    DO_GENERATE(nullptr_t);
+            case element_type::boolean: DO_GENERATE(bool);
+            case element_type::integer: DO_GENERATE(int64_t);
+            case element_type::floating_point: DO_GENERATE(double);
+            case element_type::string: DO_GENERATE(u8string);
+            case element_type::binary: DO_GENERATE(binary_chunk);
+            case element_type::object:
             default:;
         }
     }

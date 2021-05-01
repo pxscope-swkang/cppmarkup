@@ -4,7 +4,7 @@
 namespace test::kangsw::base64 {
 namespace b64 = ::kangsw::base64;
 
-constexpr std::string_view mystring = (char*)u8"Hello, world! al dl ell lorem ipsum æ»≥Á«œººø‰f";
+constexpr std::string_view mystring = (char*)"Hello, world! al dl ell lorem ipsum æ»≥Á«œººø‰f";
 
 TEST_CASE("base64")
 {

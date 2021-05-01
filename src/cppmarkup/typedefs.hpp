@@ -3,11 +3,6 @@
 #include <string_view>
 #include <vector>
 
-#if __cplusplus > 202000
-#include <span>
-#else
-#endif
-
 /** Æ÷¿öµù */
 namespace kangsw::markup {
 namespace impl {

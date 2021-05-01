@@ -11,8 +11,8 @@
 namespace test::kangsw::markup {
 
 constexpr auto default_value     = 3.141;
-constexpr auto tag_name_str      = u8"tagname";
-constexpr auto attribute_name    = u8"attrname";
+constexpr auto tag_name_str      = "tagname";
+constexpr auto attribute_name    = "attrname";
 constexpr static auto desciption = "desc";
 
 // CPPMARKUP_OBJECT_TEMPLATE(tname)
@@ -141,14 +141,14 @@ static inline struct tttest {
 
 CPPMARKUP_OBJECT_TEMPLATE(obj)
 {
-    CPPMARKUP_DESCRIPTION_BELOW(u8"설명 설명 설명");
+    CPPMARKUP_DESCRIPTION_BELOW("설명 설명 설명");
     CPPMARKUP_ADD(ShouldRefreshEveryReceive, false,
                   CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
 
     CPPMARKUP_ADD(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
     CPPMARKUP_ADD(TestBoolean, CPPMARKUP_ARRAY(false, true));
     CPPMARKUP_ADD(TestStrArray, CPPMARKUP_ARRAY("a", "b", "c", "d..."));
-    CPPMARKUP_ADD(TestBoolMap, CPPMARKUP_MAP(u8"Hell,", true, u8"Abc", false));
+    CPPMARKUP_ADD(TestBoolMap, CPPMARKUP_MAP("Hell,", true, "Abc", false));
 
     CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
                   CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
@@ -178,7 +178,7 @@ CPPMARKUP_OBJECT_TEMPLATE(elser)
     CPPMARKUP_EMBED_OBJECT_begin(hell)
     {
         // BUG Nested object 프로퍼티 제대로 생성 안 됨 !!! 일정 개수 이상부터 생기는 희한한 버그 ...
-        CPPMARKUP_ADD(TestObjMap, CPPMARKUP_MAP(u8"Hell", obj{}, u8"Abc", obj{}));
+        CPPMARKUP_ADD(TestObjMap, CPPMARKUP_MAP("Hell", obj{}, "Abc", obj{}));
         CPPMARKUP_ADD(TestObjArray, CPPMARKUP_ARRAY(obj::get_default(), obj::get_default()));
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
                       CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
@@ -236,7 +236,7 @@ TEST_CASE("CppMarkup", "Object body Template")
 
     elser car;
 
-    auto ras = car.hell->TestObjMap[u8"faer"];
+    auto ras = car.hell->TestObjMap["faer"];
 
     REQUIRE(r.ShouldRefreshEveryReceive);
 }

@@ -25,7 +25,7 @@ public:                                                                         
         } _description_assignment;                                                                           \
                                                                                                              \
     private:                                                                                                 \
-        static auto attribs()                                                                                \
+        static auto& attribs()                                                                               \
         {                                                                                                    \
             static std::vector<::kangsw::markup::property::attribute_representation> _attribs;               \
             return _attribs;                                                                                 \

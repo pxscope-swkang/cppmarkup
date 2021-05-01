@@ -1,5 +1,6 @@
 #include "marshal_json.hpp"
 #include "object.hpp"
+#include "base64.hxx"
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -14,6 +15,14 @@ namespace {
 template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v);
 template <> void to_json_value(json_dump& to, bool const& v) { to.dest << (v ? u8"true" : u8"false"); }
 template <> void to_json_value(json_dump& to, kangsw::markup::u8string const& v) { to.dest << u8'"' << v << u8'"'; }
+
+template <> void to_json_value(json_dump& to, binary_chunk const& v)
+{
+    to.dest << u8'"';
+    // base64 encoding
+    kangsw::base64::encode(v.data.data(), v.data.size(), std::ostream_iterator<char>{to.dest});
+    to.dest << u8'"';
+}
 
 enum class indent_dir {
     apply,
@@ -73,6 +82,7 @@ template <> void to_json_value(json_dump& to, kangsw::markup::object const& from
             case element_type::integer: DO_GENERATE(int64_t);
             case element_type::floating_point: DO_GENERATE(double);
             case element_type::string: DO_GENERATE(u8string);
+            case element_type::binary: DO_GENERATE(binary_chunk);
             case element_type::object: to_json_value_from_object(to, memory, prop); break;
             default:;
         }
@@ -172,7 +182,7 @@ size_t find_initial_char(u8string_view const& src, u8string_view const& allowed,
     return src.npos;
 }
 
-template<typename Ty_>
+template <typename Ty_>
 marshalerr_t parse_array(parser_context& context, Ty_& to, u8string_view& from)
 {
     return {};
@@ -191,7 +201,7 @@ marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& f
 }
 
 #undef DO_GENERATE
-#define DO_GENERATE(Ty_) 
+#define DO_GENERATE(Ty_)
 
 template <>
 marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
@@ -235,15 +245,14 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
         if (pprop == nullptr) { continue; } // 없으면 그냥 무시
 
         // 4. 해당 엘리먼트에 대해 파서 돌리기
-        switch(pprop->type.value_type())
-        {
+        switch (pprop->type.value_type()) {
             case element_type::null: break;
             case element_type::boolean: break;
             case element_type::integer: break;
             case element_type::floating_point: break;
             case element_type::string: break;
             case element_type::object: break;
-            default: ;
+            default:;
         }
     }
 

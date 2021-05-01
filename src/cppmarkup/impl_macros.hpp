@@ -25,7 +25,7 @@ public:                                                                         
         } _description_assignment;                                                                           \
                                                                                                              \
     private:                                                                                                 \
-        static auto& attribs()                                                                               \
+        static auto& attribs() noexcept                                                                      \
         {                                                                                                    \
             static std::vector<::kangsw::markup::property::attribute_representation> _attribs;               \
             return _attribs;                                                                                 \
@@ -82,7 +82,8 @@ public:                                                                         
         static_assert(!::kangsw::markup::get_element_type<attr_value_type>().is_array() &&                 \
                       !::kangsw::markup::get_element_type<attr_value_type>().is_map() &&                   \
                       !::kangsw::markup::get_element_type<attr_value_type>().is_object());                 \
-        INTERNAL_ATTR_##attr_varname(self_type* base)                                                      \
+                                                                                                           \
+        INTERNAL_ATTR_##attr_varname(self_type* base) noexcept                                             \
         {                                                                                                  \
             if (!INTERNAL_is_first_entry) { return; }                                                      \
                                                                                                            \
@@ -98,17 +99,17 @@ public:                                                                         
         attr_value_type _value;                                                                            \
                                                                                                            \
     public:                                                                                                \
-        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) : _value(v) {}                              \
-        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) : _value(std::move(v)) {}                        \
+        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) noexcept : _value(v) {}                     \
+        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) noexcept : _value(std::move(v)) {}               \
                                                                                                            \
-        auto& value() { return _value; }                                                                   \
-        auto& value() const { return _value; }                                                             \
-        auto operator->() { return &_value; }                                                              \
-        auto operator->() const { return &_value; }                                                        \
-        template <typename N_> auto& operator[](N_ i) { return _value[i]; }                                \
-        template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                          \
-        operator attr_value_type&() { return _value; }                                                     \
-        operator attr_value_type const &() const { return _value; }                                        \
+        auto& value() noexcept { return _value; }                                                          \
+        auto& value() const noexcept { return _value; }                                                    \
+        auto operator->() noexcept { return &_value; }                                                     \
+        auto operator->() const noexcept { return &_value; }                                               \
+        template <typename N_> auto& operator[](N_ i) noexcept { return _value[i]; }                       \
+        template <typename N_> auto& operator[](N_ i) const noexcept { return _value[i]; }                 \
+        operator attr_value_type&() noexcept { return _value; }                                            \
+        operator attr_value_type const &() const noexcept { return _value; }                               \
     } attr_varname{this /* 어트리뷰트 오프셋 / 사이즈 계산용, 최초 1회 */};
 
 #define INTERNAL_CPPMARKUP_INSTANCE_LATER(varname, default_value)                                \
@@ -116,9 +117,8 @@ private:                                                                        
     value_type _value;                                                                           \
                                                                                                  \
 public:                                                                                          \
-    INTERNAL_TYPE_##varname(::kangsw::markup::object* base)                                      \
+    INTERNAL_TYPE_##varname(::kangsw::markup::object* base) noexcept                             \
     {                                                                                            \
-                                                                                                 \
         if (!INTERNAL_is_first_entry) { return; }                                                \
                                                                                                  \
         INTERNAL_elembase_init(                                                                  \
@@ -132,19 +132,26 @@ public:                                                                         
             ::kangsw::markup::impl::object_map_instance<value_type>::get());                     \
     }                                                                                            \
                                                                                                  \
-    INTERNAL_TYPE_##varname(value_type const& v) : _value(v) {}                                  \
-    INTERNAL_TYPE_##varname(value_type&& v) : _value(std::move(v)) {}                            \
+    INTERNAL_TYPE_##varname(value_type const& v) noexcept : _value(v) {}                         \
+    INTERNAL_TYPE_##varname(value_type&& v) noexcept : _value(std::move(v)) {}                   \
+    auto& operator=(value_type&& v) noexcept { return _value = (std::move(v)), *this; }          \
+    auto& operator=(value_type const& v) noexcept { return _value = (v), *this; }                \
                                                                                                  \
-    auto& value() { return _value; }                                                             \
-    auto& value() const { return _value; }                                                       \
-    auto operator->() { return &_value; }                                                        \
-    auto operator->() const { return &_value; }                                                  \
-    operator value_type&() { return _value; }                                                    \
-    operator value_type const &() const { return _value; }                                       \
-    template <typename N_> auto& operator[](N_ i) { return _value[i]; }                          \
-    template <typename N_> auto& operator[](N_ i) const { return _value[i]; }                    \
+    INTERNAL_TYPE_##varname(INTERNAL_TYPE_##varname const&) noexcept = default;                  \
+    INTERNAL_TYPE_##varname(INTERNAL_TYPE_##varname&&) noexcept      = default;                  \
+    INTERNAL_TYPE_##varname& operator=(INTERNAL_TYPE_##varname const& v) noexcept = default;     \
+    INTERNAL_TYPE_##varname& operator=(INTERNAL_TYPE_##varname&& v) noexcept = default;          \
+                                                                                                 \
+    auto& value() noexcept { return _value; }                                                    \
+    auto& value() const noexcept { return _value; }                                              \
+    auto operator->() noexcept { return &_value; }                                               \
+    auto operator->() const noexcept { return &_value; }                                         \
+    operator value_type&() noexcept { return _value; }                                           \
+    operator value_type const &() const noexcept { return _value; }                              \
+    template <typename N_> auto& operator[](N_ i) noexcept { return _value[i]; }                 \
+    template <typename N_> auto& operator[](N_ i) const noexcept { return _value[i]; }           \
     }                                                                                            \
-    varname { this }
+    varname{this};                                                                               
 
 #define INTERNAL_CPPMARKUP_ADD(varname, tag_name, default_value, ...)              \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__);          \

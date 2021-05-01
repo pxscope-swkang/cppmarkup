@@ -153,11 +153,13 @@ struct property {
         void (*pinitializer)(void*);
 
         /** 획득자 */
-        void const* get(void const* elem) const { return (char*)elem + offset; }
-        void* get(void* elem) const { return (char*)elem + offset; }
+        [[nodiscard]] void const* get(void const* elem) const { return (char*)elem + offset; }
+        [[nodiscard]] void* get(void* elem) const { return (char*)elem + offset; }
 
-        template <typename Ty_> Ty_ const* as(void const* m) const;
-        template <typename Ty_> Ty_* as(void* m) const { return as<Ty_>(static_cast<object const*>(m)); }
+        template <typename Ty_>
+        [[nodiscard]] Ty_ const* as(void const* m) const;
+        template <typename Ty_>
+        [[nodiscard]] Ty_* as(void* m) const { return as<Ty_>(static_cast<object const*>(m)); }
     };
 
     /** 어트리뷰트 목록 */
@@ -170,12 +172,14 @@ struct property {
     auto as_map() const { return _map_manip; }
 
     /** 프로퍼티 주소 획득 */
-    void const* get(object const* m) const { return (char*)m + memory.elem_offset + memory.value_offset; }
-    void* get(object* m) const { return const_cast<void*>(get(static_cast<object const*>(m))); }
+    [[nodiscard]] void const* get(object const* m) const { return (char*)m + memory.elem_offset + memory.value_offset; }
+    [[nodiscard]] void* get(object* m) const { return const_cast<void*>(get(static_cast<object const*>(m))); }
 
     /** 프로퍼티 형변환 획득. 반드시 형식이 일치해야 합니다. */
-    template <typename Ty_> Ty_ const* as(object const* m) const;
-    template <typename Ty_> Ty_* as(object* m) const { return as<Ty_>(static_cast<object const*>(m)); }
+    template <typename Ty_>
+    [[nodiscard]] Ty_ const* as(object const* m) const;
+    template <typename Ty_>
+    [[nodiscard]] Ty_* as(object* m) const { return as<Ty_>(static_cast<object const*>(m)); }
 
 private:
     friend class impl::element_base;
@@ -203,7 +207,7 @@ marshalerr_t dump(Markup_& to, object const& from) { static_assert(false); }
  */
 class object {
 public:
-    virtual ~object() = default;
+    virtual ~object() noexcept = default;
 
     virtual std::vector<property> const& props() const = 0;
 
@@ -278,11 +282,11 @@ namespace impl {
             return _value;
         };
 
-        object_base() // 가장 먼저 호출 보장
+        object_base() noexcept// 가장 먼저 호출 보장
         {
         }
 
-        ~object_base() // 가장 늦게 호출 보장
+        ~object_base() noexcept // 가장 늦게 호출 보장
         {
             INTERNAL_is_first_entry = false;
         }

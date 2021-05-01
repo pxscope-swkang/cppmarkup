@@ -220,6 +220,14 @@ TEST_CASE("CppMarkup", "Object body Template")
     auto g                                 = r.ShouldRefreshEveryReceive.value();
 
     superobj o;
+    obj dddf;
+    r = dddf;
+
+    static_assert(std::is_nothrow_move_constructible_v<superobj>);
+    static_assert(std::is_nothrow_copy_constructible_v<superobj>);
+    static_assert(std::is_nothrow_constructible_v<superobj>);
+    static_assert(std::is_nothrow_copy_assignable_v<superobj>);
+    static_assert(std::is_nothrow_move_assignable_v<superobj>);
 
     elser cc;
     elser cd;

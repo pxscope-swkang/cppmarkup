@@ -16,7 +16,7 @@ aux_source_directory        (${ROOT_SRC_DIR}/cppmarkup    CPPMARKUP_LIB_SOURCE)
 add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOURCE})
 add_library                 (cppmarkup::static  ALIAS       CPPMARKUP_lib)
 
-target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_17)
+target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_20)
 target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR})
 
 # -- INSTALLATIONS

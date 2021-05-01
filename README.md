@@ -22,8 +22,8 @@ CPPMARKUP_OBJECT_TEMPLATE(template_type_name)
         
     // 바로 아래 엘리먼트의 설명 작성
     CPPMARKUP_DESCRIPTION(
-        u8"lorem ipsum fa er .. qw.e.fdasdvccc ..."
-        u8"나랏말싸미 듕귁에 달아 ....");
+        "lorem ipsum fa er .. qw.e.fdasdvccc ..."
+        "나랏말싸미 듕귁에 달아 ....");
     
     // <IntName>3</IntName>
     CPPMARKUP_ADD(value_id_int, "IntName", 3);

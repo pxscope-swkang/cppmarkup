@@ -3,11 +3,6 @@
 #include <string_view>
 #include <vector>
 
-#if __cplusplus > 202000
-#include <span>
-#else
-#endif
-
 /** 포워딩 */
 namespace kangsw::markup {
 namespace impl {
@@ -20,13 +15,14 @@ class object;
 } // namespace kangsw::markup
 
 namespace kangsw::markup {
-#if __cplusplus > 202000
-using u8string      = std::u8string;
-using u8string_view = std::u8string_view;
-#else
+// #if __cplusplus > 202000
+// using u8string      = std::u8string;
+// using u8string_view = std::u8string_view;
+// #else
+// #endif
+
 using u8string            = std::string;
 using u8string_view       = std::string_view;
-#endif
 
 /** 명시적인 바이너리 타입을 나타냅니다. Markup에는 base64로 인코딩 됨. */
 struct binary_chunk {
@@ -49,7 +45,12 @@ using compact_binary_view = std::vector<compact_byte> const&;
 struct marshalerr_t {
     enum type : intptr_t {
         ok,
+
         fail = std::numeric_limits<std::underlying_type_t<type>>::min(), // 0x10000000'00000000...
+        invalid_format = -1,
+        invalid_type = -2,
+        missing_matching_brace = -3,
+
     } value;
 
     // clang-format off

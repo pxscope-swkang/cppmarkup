@@ -15,7 +15,7 @@
 
 /** */
 #define CPPMARKUP_ADD(tag, default_value, ... /*ATTRIBUTES*/) \
-    INTERNAL_CPPMARKUP_ADD(tag, u8## #tag, default_value, ##__VA_ARGS__)
+    INTERNAL_CPPMARKUP_ADD(tag, #tag, default_value, ##__VA_ARGS__)
 
 /** */
 #define CPPMARKUP_ADD_EX(varname, tag, default_value, ... /*ATTRIBUTES*/) \
@@ -23,7 +23,7 @@
 
 /** */
 #define CPPMARKUP_EMBED_OBJECT_begin(tag, ... /*ATTRIBUTES*/) \
-    INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(tag, u8## #tag, ##__VA_ARGS__)
+    INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(tag, #tag, ##__VA_ARGS__)
 #define CPPMARKUP_EMBED_OBJECT_end(tag) INTERNAL_CPPMARKUP_EMBED_OBJECT_end(tag)
 
 /** */
@@ -33,11 +33,11 @@
 
 /** */
 #define CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(type_name, target, tag, ... /*ATTRIBUTES*/) \
-    INTERNAL_CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(type_name, target, tag, u8## #tag, ##__VA_ARGS__)
+    INTERNAL_CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(type_name, target, tag, #tag, ##__VA_ARGS__)
 
 /** */
 #define CPPMARKUP_ATTRIBUTE(attr_name, default_value) \
-    INTERNAL_CPPMARKUP_ATTRIBUTE(attr_name, u8## #attr_name, default_value)
+    INTERNAL_CPPMARKUP_ATTRIBUTE(attr_name, #attr_name, default_value)
 
 /** */
 #define CPPMARKUP_ATTRIBUTE_EX(attr_varname, attr_name, default_value) \

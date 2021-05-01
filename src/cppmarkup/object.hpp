@@ -229,6 +229,9 @@ constexpr element_type get_element_type()
     if constexpr (std::is_base_of_v<object, Ty_>) {
         return element_type::object;
     }
+    else if constexpr (std::is_same_v<Ty_, binary_chunk>) {
+        return element_type::binary;
+    }
     else if constexpr (std::is_same_v<Ty_, bool>) {
         return element_type::boolean;
     }

@@ -12,8 +12,58 @@ This works similarly with reflection of managed languages, however, this doesn't
 
 # Usage
 
-```c++:tests/automation/test-common-type.hpp
 ```
+CPPMARKUP_OBJECT_TEMPLATE(sample_type)
+{
+    CPPMARKUP_ELEMENT(SomeBoolValue, true);
+    CPPMARKUP_ELEMENT(SomeNullValueWithAttr, nullptr,
+                      CPPMARKUP_ATTRIBUTE(SomeAttr1, "Abcd");
+                      CPPMARKUP_ATTRIBUTE(SomeAttr2, false);
+                      CPPMARKUP_ATTRIBUTE(SomeAttr3, 315.241););
+
+    CPPMARKUP_EMBED_OBJECT_begin(SomeEmbeddedObject,
+                                 CPPMARKUP_ATTRIBUTE(SomeDateValue, 1534))
+    {
+        CPPMARKUP_ELEMENT(EmbeddedArray, CPPMARKUP_ARRAY(1, 2, 3, 4, 5));
+    }
+    CPPMARKUP_EMBED_OBJECT_end(SomeEmbeddedObject)
+};
+
+...
+    using namespace kangsw::markup;
+    auto s = sample_type::get_default(); // warning: sample_type{} returns 0-initialized structure
+    u8string buff;
+    dump(json_dump{buff, 4, 0}, s);
+...
+```
+
+This outputs below JSON string
+
+```json
+{
+    "SomeBoolValue": true,
+    "SomeNullValueWithAttr~@@ATTR@@": {
+        "SomeAttr1": "Abcd",
+        "SomeAttr2": false,
+        "SomeAttr3": 315.241000
+    },
+    "SomeNullValueWithAttr": null,
+    "SomeEmbeddedObject~@@ATTR@@": {
+        "SomeDateValue": 1534
+    },
+    "SomeEmbeddedObject": {
+        "EmbeddedArray": [
+            1,
+            2,
+            3,
+            4,
+            5
+        ]
+    }
+}
+```
+
+> TODO: Add cases for XML, BSON dumps ...
 
 ## Note
 

@@ -52,11 +52,10 @@ void encode(void const* data, size_t len, OutIt_&& o)
         char oblk[4];
         _encode_blk(oblk, data);
 
-        *o   = oblk[0];
-        *++o = oblk[1];
-        *++o = oblk[2];
-        *++o = oblk[3];
-        ++o;
+        o = oblk[0];
+        o = oblk[1];
+        o = oblk[2];
+        o = oblk[3];
     }
 
     if (len) {
@@ -68,14 +67,15 @@ void encode(void const* data, size_t len, OutIt_&& o)
         int n_pad = 3 - (int)len;
         int n_ch  = 4 - n_pad;
 
-        for (int i = 0; i < n_ch; ++i) { *o++ = oblk[i]; }
-        for (int i = 0; i < n_pad; ++i) { *o++ = _padchar; }
+        for (int i = 0; i < n_ch; ++i) { o = oblk[i]; }
+        for (int i = 0; i < n_pad; ++i) { o = _padchar; }
     }
 }
 
 template <typename InIt_, typename OutIt_>
 bool decode(InIt_ start, InIt_ const end, OutIt_ o)
 {
+    // TODO: 입력 이터레이터 타입인 InIt_를 항상 random_access_iterator로 가정하여 최적화하는 로직 추가; if constexpr로 이터레이터 검사해서 루틴 분리. 지금 로직도 필요는 함 ... (스트림 입력 등 읽어오기 위해)
     static_assert(sizeof *start == 1);
 
     for (auto it = start; it != end;) {
@@ -96,7 +96,7 @@ bool decode(InIt_ start, InIt_ const end, OutIt_ o)
         auto& chset = reinterpret_cast<std::array<const char, 3>&>(oblk);
         int n_bin   = (pad_pos == 4) ? 3 : (pad_pos == 3) ? 2 : 1;
 
-        for (int i = 0; i < n_bin; ++i, ++o) { *o = chset[2 - i]; }
+        for (int i = 0; i < n_bin; ++i) { o = chset[2 - i]; }
     }
 
     return true;

@@ -12,7 +12,7 @@ TEST_CASE("base64")
     base64str.reserve(b64::encoded_size(mystring.length()));
     b64::encode(mystring.data(), mystring.size() * sizeof mystring[0], std::back_inserter(base64str));
 
-    printf("length: %d \n", base64str.size());
+    printf("length: %lld \n", base64str.size());
     puts(base64str.c_str());
 
     std::string sourcestr;

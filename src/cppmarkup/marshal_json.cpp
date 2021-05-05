@@ -67,7 +67,7 @@ to_json_value(json_dump& to, binary_chunk const& v)
 }
 
 template <typename Ty_>
-void to_json_array(json_dump& to, array_proxy<Ty_, void const*> const& proxy);
+void to_json_array(json_dump& to, array_proxy<Ty_, void const*> proxy);
 
 /** 오브젝트 덤핑 로직 */
 template <> void to_json_value(json_dump& to, object const& v)
@@ -124,14 +124,14 @@ template <> void to_json_value(json_dump& to, object const& v)
 }
 
 template <typename Ty_>
-void to_json_array(json_dump& to, array_proxy<Ty_, void const*> const& proxy)
+void to_json_array(json_dump& to, array_proxy<Ty_, void const*> proxy)
 {
     to.buff | '[';
     break_indent(to, indent::conf_fwd);
 
     for (size_t i = 0, end = proxy.size(); i < end; ++i) {
         break_indent(to);
-        typename array_proxy<Ty_, void const*>::const_reference e = proxy[i];
+        typename decltype(proxy)::const_reference e = proxy[i];
         to_json_value(to, e);
 
         if (i + 1 < end) { to.buff | ','; }
@@ -173,13 +173,6 @@ size_t find_initial_char(u8string_view const& src, u8string_view const& allowed,
     }
 
     return src.npos;
-}
-
-template <typename Ty_>
-marshalerr_t parse_array(parser_context& context, Ty_& to, u8string_view& ss)
-{
-    // TODO
-    return marshalerr_t::fail;
 }
 
 template <typename Ty_>
@@ -258,33 +251,8 @@ marshalerr_t parse_value(parser_context& context, bool& to, u8string_view& ss)
     return marshalerr_t::ok;
 }
 
-marshalerr_t parse_object(parser_context& context, element_type const& ty, void* memory, u8string_view& ss);
-
-marshalerr_t parse_memory(parser_context& context, element_type const& ty, void* memory, u8string_view& ss)
-{
-    // TODO: parse_map에 대한 처리 추가
-#define PEWPEW(type)                                                  \
-    if (ty.is_array())                                                \
-        return parse_array(context, *(std::vector<type>*)memory, ss); \
-    else                                                              \
-        return parse_value(context, *(type*)memory, ss);
-
-    // clang-format off
-    switch (ty.value_type()) {
-        case element_type::null:            PEWPEW(nullptr_t);
-        case element_type::boolean:         PEWPEW(bool);
-        case element_type::integer:         PEWPEW(int64_t);
-        case element_type::floating_point:  PEWPEW(double);
-        case element_type::string:          PEWPEW(u8string);
-        case element_type::binary:          PEWPEW(binary_chunk);
-        case element_type::object:          return parse_object(context, ty,memory, ss);
-
-        default:;
-    }
-    // clang-format on
-
-    return marshalerr_t::ok;
-}
+template <typename Ty_>
+marshalerr_t parse_array(parser_context& context, array_proxy<Ty_, void*> to, u8string_view& ss);
 
 template <>
 marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
@@ -337,7 +305,9 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             for (auto& attr : attrs) {
                 auto memory = attr.memory(prop_memory);
 
-                auto parse_result = parse_memory(context, pprop->type, memory, ss);
+                auto parse_result = select_type_handler_attr(
+                    pprop->type, memory,
+                    [&context, &ss](auto& v) { return parse_value(context, v, ss); });
                 if (parse_result != marshalerr_t::ok) { return parse_result; }
             }
         }
@@ -347,7 +317,11 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             if (pprop == nullptr) { continue; } // 없으면 그냥 무시
             auto memory = pprop->memory(&to);
 
-            auto parse_result = parse_memory(context, pprop->type, memory, ss);
+            auto parse_result = select_type_handler(
+                *pprop, pprop->value(memory),
+                [&context, &ss](auto& v) { return parse_value(context, v, ss); },
+                [&context, &ss](auto& v) { return parse_array(context, v, ss); },
+                [&context, &ss](auto& v) { /*TODO*/ });
             if (parse_result != marshalerr_t::ok) { return parse_result; }
         }
     }
@@ -356,19 +330,21 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     return marshalerr_t::ok;
 }
 
-marshalerr_t parse_object(parser_context& context, element_type const& ty, void* memory, u8string_view& ss)
+template <typename Ty_>
+marshalerr_t parse_array(parser_context& context, array_proxy<Ty_, void*> to, u8string_view& ss)
 {
-    if (ty.is_array()) {
-        return marshalerr_t::fail;
-    }
-    else if (ty.is_map()) {
-        // TODO
-        return marshalerr_t::fail;
-    }
-    else {
-        return parse_value(context, *(object*)memory, ss);
-    }
+    // TODO WORKING IN PROGRESS
+    // 여는 대괄호 찾기
+
+    // 공백 스킵
+
+    // 첫 문자 ]인지 점검 ... 아니라면 값 파싱 <Ty_>
+
+    // 쉼표면 계속, ]면 이탈
+
+    return marshalerr_t::fail;
 }
+
 } // namespace
 
 kangsw::markup::marshalerr_t

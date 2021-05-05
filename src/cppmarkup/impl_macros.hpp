@@ -9,29 +9,30 @@
 #define INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(tname) \
     struct tname : public ::kangsw::markup::impl::object_base<tname>
 
-#define INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ... /*ATTRIBUTES*/)                        \
-public:                                                                                                      \
-    class INTERNAL_TYPE_##varname : ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_##varname> { \
-    private:                                                                                                 \
-        using self_type               = INTERNAL_TYPE_##varname;                                             \
-        static constexpr auto _tagstr = tag_name_str;                                                        \
-                                                                                                             \
-        static inline struct _internal_description_assignment {                                              \
-            _internal_description_assignment()                                                               \
-            {                                                                                                \
-                _description                = INTERNAL_next_description();                                   \
-                INTERNAL_next_description() = {};                                                            \
-            }                                                                                                \
-        } _description_assignment;                                                                           \
-                                                                                                             \
-    private:                                                                                                 \
-        static auto& attribs() noexcept                                                                      \
-        {                                                                                                    \
-            static std::vector<::kangsw::markup::property::attribute_representation> _attribs;               \
-            return _attribs;                                                                                 \
-        }                                                                                                    \
-                                                                                                             \
-    public:                                                                                                  \
+#define INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name_str, ... /*ATTRIBUTES*/)          \
+public:                                                                                        \
+    class INTERNAL_TYPE_##varname                                                              \
+        : public ::kangsw::markup::impl::element_template_base<INTERNAL_TYPE_##varname> {      \
+    private:                                                                                   \
+        using self_type               = INTERNAL_TYPE_##varname;                               \
+        static constexpr auto _tagstr = tag_name_str;                                          \
+                                                                                               \
+        static inline struct _internal_description_assignment {                                \
+            _internal_description_assignment()                                                 \
+            {                                                                                  \
+                _description                = INTERNAL_next_description();                     \
+                INTERNAL_next_description() = {};                                              \
+            }                                                                                  \
+        } _description_assignment;                                                             \
+                                                                                               \
+    private:                                                                                   \
+        static auto& attribs() noexcept                                                        \
+        {                                                                                      \
+            static std::vector<::kangsw::markup::property::attribute_representation> _attribs; \
+            return _attribs;                                                                   \
+        }                                                                                      \
+                                                                                               \
+    public:                                                                                    \
         /*ATTRIBUTES will be placed here */ __VA_ARGS__
 
 namespace kangsw::markup::impl {
@@ -86,7 +87,9 @@ public:                                                                         
             if (!INTERNAL_is_first_entry) { return; }                                                      \
                                                                                                            \
             INTERNAL_attrbase_init(                                                                        \
-                base, attr_name,                                                                           \
+                (::kangsw::markup::impl::element_base*)                                                    \
+                    base,                                                                                  \
+                attr_name,                                                                                 \
                 ::kangsw::markup::get_element_type<attr_value_type>(),                                     \
                 attribs(),                                                                                 \
                 sizeof *this,                                                                              \
@@ -97,8 +100,12 @@ public:                                                                         
         attr_value_type _value;                                                                            \
                                                                                                            \
     public:                                                                                                \
-        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) noexcept : _value(v) {}                     \
-        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) noexcept : _value(std::move(v)) {}               \
+        INTERNAL_ATTR_##attr_varname(attr_value_type const& v) noexcept                                    \
+            : _value(v)                                                                                    \
+        {}                                                                                                 \
+        INTERNAL_ATTR_##attr_varname(attr_value_type&& v) noexcept                                         \
+            : _value(std::move(v))                                                                         \
+        {}                                                                                                 \
                                                                                                            \
         auto& value() noexcept { return _value; }                                                          \
         auto& value() const noexcept { return _value; }                                                    \
@@ -130,8 +137,12 @@ public:                                                                         
             ::kangsw::markup::impl::object_map_instance<value_type>::get());                     \
     }                                                                                            \
                                                                                                  \
-    INTERNAL_TYPE_##varname(value_type const& v) noexcept : _value(v) {}                         \
-    INTERNAL_TYPE_##varname(value_type&& v) noexcept : _value(std::move(v)) {}                   \
+    INTERNAL_TYPE_##varname(value_type const& v) noexcept                                        \
+        : _value(v)                                                                              \
+    {}                                                                                           \
+    INTERNAL_TYPE_##varname(value_type&& v) noexcept                                             \
+        : _value(std::move(v))                                                                   \
+    {}                                                                                           \
     auto& operator=(value_type&& v) noexcept { return _value = (std::move(v)), *this; }          \
     auto& operator=(value_type const& v) noexcept { return _value = (v), *this; }                \
                                                                                                  \
@@ -149,7 +160,7 @@ public:                                                                         
     template <typename N_> auto& operator[](N_ i) noexcept { return _value[i]; }                 \
     template <typename N_> auto& operator[](N_ i) const noexcept { return _value[i]; }           \
     }                                                                                            \
-    varname{this};                                                                               
+    varname{this};
 
 #define INTERNAL_CPPMARKUP_ADD(varname, tag_name, default_value, ...)              \
     INTERNAL_CPPMARKUP_INSTANCE_FORMER(varname, tag_name, ##__VA_ARGS__);          \

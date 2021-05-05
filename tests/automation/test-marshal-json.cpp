@@ -24,14 +24,23 @@ SCENARIO("Markup object can be marshaled from/to JSON", "[json]")
         {
             using namespace kangsw::markup;
             u8string buff;
-            dump(json_dump{buff, 4, 0}, s);
+            dump(json_dump{buff}, s);
 
-            INFO(buff);
-            CHECK(false);
-
-            THEN("")
+            THEN("Create another empty structure")
             {
+                AND_THEN("Parsing result should be equal with original data")
+                {
+                    FAIL("TEST_NOT_IMPLEMENTED");
+                }
             }
         }
     }
+}
+
+TEST_CASE("JSON Dump test", "[.]")
+{
+    using namespace kangsw;
+    markup::u8string buff;
+    markup::dump(markup::json_dump{buff, 4, 0}, sample_type::get_default());
+    WARN(buff);
 }

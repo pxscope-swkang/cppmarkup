@@ -70,6 +70,7 @@ struct object_vector_manip {
     virtual object const* at(void const*, size_t index) const = 0;
     virtual object* at(void*, size_t index) const             = 0;
     virtual size_t append(void*, object** out) const          = 0;
+    virtual void reserve(void*, size_t n) const               = 0;
     virtual void clear(void*) const                           = 0;
     virtual void swap(void*, size_t a, size_t b) const        = 0;
     virtual void pop_back(void*) const                        = 0;
@@ -282,7 +283,7 @@ namespace impl {
             return _value;
         };
 
-        object_base() noexcept// 가장 먼저 호출 보장
+        object_base() noexcept // 가장 먼저 호출 보장
         {
         }
 
@@ -442,6 +443,10 @@ namespace impl {
                 auto idx = v.size();
                 if (out) { *out = &v.emplace_back(); }
                 return idx;
+            }
+            void reserve(void* m, size_t n) const override
+            {
+                ((container_type*)m)->reserve(n);
             }
         };
 

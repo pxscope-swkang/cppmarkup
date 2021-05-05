@@ -20,25 +20,25 @@ class array_proxy {
 public:
     using container_type  = std::conditional_t<_is_const_array, const std::vector<Ty_>, std::vector<Ty_>>;
     using const_reference = typename container_type::const_reference;
-    using reference       = typename container_type::reference;
+    using reference       = std::conditional_t<_is_const_array, const_reference, typename container_type::reference>;
 
 public:
     array_proxy(Vp_ vp)
-        : _m(*reinterpret_cast<container_type*>(vp))
+        : _m(reinterpret_cast<container_type*>(vp))
     {}
 
-    auto empty() const { return _m.empty(); }
-    auto size() const { return _m.size(); }
+    auto empty() const { return _m->empty(); }
+    auto size() const { return _m->size(); }
 
-    const_reference operator[](size_t i) const { return _m[i]; }
-    reference operator[](size_t i) { return _m[i]; }
-    const_reference at(size_t i) const { return _m.at(i); }
-    reference at(size_t i) { return _m.at(i); }
+    const_reference operator[](size_t i) const { return _m->operator[](i); }
+    reference operator[](size_t i) { return _m->operator[](i); }
+    const_reference at(size_t i) const { return _m->at(i); }
+    reference at(size_t i) { return _m->at(i); }
 
-    reference append() { return _m.emplace_back(); }
-    auto reserve(size_t count) { return _m.reserve(count); }
-    size_t erase(size_t from, size_t to) { return _m.erase(_m.begin() + from, _m.begin() + to) - _m.begin(); }
-    size_t erase(size_t pos) { return _m.erase(_m.begin() + pos) - _m.begin(); }
+    reference append() { return _m->emplace_back(); }
+    auto reserve(size_t count) { return _m->reserve(count); }
+    size_t erase(size_t from, size_t to) { return _m->erase(_m->begin() + from, _m->begin() + to) - _m->begin(); }
+    size_t erase(size_t pos) { return _m->erase(_m->begin() + pos) - _m->begin(); }
 
     template <class Fn_>
     auto for_each(Fn_&& fn)
@@ -71,14 +71,14 @@ public:
     }
 
 private:
-    container_type& _m;
+    container_type* _m;
 };
 
 template <>
 class array_proxy<object, void const*> {
 public:
     using const_reference = object const&;
-    using reference = object&;
+    using reference       = object&;
 
 public:
     array_proxy(object_vector_manip const* api, void const* objarr)

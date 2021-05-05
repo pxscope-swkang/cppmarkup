@@ -142,7 +142,7 @@ struct property {
     /** 벨류 오프셋 획득자 */
     void* value(void* elem) const { return (char*)elem + memory.value_offset; }
     void const* value(void const* elem) const { return (char const*)elem + memory.value_offset; }
-    
+
     /** 단일 어트리뷰트 표현 */
     struct attribute_representation {
         /** 어트리뷰트 타입 */
@@ -180,7 +180,7 @@ struct property {
     auto as_map() const { return _map_manip; }
 
     /** 프로퍼티 형변환 획득. 반드시 형식이 일치해야 합니다. */
-    template <typename Ty_> 
+    template <typename Ty_>
     [[nodiscard]] Ty_ const* as(object const* m) const;
     template <typename Ty_>
     [[nodiscard]] Ty_* as(object* m) const { return as<Ty_>(static_cast<object const*>(m)); }
@@ -290,9 +290,11 @@ namespace impl {
         {
         }
 
-        ~object_base() noexcept // 가장 늦게 호출 보장
+        ~object_base() noexcept override // 가장 늦게 호출 보장
         {
-            INTERNAL_is_first_entry = false;
+            INTERNAL_CPPMARKUP_UNLIKELY if (INTERNAL_is_first_entry) {
+                INTERNAL_is_first_entry = false;
+            }
         }
 
         static ObjClass_ get_default()
@@ -444,7 +446,7 @@ namespace impl {
             {
                 auto& v  = *(container_type*)m;
                 auto idx = v.size();
-                if (out) { *out = &v.emplace_back(); }
+                INTERNAL_CPPMARKUP_LIKELY if (out) { *out = &v.emplace_back(); }
                 return idx;
             }
             void reserve(void* m, size_t n) const override

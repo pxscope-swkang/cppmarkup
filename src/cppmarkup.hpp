@@ -1,4 +1,5 @@
 #pragma once
+#include "cppmarkup_object.hpp"
 #include "cppmarkup/impl_macros.hpp"
 
 /*
@@ -17,7 +18,7 @@
     INTERNAL_CPPMARKUP_ADD(tag, #tag, default_value, ##__VA_ARGS__)
 
 /** */
-#define CPPMARKUP_ADD_EX(varname, tag, default_value, ... /*ATTRIBUTES*/) \
+#define CPPMARKUP_ELEMENT_EX(varname, tag, default_value, ... /*ATTRIBUTES*/) \
     INTERNAL_CPPMARKUP_ADD(varname, tag, default_value, ##__VA_ARGS__)
 
 /** */

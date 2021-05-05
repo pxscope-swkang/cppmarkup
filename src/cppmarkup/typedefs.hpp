@@ -3,6 +3,14 @@
 #include <string_view>
 #include <vector>
 
+#if __cplusplus > 202000l
+#define INTERNAL_CPPMARKUP_LIKELY [[likely]]
+#define INTERNAL_CPPMARKUP_UNLIKELY [[unlikely]]
+#else
+#define INTERNAL_CPPMARKUP_LIKELY 
+#define INTERNAL_CPPMARKUP_UNLIKELY
+#endif
+
 /** Æ÷¿öµù */
 namespace kangsw::markup {
 namespace impl {

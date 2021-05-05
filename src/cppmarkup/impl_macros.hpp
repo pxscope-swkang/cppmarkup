@@ -47,6 +47,7 @@ decltype(auto) deduce_fn(Ty_&& v)
     if constexpr (templates::is_specialization<Ty_, std::basic_string>::value) { return u8string{v.begin(), v.end()}; }
     if constexpr (std::is_base_of_v<object, Ty_>) { return Ty_(std::move(v)); }
     if constexpr (std::is_same_v<Ty_, u8string::const_pointer>) { return u8string{v}; }
+    if constexpr (std::is_same_v<Ty_, nullptr_t>) { return nullptr; }
 }
 
 template <typename Ty_, size_t N>
@@ -84,6 +85,7 @@ public:                                                                         
                                                                                                            \
         INTERNAL_ATTR_##attr_varname(self_type* base) noexcept                                             \
         {                                                                                                  \
+            INTERNAL_CPPMARKUP_LIKELY                                                                      \
             if (!INTERNAL_is_first_entry) { return; }                                                      \
                                                                                                            \
             INTERNAL_attrbase_init(                                                                        \
@@ -124,6 +126,7 @@ private:                                                                        
 public:                                                                                          \
     INTERNAL_TYPE_##varname(::kangsw::markup::object* base) noexcept                             \
     {                                                                                            \
+        INTERNAL_CPPMARKUP_LIKELY                                                                \
         if (!INTERNAL_is_first_entry) { return; }                                                \
                                                                                                  \
         INTERNAL_elembase_init(                                                                  \

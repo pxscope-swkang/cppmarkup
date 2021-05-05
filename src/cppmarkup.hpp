@@ -13,7 +13,7 @@
 #define CPPMARKUP_OBJECT_TEMPLATE(type_name) INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(type_name)
 
 /** */
-#define CPPMARKUP_ADD(tag, default_value, ... /*ATTRIBUTES*/) \
+#define CPPMARKUP_ELEMENT(tag, default_value, ... /*ATTRIBUTES*/) \
     INTERNAL_CPPMARKUP_ADD(tag, #tag, default_value, ##__VA_ARGS__)
 
 /** */

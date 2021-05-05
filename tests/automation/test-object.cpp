@@ -122,66 +122,66 @@ constexpr static auto desciption = "desc";
 CPPMARKUP_OBJECT_TEMPLATE(obj)
 {
     CPPMARKUP_DESCRIPTION_BELOW("설명 설명 설명");
-    CPPMARKUP_ADD(ShouldRefreshEveryReceive, false,
-                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
-                  CPPMARKUP_ATTRIBUTE(IntervalMsB, 153);
-                  CPPMARKUP_ATTRIBUTE(IntervalMsC, "Alah hu akbarr"); 
-                  CPPMARKUP_ATTRIBUTE(IntervalMsCGF, false););
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceive, false,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
+                      CPPMARKUP_ATTRIBUTE(IntervalMsB, 153);
+                      CPPMARKUP_ATTRIBUTE(IntervalMsC, "Alah hu akbarr");
+                      CPPMARKUP_ATTRIBUTE(IntervalMsCGF, false););
 
-    CPPMARKUP_ADD(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
-    CPPMARKUP_ADD(TestBoolean, CPPMARKUP_ARRAY(false, true));
-    CPPMARKUP_ADD(TestStrArray, CPPMARKUP_ARRAY("a", "b", "c", "d..."));
+    CPPMARKUP_ELEMENT(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
+    CPPMARKUP_ELEMENT(TestBoolean, CPPMARKUP_ARRAY(false, true));
+    CPPMARKUP_ELEMENT(TestStrArray, CPPMARKUP_ARRAY("a", "b", "c", "d..."));
 
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
-                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveB, 0.432,
-                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveE, 0.432);
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveEF, 0.432);
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveEG, 0.432);
-    CPPMARKUP_ADD(ShouldRefreshEveryReceiveEH, 0.432);
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveA, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveB, 0.432,
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveE, 0.432);
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveEF, 0.432);
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveEG, 0.432);
+    CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveEH, 0.432);
 
-    CPPMARKUP_ADD(SomeChnk, ::kangsw::markup::binary_chunk{});
+    CPPMARKUP_ELEMENT(SomeChnk, ::kangsw::markup::binary_chunk{});
 };
 
 CPPMARKUP_WRAPPED_OBJECT_TEMPLATE(superobj, obj, Body);
 
 CPPMARKUP_OBJECT_TEMPLATE(objarr)
 {
-    CPPMARKUP_ADD(ObjArrA, CPPMARKUP_ARRAY(obj{}, obj{}, obj{}));
-    CPPMARKUP_ADD(ObjB, obj{});
-    CPPMARKUP_ADD(ObjC, obj{});
-    CPPMARKUP_ADD(ObjD, obj{});
-    CPPMARKUP_ADD(ObjE, obj{});
+    CPPMARKUP_ELEMENT(ObjArrA, CPPMARKUP_ARRAY(obj{}, obj{}, obj{}));
+    CPPMARKUP_ELEMENT(ObjB, obj{});
+    CPPMARKUP_ELEMENT(ObjC, obj{});
+    CPPMARKUP_ELEMENT(ObjD, obj{});
+    CPPMARKUP_ELEMENT(ObjE, obj{});
 };
 
 CPPMARKUP_OBJECT_TEMPLATE(elser)
 {
     CPPMARKUP_EMBED_OBJECT_begin(hell)
     {
-        CPPMARKUP_ADD(TestObjMap, CPPMARKUP_MAP("Hell", obj{}, "Abc", obj{}));
-        CPPMARKUP_ADD(TestObjArray, CPPMARKUP_ARRAY(obj::get_default(), obj::get_default()));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
-                      CPPMARKUP_ATTRIBUTE(IntervalMsBc, 1541););
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveB, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveC, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveD, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveE, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveF, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFc, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFg, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFrr, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
-        CPPMARKUP_ADD(ShouldRefreshEveryReceiveFqe, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(TestObjMap, CPPMARKUP_MAP("Hell", obj{}, "Abc", obj{}));
+        CPPMARKUP_ELEMENT(TestObjArray, CPPMARKUP_ARRAY(obj::get_default(), obj::get_default()));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveA, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
+                          CPPMARKUP_ATTRIBUTE(IntervalMsBc, 1541););
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveB, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveC, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveD, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveE, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveF, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveFc, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveFg, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveFrr, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+        CPPMARKUP_ELEMENT(ShouldRefreshEveryReceiveFqe, 0.432,
+                          CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
     }
     CPPMARKUP_EMBED_OBJECT_end(hell);
 };

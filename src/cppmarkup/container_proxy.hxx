@@ -12,8 +12,8 @@ namespace kangsw::markup {
 /**
  * TODO: object vector와 일반 값 타입 vector이 공통된 템플릿 인터페이스를 제공할 수 있게 합니다.
  */
-template <typename Ty_ = bool, typename Vp_ = void*>
-class vector_proxy {
+template <typename Ty_, typename Vp_>
+class array_proxy {
     static_assert(std::is_same_v<void, std::remove_const_t<std::remove_pointer_t<Vp_>>>);
     enum { _is_const_array = std::is_const_v<std::remove_pointer_t<Vp_>> };
 
@@ -21,7 +21,7 @@ public:
     using container_type = std::conditional_t<_is_const_array, const std::vector<Ty_>, std::vector<Ty_>>;
 
 public:
-    vector_proxy(Vp_ vp)
+    array_proxy(Vp_ vp)
         : _m(*reinterpret_cast<container_type*>(vp))
     {}
 
@@ -73,9 +73,9 @@ private:
 };
 
 template <>
-class vector_proxy<object, void const*> {
+class array_proxy<object, void const*> {
 public:
-    vector_proxy(object_vector_manip const* api, void const* objarr)
+    array_proxy(object_vector_manip const* api, void const* objarr)
         : _f(api)
         , _vp(objarr)
     {}
@@ -110,10 +110,10 @@ protected:
  * 해당 클래스는 const 버전의 기능을 확장하는 식으로 구현됩니다.
  */
 template <>
-class vector_proxy<object, void*> : public vector_proxy<object, void const*> {
+class array_proxy<object, void*> : public array_proxy<object, void const*> {
 public:
-    vector_proxy(object_vector_manip const* api, void* objarr)
-        : vector_proxy<object, void const*>(api, objarr)
+    array_proxy(object_vector_manip const* api, void* objarr)
+        : array_proxy<object, void const*>(api, objarr)
     {}
 
     auto& operator[](size_t i) { return *_f->at(vp(), i); }
@@ -150,10 +150,10 @@ private:
 };
 
 template <typename Ty_, typename Vp_>
-decltype(auto) make_primitive_array_proxy(Vp_ ptr) { return vector_proxy<Ty_, Vp_>{ptr}; }
+decltype(auto) make_primitive_array_proxy(Vp_ ptr) { return array_proxy<Ty_, Vp_>{ptr}; }
 
 template <typename Vp_>
-decltype(auto) make_object_array_proxy(object_vector_manip const* api, Vp_ ptr) { return vector_proxy<object, Vp_>{api, ptr}; }
+decltype(auto) make_object_array_proxy(object_vector_manip const* api, Vp_ ptr) { return array_proxy<object, Vp_>{api, ptr}; }
 
 /**
  * TODO: std::map<u8string, object&> 와 같은 함수 시그네쳐

@@ -192,7 +192,7 @@ decltype(auto) ddf(std::map<std::string, Ty_>&& args)
     return std::move(args);
 }
 
-TEST_CASE("CppMarkup", "Object body Template")
+TEST_CASE("Object compilation", "[object]")
 {
     std::map<std::string, bool> ar{{"abs", true}};
 
@@ -210,25 +210,7 @@ TEST_CASE("CppMarkup", "Object body Template")
     static_assert(std::is_nothrow_constructible_v<superobj>);
     static_assert(std::is_nothrow_copy_assignable_v<superobj>);
     static_assert(std::is_nothrow_move_assignable_v<superobj>);
-
-    elser cc;
-    superobj cd;
-
-    cd.reset();
-    ::kangsw::markup::u8string str;
-    ::kangsw::markup::json_dump dmp{str, 4, 0};
-    ::kangsw::markup::dump(dmp, cd);
-
-    std::cout << dmp.buff;
-
-    auto& vv = r.TestStrArray.value();
-
-    auto p = r.props();
-
-    elser car;
-
-    auto ras = car.hell->TestObjMap["faer"];
-
+    
     REQUIRE(r.ShouldRefreshEveryReceive);
 }
 

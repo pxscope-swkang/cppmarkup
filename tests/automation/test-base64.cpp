@@ -6,7 +6,7 @@ namespace b64 = ::kangsw::base64;
 
 constexpr std::string_view mystring = (char*)"Hello, world! al dl ell lorem ipsum æ»≥Á«œººø‰f";
 
-TEST_CASE("base64")
+TEST_CASE("base64", "[misc]")
 {
     std::string base64str;
     base64str.reserve(b64::encoded_size(mystring.length()));

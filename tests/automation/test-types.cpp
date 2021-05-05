@@ -1,5 +1,5 @@
 #include "catch.hpp"
-#include "cppmarkup/object_container_proxy.hxx"
+#include "cppmarkup/container_proxy.hxx"
 
 using namespace ::kangsw;
 

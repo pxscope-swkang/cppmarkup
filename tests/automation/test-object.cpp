@@ -230,7 +230,8 @@ TEST_CASE("CppMarkup", "Object body Template")
     elser cd;
 
     cd.reset();
-    ::kangsw::markup::json_dump dmp{std::cout, 4, 0};
+    ::kangsw::markup::u8string str;
+    ::kangsw::markup::json_dump dmp{str, 4, 0};
     ::kangsw::markup::dump(dmp, cd);
 
     auto& vv = r.TestStrArray.value();

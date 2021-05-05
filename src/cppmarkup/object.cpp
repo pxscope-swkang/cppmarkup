@@ -3,11 +3,11 @@
 void kangsw::markup::object::reset()
 {
     for (auto& p : props()) {
-        auto elem = p.get(this);
+        auto elem = p.memory(this);
         p.pinitializer(elem);
 
         for (auto& attr : p.attributes) {
-            attr.pinitializer(attr.get(elem));
+            attr.pinitializer(attr.memory(elem));
         }
     }
 }

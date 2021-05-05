@@ -134,6 +134,10 @@ struct property {
 
         /** 요소 전체 크기 */
         size_t total_element_size;
+
+        /** 메모리 오프셋 획득자 */
+        void* operator()(object* root) const { return (char*)root + elem_offset + value_offset; }
+        void const* operator()(object const* root) const { return (char const*)root + elem_offset + value_offset; }
     } memory;
 
     /** 단일 어트리뷰트 표현 */
@@ -153,9 +157,9 @@ struct property {
         /** 어트리뷰트 기본 초기화자*/
         void (*pinitializer)(void*);
 
-        /** 획득자 */
-        [[nodiscard]] void const* get(void const* elem) const { return (char*)elem + offset; }
-        [[nodiscard]] void* get(void* elem) const { return (char*)elem + offset; }
+        /** 프로퍼티 주소 획득자 */
+        [[nodiscard]] void const* memory(void const* elem) const { return (char*)elem + offset; }
+        [[nodiscard]] void* memory(void* elem) const { return (char*)elem + offset; }
 
         template <typename Ty_>
         [[nodiscard]] Ty_ const* as(void const* m) const;
@@ -172,12 +176,8 @@ struct property {
     /** 맵 매니퓰레이터 획득 */
     auto as_map() const { return _map_manip; }
 
-    /** 프로퍼티 주소 획득 */
-    [[nodiscard]] void const* get(object const* m) const { return (char*)m + memory.elem_offset + memory.value_offset; }
-    [[nodiscard]] void* get(object* m) const { return const_cast<void*>(get(static_cast<object const*>(m))); }
-
     /** 프로퍼티 형변환 획득. 반드시 형식이 일치해야 합니다. */
-    template <typename Ty_>
+    template <typename Ty_> 
     [[nodiscard]] Ty_ const* as(object const* m) const;
     template <typename Ty_>
     [[nodiscard]] Ty_* as(object* m) const { return as<Ty_>(static_cast<object const*>(m)); }
@@ -483,13 +483,13 @@ namespace impl {
 template <typename Ty_> Ty_ const* property::attribute_representation::as(void const* m) const
 {
     if (get_element_type<Ty_>() != this->type) { return nullptr; }
-    return static_cast<Ty_ const*>(get(m));
+    return static_cast<Ty_ const*>(memory(m));
 }
 
 template <typename Ty_> Ty_ const* property::as(object const* m) const
 {
     if (get_element_type<Ty_>() != this->type) { return nullptr; }
-    return static_cast<Ty_ const*>(get(m));
+    return static_cast<Ty_ const*>(memory(m));
 }
 
 } // namespace kangsw::markup

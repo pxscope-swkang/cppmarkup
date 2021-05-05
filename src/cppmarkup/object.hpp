@@ -136,10 +136,14 @@ struct property {
         size_t total_element_size;
 
         /** 메모리 오프셋 획득자 */
-        void* operator()(object* root) const { return (char*)root + elem_offset + value_offset; }
-        void const* operator()(object const* root) const { return (char const*)root + elem_offset + value_offset; }
+        [[nodiscard]] void* operator()(object* root) const { return (char*)root + elem_offset; }
+        [[nodiscard]] void const* operator()(object const* root) const { return (char const*)root + elem_offset; }
     } memory;
 
+    /** 벨류 오프셋 획득자 */
+    void* value(void* elem) const { return (char*)elem + memory.value_offset; }
+    void const* value(void const* elem) const { return (char const*)elem + memory.value_offset; }
+    
     /** 단일 어트리뷰트 표현 */
     struct attribute_representation {
         /** 어트리뷰트 타입 */

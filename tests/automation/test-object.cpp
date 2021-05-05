@@ -119,34 +119,18 @@ constexpr static auto desciption = "desc";
 //    // ~INTERNAL_CPPMARKUP_INSTANCE_LATER
 //};
 
-static inline struct tttest {
-    tttest()
-    {
-        {
-            decltype(::kangsw::markup::impl::deduce_fn(142)) r;
-            puts(typeid(r).name());
-        }
-        {
-            decltype(::kangsw::markup::impl::deduce_fn("Reawrwr")) r;
-            puts(typeid(r).name());
-        }
-        {
-            decltype(::kangsw::markup::impl::deduce_fn({134, 21, 541})) r;
-            puts(typeid(r).name());
-        }
-    }
-} g_UNUSED_TEST_TT;
-
 CPPMARKUP_OBJECT_TEMPLATE(obj)
 {
     CPPMARKUP_DESCRIPTION_BELOW("설명 설명 설명");
     CPPMARKUP_ADD(ShouldRefreshEveryReceive, false,
-                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+                  CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
+                  CPPMARKUP_ATTRIBUTE(IntervalMsB, 153);
+                  CPPMARKUP_ATTRIBUTE(IntervalMsC, "Alah hu akbarr"); 
+                  CPPMARKUP_ATTRIBUTE(IntervalMsCGF, false););
 
     CPPMARKUP_ADD(TestArray, CPPMARKUP_ARRAY(1, 2, 45));
     CPPMARKUP_ADD(TestBoolean, CPPMARKUP_ARRAY(false, true));
     CPPMARKUP_ADD(TestStrArray, CPPMARKUP_ARRAY("a", "b", "c", "d..."));
-    CPPMARKUP_ADD(TestBoolMap, CPPMARKUP_MAP("Hell,", true, "Abc", false));
 
     CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
                   CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
@@ -178,7 +162,8 @@ CPPMARKUP_OBJECT_TEMPLATE(elser)
         CPPMARKUP_ADD(TestObjMap, CPPMARKUP_MAP("Hell", obj{}, "Abc", obj{}));
         CPPMARKUP_ADD(TestObjArray, CPPMARKUP_ARRAY(obj::get_default(), obj::get_default()));
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveA, 0.432,
-                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
+                      CPPMARKUP_ATTRIBUTE(IntervalMs, 15);
+                      CPPMARKUP_ATTRIBUTE(IntervalMsBc, 1541););
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveB, 0.432,
                       CPPMARKUP_ATTRIBUTE(IntervalMs, 15));
         CPPMARKUP_ADD(ShouldRefreshEveryReceiveC, 0.432,
@@ -227,18 +212,18 @@ TEST_CASE("CppMarkup", "Object body Template")
     static_assert(std::is_nothrow_move_assignable_v<superobj>);
 
     elser cc;
-    elser cd;
+    superobj cd;
 
     cd.reset();
     ::kangsw::markup::u8string str;
     ::kangsw::markup::json_dump dmp{str, 4, 0};
     ::kangsw::markup::dump(dmp, cd);
 
+    std::cout << dmp.buff;
+
     auto& vv = r.TestStrArray.value();
 
     auto p = r.props();
-
-    auto c = r.TestBoolMap.value();
 
     elser car;
 

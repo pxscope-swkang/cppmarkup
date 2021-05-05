@@ -4,7 +4,7 @@ void kangsw::markup::object::reset()
 {
     for (auto& p : props()) {
         auto elem = p.memory(this);
-        p.pinitializer(elem);
+        p.pinitializer(p.value(elem));
 
         for (auto& attr : p.attributes) {
             attr.pinitializer(attr.memory(elem));

@@ -18,7 +18,9 @@ class array_proxy {
     enum { _is_const_array = std::is_const_v<std::remove_pointer_t<Vp_>> };
 
 public:
-    using container_type = std::conditional_t<_is_const_array, const std::vector<Ty_>, std::vector<Ty_>>;
+    using container_type  = std::conditional_t<_is_const_array, const std::vector<Ty_>, std::vector<Ty_>>;
+    using const_reference = typename container_type::const_reference;
+    using reference       = typename container_type::reference;
 
 public:
     array_proxy(Vp_ vp)
@@ -28,12 +30,12 @@ public:
     auto empty() const { return _m.empty(); }
     auto size() const { return _m.size(); }
 
-    auto& operator[](size_t i) const { return _m[i]; }
-    auto& operator[](size_t i) { return _m[i]; }
-    auto& at(size_t i) const { return _m.at(i); }
-    auto& at(size_t i) { return _m.at(i); }
+    const_reference operator[](size_t i) const { return _m[i]; }
+    reference operator[](size_t i) { return _m[i]; }
+    const_reference at(size_t i) const { return _m.at(i); }
+    reference at(size_t i) { return _m.at(i); }
 
-    auto& append() { return _m.emplace_back(); }
+    reference append() { return _m.emplace_back(); }
     auto reserve(size_t count) { return _m.reserve(count); }
     size_t erase(size_t from, size_t to) { return _m.erase(_m.begin() + from, _m.begin() + to) - _m.begin(); }
     size_t erase(size_t pos) { return _m.erase(_m.begin() + pos) - _m.begin(); }
@@ -74,6 +76,10 @@ private:
 
 template <>
 class array_proxy<object, void const*> {
+public:
+    using const_reference = object const&;
+    using reference = object&;
+
 public:
     array_proxy(object_vector_manip const* api, void const* objarr)
         : _f(api)
@@ -150,10 +156,10 @@ private:
 };
 
 template <typename Ty_, typename Vp_>
-decltype(auto) make_primitive_array_proxy(Vp_ ptr) { return array_proxy<Ty_, Vp_>{ptr}; }
+decltype(auto) make_primitive_array_proxy(Vp_ ptr) { return array_proxy<Ty_, Vp_>(ptr); }
 
 template <typename Vp_>
-decltype(auto) make_object_array_proxy(object_vector_manip const* api, Vp_ ptr) { return array_proxy<object, Vp_>{api, ptr}; }
+decltype(auto) make_object_array_proxy(object_vector_manip const* api, Vp_ ptr) { return array_proxy<object, Vp_>(api, ptr); }
 
 /**
  * TODO: std::map<u8string, object&> 와 같은 함수 시그네쳐

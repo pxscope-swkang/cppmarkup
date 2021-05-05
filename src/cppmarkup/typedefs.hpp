@@ -21,12 +21,19 @@ namespace kangsw::markup {
 // #else
 // #endif
 
-using u8string            = std::string;
-using u8string_view       = std::string_view;
+using u8string      = std::string;
+using u8string_view = std::string_view;
 
 /** 명시적인 바이너리 타입을 나타냅니다. Markup에는 base64로 인코딩 됨. */
 struct binary_chunk {
-    std::vector<std::byte> data;
+
+    auto& bytes() const { return _data; }
+    auto& bytes() { return _data; }
+    auto& chars() const { return reinterpret_cast<std::vector<char> const&>(_data); }
+    auto& chars() { return reinterpret_cast<std::vector<char>&>(_data); }
+
+private:
+    std::vector<std::byte> _data;
 };
 
 /** 데이터 고속 송수신을 위한 바이너리 표현입니다. */
@@ -46,10 +53,11 @@ struct marshalerr_t {
     enum type : intptr_t {
         ok,
 
-        fail = std::numeric_limits<std::underlying_type_t<type>>::min(), // 0x10000000'00000000...
-        invalid_format = -1,
-        invalid_type = -2,
+        fail                   = std::numeric_limits<std::underlying_type_t<type>>::min(), // 0x10000000'00000000...
+        invalid_format         = -1,
+        invalid_type           = -2,
         missing_matching_brace = -3,
+        value_out_of_range     = -4,
 
     } value;
 

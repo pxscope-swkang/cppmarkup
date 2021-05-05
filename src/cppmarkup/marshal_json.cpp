@@ -1,6 +1,8 @@
 #include "marshal_json.hpp"
 #include "base64.hxx"
 #include "object.hpp"
+
+#include <charconv>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -20,7 +22,7 @@ template <> void to_json_value(json_dump& to, binary_chunk const& v)
 {
     to.dest << '"';
     // base64 encoding
-    kangsw::base64::encode(v.data.data(), v.data.size(), std::ostream_iterator<char>{to.dest});
+    kangsw::base64::encode(v.bytes().data(), v.bytes().size(), std::ostream_iterator<char>{to.dest});
     to.dest << '"';
 }
 
@@ -184,42 +186,108 @@ size_t find_initial_char(u8string_view const& src, u8string_view const& allowed,
 }
 
 template <typename Ty_>
-marshalerr_t parse_array(parser_context& context, Ty_& to, u8string_view& from)
+marshalerr_t parse_array(parser_context& context, Ty_& to, u8string_view& ss)
 {
-    return {};
+    return marshalerr_t::fail;
 }
 
 template <typename Ty_>
-marshalerr_t parse_value(parser_context& context, Ty_& to, u8string_view& from)
+marshalerr_t parse_value(parser_context& context, Ty_& to, u8string_view& ss)
 { // 모든 파서는 원본 스트링 뷰를 갱신함.
-    return {};
+    // 함수 진입 시, 항상 ss 는 값의 첫 캐릭터를 가리킴이 보장됩니다.
+    std::from_chars_result result = std::from_chars(&*ss.begin(), &*ss.end(), to);
+
+    if (result.ec == std::errc::invalid_argument) { return marshalerr_t::invalid_type; }
+    if (result.ec == std::errc::result_out_of_range) { return marshalerr_t::value_out_of_range; }
+
+    auto next   = result.ptr;
+    auto offset = next - ss.data();
+
+    ss = ss.substr(offset);
+    return marshalerr_t::ok;
 }
 
 template <>
-marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& from)
+marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& ss)
 {
-    return {};
+    static const std::regex match_str{R"_("((?:[^"\\]|\\.)*)")_"};
+    auto& match = context._match_result_memory;
+    if (!std::regex_search(ss.begin(), ss.end(), match, match_str)) {
+        return marshalerr_t::invalid_format;
+    }
+
+    to = std::move(match[1].str());
+    ss = ss.substr(match.length());
+    return marshalerr_t::ok;
 }
+
+template <>
+marshalerr_t parse_value(parser_context& context, [[maybe_unused]] nullptr_t& to, u8string_view& ss)
+{ // find 'null' from input json str ...
+    if (ss.rfind("null") != 0) { return marshalerr_t::invalid_type; }
+
+    ss = ss.substr(4); // next character of "null"
+    return marshalerr_t::ok;
+}
+template <>
+marshalerr_t parse_value(parser_context& context, binary_chunk& to, u8string_view& ss)
+{
+    if (ss.size() < 2) { return marshalerr_t::invalid_format; } // minimum: ""
+    if (ss[0] != '"') { return marshalerr_t::invalid_type; }
+
+    auto end = ss.find('"', 1);
+    if (end == ss.npos) { return marshalerr_t::invalid_format; }
+
+    auto b64str = ss.substr(1, end - 1);
+    if ((b64str.size() & 0x03) != 0) { return marshalerr_t::invalid_type; } // always be multiplicand of 4...
+
+    to.chars().clear(), to.chars().reserve(kangsw::base64::decoded_size(b64str.size()));
+    if (!kangsw::base64::decode(b64str.begin(), b64str.end(), std::back_inserter(to.chars()))) {
+        return marshalerr_t::invalid_type;
+    }
+
+    ss = ss.substr(end + 1);
+    return marshalerr_t::ok;
+}
+
+template <>
+marshalerr_t parse_value(parser_context& context, bool& to, u8string_view& ss)
+{
+    if (ss.rfind("true") == 0) {
+        to = true;
+    }
+    else if (ss.rfind("false") == 0) {
+        to = false;
+    }
+    else {
+        return marshalerr_t::invalid_type;
+    }
+
+    ss = ss.substr(5 - to); // next character of "null"
+    return marshalerr_t::ok;
+}
+
+marshalerr_t parse_object(parser_context& context, element_type const& ty, void* memory, u8string_view& ss);
 
 marshalerr_t parse_memory(parser_context& context, element_type const& ty, void* memory, u8string_view& ss)
 {
-#define PEWPEW(type)                                           \
-    if (ty.is_array())                                         \
-        parse_array(context, *(std::vector<type>*)memory, ss); \
-    else                                                       \
-        parse_value(context, *(type*)memory, ss);              \
-    break
+    // TODO: parse_map에 대한 처리 추가
+#define PEWPEW(type)                                                  \
+    if (ty.is_array())                                                \
+        return parse_array(context, *(std::vector<type>*)memory, ss); \
+    else                                                              \
+        return parse_value(context, *(type*)memory, ss);
 
     // clang-format off
     switch (ty.value_type()) {
-        case element_type::null: break;
+        case element_type::null:            PEWPEW(nullptr_t);
         case element_type::boolean:         PEWPEW(bool);
         case element_type::integer:         PEWPEW(int64_t);
         case element_type::floating_point:  PEWPEW(double);
         case element_type::string:          PEWPEW(u8string);
         case element_type::binary:          PEWPEW(binary_chunk);
-        case element_type::object:
-            // TODO: object는 따로 처리 
+        case element_type::object:          return parse_object(context, ty,memory, ss);
+
         default:;
     }
     // clang-format on
@@ -243,7 +311,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     }
 
     for (bool do_continue = true; do_continue;) {
-        static const std::regex regex_tag{R"_(\s*"((?:[^"\\]|\\.)*)"\s*:)_"};
+        static const std::regex regex_tag{R"_(\s*"((?:[^"\\]|\\.)*)"\s*:\s*)_"};
         auto& result = context._match_result_memory;
 
         // 2. 태그 찾기
@@ -297,6 +365,19 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     return marshalerr_t::ok;
 }
 
+marshalerr_t parse_object(parser_context& context, element_type const& ty, void* memory, u8string_view& ss)
+{
+    if (ty.is_array()) {
+        return marshalerr_t::fail;
+    }
+    else if (ty.is_map()) {
+        // TODO
+        return marshalerr_t::fail;
+    }
+    else {
+        return parse_value(context, *(object*)memory, ss);
+    }
+}
 } // namespace
 
 kangsw::markup::marshalerr_t

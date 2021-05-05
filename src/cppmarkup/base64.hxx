@@ -31,6 +31,11 @@ constexpr uint8_t _table_decode[256] = {
     // clang-format on
 };
 
+constexpr bool is_valid_b64_char(char ch)
+{
+    return _table_decode[ch] != 0xcc;
+}
+
 inline void _encode_blk(char* o, void const* i)
 {
     auto ch = (uint8_t*)i;
@@ -83,8 +88,9 @@ bool decode(InIt_ start, InIt_ const end, OutIt_ o)
         if (pad_pos < 2) { return false; }
 
         for (int i = 0; i < pad_pos; ++i) {
-            oblk |= _table_decode[iblk[i]] << (3 - i) * 6;
-            if (_table_decode[iblk[i]] == 0xcc) { return false; }
+            auto bitval = _table_decode[iblk[i]];
+            if (bitval == 0xcc) { return false; }
+            oblk |= bitval << (3 - i) * 6;
         }
 
         auto& chset = reinterpret_cast<std::array<const char, 3>&>(oblk);

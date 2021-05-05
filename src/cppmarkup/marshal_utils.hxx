@@ -13,10 +13,10 @@ namespace impl {
         FnMap_&& fnm)
     {
         enum { is_const = std::is_const_v<std::remove_pointer_t<Vp_>> };
-        using value_type = std::conditional<is_const, Ty_ const, Ty_>;
+        using value_type = std::conditional_t<is_const, Ty_ const, Ty_>;
 
         if (prop.type.is_array()) {
-            if (prop.type.is_object()) {
+            if constexpr (std::is_base_of_v<object, Ty_>) {
                 return fna(make_object_array_proxy(prop.as_array(), memory));
             }
             else {
@@ -25,7 +25,7 @@ namespace impl {
         }
         if (prop.type.is_map()) {
             // TODO
-            if (prop.type.is_object()) {
+            if constexpr (std::is_base_of_v<object, Ty_>) {
             }
             else {
             }
@@ -34,11 +34,11 @@ namespace impl {
         return fne(*(value_type*)memory);
     }
 
-    template <class Ty_, class Vp_, class FnElem_, class FnArray_, class FnMap_>
+    template <class Ty_, class Vp_, class FnElem_>
     decltype(auto) select_type_handler_attr(Vp_ memory, FnElem_&& fne)
     {
         enum { is_const = std::is_const_v<std::remove_pointer_t<Vp_>> };
-        using value_type = std::conditional<is_const, Ty_ const, Ty_>;
+        using value_type = std::conditional_t<is_const, Ty_ const, Ty_>;
 
         return fne(*(value_type*)memory);
     }
@@ -113,7 +113,7 @@ decltype(auto) select_type_handler_attr(
         case element_type::binary:  
             return impl::select_type_handler_attr<binary_chunk>(memory, std::forward<FnElem_>(fne));
                                     
-        case element_type::object:  [[fallthrough]]
+        case element_type::object:  
         default: assert(false && "Should not enter this code");
         case element_type::null:    return impl::select_type_handler_attr<nullptr_t>(memory, std::forward<FnElem_>(fne));
     }

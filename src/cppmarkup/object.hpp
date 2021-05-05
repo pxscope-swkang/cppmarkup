@@ -200,10 +200,10 @@ private:
  * 특수화되지 않은 함수의 사용은 항상 실패합니다.
  */
 template <typename Markup_>
-marshalerr_t parse(object& to, Markup_ const& from) { static_assert(false); }
+marshalerr_t parse(object& to, Markup_ from) { static_assert(false); }
 
 template <typename Markup_>
-marshalerr_t dump(Markup_& to, object const& from) { static_assert(false); }
+marshalerr_t dump(Markup_ to, object const& from) { static_assert(false); }
 
 /**
  * XML, 또는 JSON 오브젝트를 나타냅니다.
@@ -292,7 +292,8 @@ namespace impl {
 
         ~object_base() noexcept override // 가장 늦게 호출 보장
         {
-            INTERNAL_CPPMARKUP_UNLIKELY if (INTERNAL_is_first_entry) {
+            INTERNAL_CPPMARKUP_UNLIKELY if (INTERNAL_is_first_entry)
+            {
                 INTERNAL_is_first_entry = false;
             }
         }

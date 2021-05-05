@@ -31,7 +31,7 @@ struct json_dump {
     int initial_indent = 0;
 };
 
-marshalerr_t parse(object& to, json_parse const& from);
-marshalerr_t dump(json_dump& to, object const& from);
+marshalerr_t parse(object& to, json_parse from);
+marshalerr_t dump(json_dump to, object const& from);
 
 } // namespace kangsw::markup

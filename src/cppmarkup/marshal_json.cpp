@@ -144,7 +144,7 @@ void to_json_array(json_dump& to, array_proxy<Ty_, void const*> proxy)
 } // namespace
 
 kangsw::markup::marshalerr_t
-kangsw::markup::dump(json_dump& to, object const& from)
+kangsw::markup::dump(json_dump to, object const& from)
 {
     to_json_value(to, from);
     break_indent(to, indent::apply);
@@ -348,7 +348,7 @@ marshalerr_t parse_array(parser_context& context, array_proxy<Ty_, void*> to, u8
 } // namespace
 
 kangsw::markup::marshalerr_t
-kangsw::markup::parse(object& to, json_parse const& from)
+kangsw::markup::parse(object& to, json_parse from)
 {
     // 앞에서부터 캐릭터 하나씩 iterate ...
     // 푸시다운 오토마타로 구현 ...

@@ -80,8 +80,8 @@ struct element_type {
         integer,
         floating_point,
         string,
-        object,
         binary,
+        object,
 
         number = 0x10,
 

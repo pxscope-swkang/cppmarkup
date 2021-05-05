@@ -1,96 +1,35 @@
-# EZDATA
+# kangsw::markup
 
-c++ <-> json, xml 간 데이터 바인딩 라이브러리
+This library provides easy-to-use interface for data binding between markup formats(JSON) and c++ native structures.
 
-## Contraints
+Markup object, which is representative data type of this library, exposes set of properties to describe an object, makes easy extend with other markup formats.
 
-XML은 <OuterTag>PlainText<InnerTag/></OuterTag>등과 같이, plain text와 tag를 혼용할 수 없음. 순서에 둔감함 (JSON과 호환)
+You can define native structure with set of macros, which will create runtime native structure description automatically.
 
-# 사용 예제
+You can iterate objects' properties only with `markup::object` pointers, without any detailed type information. 
 
-```c++
-// 서술적 문법 ...
-// 등장 순서대로 빌드하며, 문맥은 컴파일 단위로 저장(단순 static 변수)
-CPPMARKUP_OBJECT_TEMPLATE(template_type_name) 
-{
-    // <VoidName Value="3"/>
-    // 뒤쪽의 어트리뷰트는 attribute 구조체를 만들어 이를 상속하는 식으로 구현
-    CPPMARKUP_ADD(
-        value_id_void, "VoidName", void,
-        CPPMARKUP_ATTR(AttrName1, "DefaultValue1"),
-        CPPMARKUP_ATTR(AttrName2, "DefaultValue2"));
-        
-    // 바로 아래 엘리먼트의 설명 작성
-    CPPMARKUP_DESCRIPTION(
-        "lorem ipsum fa er .. qw.e.fdasdvccc ..."
-        "나랏말싸미 듕귁에 달아 ....");
-    
-    // <IntName>3</IntName>
-    CPPMARKUP_ADD(value_id_int, "IntName", 3);
-    
-    // 내부에 중첩도 가능.
-    CPPMARKUP_OBJECT_TEMPLATE(nested0)
-    {
-        
-    };
-    CPPMARKUP_ADD(annonymous0, "Annonymous", nested0{});
-    
-    // 배열 표현, initializer_list로 표현할 수 있어야 함(타입 항상 동일)
-    CPPMARKUP_ADD_ARRAY(array_id, "Array", {3, 4, 5, 6}, CPPMARKUP_ATTR(a, "C"));
-    CPPMARKUP_ADD_ARRAY(array_id2, "Array2", {nested0{}, nested0{}});
-};
+This works similarly with reflection of managed languages, however, this doesn't support runtime type modification, which is pretty out of focus of this library.
 
-// 오브젝트 중첩 ...
-CPPMARKUP_OBJECT_TEMPLATE(nested_object_type_name)
-{
-    CPPMARKUP_ADD(
-        nested_id,
-        "NestedObj", 
-        template_type_name{
-            .value_id_void{.attributes{.AttrName1="Abc", .AttrName2="Def"}},
-            .value_id_int{.value=3}},
-        CPPMARKUP_ATTR(AttrName1, "DefaultValue1"));
-};
+# Usage
 
+```c++:tests/automation/test-common-type.hpp
 ```
 
-# 구현 노트
+## Note
 
-오브젝트 템플릿은 단순히 새로운 구조체 타입을 정의 ... 파싱 및 덤프 될 수 있음
+Unlike common XML files, CPPMARKUP notations does not allow mixing both plain text and tags. 
 
-기본적으로 파싱/덤핑 템플릿 함수로 동작, 그러나 CPPMARKUP_base_object를 상속하는 함수에 대한 특수화로 재귀적 파싱 구현
+```xml
+<-- THIS IS NOT ALLOWED -->
+<som_tag>
+    plain text. plain text. plain text. plain text. plain text. <some_other_tag></some_other_tag> plain text. plain text. plain text. 
+</som_tag>
+```
 
-`CPPMARKUP_OBJECT_TEMPLATE`는 파싱 규칙 벡터를 멤버로 갖는 클래스를 상속, 현재 스코프에서 정적 인라인 변수 `node_list` 이름을 자신의 것으로 설정. (즉, 중첩이 가능)
+You'd better to understand markup handling of this library as JSON; simple set of key-value pairs.
 
-`CPPMARKUP_ADD` 매크로는 등장 순서대로 `node_list`에 태그, 자기 구조체의 오프셋을 넣음.
 
-`CPPMARKUP_ATTR` 매크로는 `CPPMARKUP_ADD`가 푸시한 `node_list`의 가장 탑 엘리먼트의 `attrs` 배열에 자기 자신을 푸시하는 구조체를 생성. (매크로 각각 자신의 상대 오프셋을 집어넣음)
-
-`CPPMARKUP_DESCRIPTION`은 다음 `node_list`에 대한 push에서 release되는 문자열을 설정. 다음 인스턴스 한 개에 설명을 덧붙임.
-
-`CPPMARKUP_ADD_ARRAY`는 내부적으로 Tag 이름 밑에 중첩되는 다수의 `<elem>` 태그로 표현. 항상 `std::vector<std::decltype(std::initializer_list{ARR})::element_type>`
-
-Array 파싱은 두 가지 전략이 있음.
-
-하나는 모든 array parsing 시나리오에 대해 overload .. 다른 하나는 템플릿으로 공통 로직 뽑아내기.
-
-엘리먼트 파싱은 다음의 과정
-
-1. 노드를 iterate; 각 노드에 대해
-   1. 태그를 현재 깊이에서 검색; 존재하면
-   2. 현재 노드가 가리키는 속성의, 오브젝트에 대한 오프셋 및 사이즈로 raw data 접근
-   3. 파싱 로직 적용
-   4. 성공 시 continue
-
-엘리먼트 덤프는 다음의 과정
-
-1. 노드를 iterate; 각 노드에 대해
-   1. 목적 마크업 표현에 태그를 생성
-   2. 현재 노드가 가리키는 속성의, 오브젝트에 대한 오프셋 및 사이즈로 raw data 접근
-   3. 덤프 로직을 적용
-   4. 항상 성공
 
 # References
 
-1. [`nlohmann/json`](https://github.com/nlohmann/json)
-2. [`zeux/pugixml`](https://github.com/zeux/pugixml)
+1. [`zeux/pugixml`](https://github.com/zeux/pugixml)

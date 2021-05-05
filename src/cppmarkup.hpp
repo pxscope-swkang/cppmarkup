@@ -1,6 +1,5 @@
 #pragma once
 #include "cppmarkup/impl_macros.hpp"
-#include "cppmarkup/marshal_defaults.hpp"
 
 /*
 -----------------------------------------------------------------------------------

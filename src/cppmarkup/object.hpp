@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "hash.hpp"
-#include "marshal_defaults.hpp"
 #include "template_utils.hxx"
 #include "typedefs.hpp"
 

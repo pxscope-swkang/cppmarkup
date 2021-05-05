@@ -29,6 +29,7 @@ namespace impl {
             }
             else {
             }
+            assert(false);
         }
 
         return fne(*(value_type*)memory);

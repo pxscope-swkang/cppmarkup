@@ -24,7 +24,7 @@ struct json_parse {
 };
 
 struct json_dump {
-    std::ostream& dest;
+    u8string& buff;
 
     // 아래로 포맷팅 옵션 ...
     int indent         = -1; // 0 이상의 값 지정 시 개행 문자 삽입됨

@@ -1,5 +1,7 @@
 #include "marshal_json.hpp"
 #include "base64.hxx"
+#include "container_proxy.hxx"
+#include "marshal_utils.hxx"
 #include "object.hpp"
 
 #include <charconv>
@@ -13,142 +15,130 @@ using namespace kangsw::markup;
 ////////////////////////////////////////////////////////////////////////////////////////// DUMPING
 
 namespace {
-/** TO_STRING과 유사한 역할 수행 */
-template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v);
-template <> void to_json_value(json_dump& to, bool const& v) { to.dest << (v ? "true" : "false"); }
-template <> void to_json_value(json_dump& to, kangsw::markup::u8string const& v) { to.dest << '"' << v << '"'; }
+/** 인덴트 기능 */
+struct indent {
+    enum type {
+        apply    = 0x1,
+        conf_fwd = 0x2,
+        conf_bwd = 0x4
+    } _value;
 
-template <> void to_json_value(json_dump& to, binary_chunk const& v)
-{
-    to.dest << '"';
-    // base64 encoding
-    kangsw::base64::encode(v.bytes().data(), v.bytes().size(), std::ostream_iterator<char>{to.dest});
-    to.dest << '"';
-}
+    operator type() const { return _value; }
 
-enum class indent_dir {
-    apply,
-    conf_fwd,
-    conf_bwd
+    // clang-format off
+    indent(type v) : _value(v) {} 
+    indent(int v) : _value((type)v) {}
+    // clang-format on
 };
 
-void break_indent(json_dump& to, indent_dir dir)
+void break_indent(json_dump& to, indent dir = indent::apply)
 {
     if (to.indent <= 0) { return; }
 
-    switch (dir) {
-        case indent_dir::apply:
-            to.dest << '\n'
-                    << std::setw(to.initial_indent) << "";
-            break;
-        case indent_dir::conf_fwd: to.initial_indent += to.indent; break;
-        case indent_dir::conf_bwd: to.initial_indent -= to.indent; break;
-        default: throw;
-    }
+    if (dir & indent::conf_fwd) { to.initial_indent += to.indent; }
+    if (dir & indent::conf_bwd) { to.initial_indent -= to.indent; }
+    if (dir & indent::apply) { to.buff += '\n', to.buff.append(to.initial_indent, ' '); }
 }
 
-void to_json_value_from_object(json_dump& to, void const* m, property const& prop);
+/** concatenator */
+template <typename Ty_>
+u8string& operator|(u8string& l, Ty_&& t) { return l += std::forward<Ty_>(t); }
 
-#define DO_GENERATE(ty)                                      \
-    if (prop.type.is_array())                                \
-        to_json_value(to, *(std::vector<ty>*)memory);        \
-    else if (prop.type.is_map())                             \
-        to_json_value(to, *(std::map<u8string, ty>*)memory); \
-    else                                                     \
-        to_json_value(to, *(ty*)memory);                     \
-    break;
-
-template <> void to_json_value(json_dump& to, kangsw::markup::object const& from)
-{
-    auto& props = from.props();
-    auto& out   = to.dest;
-    out << '{';
-    break_indent(to, indent_dir::conf_fwd);
-
-    for (int i = 0; i < props.size(); ++i) {
-        auto& prop         = props[i];
-        void const* memory = (char*)&from + prop.memory.elem_offset + prop.memory.value_offset;
-
-        // TODO: attribute는 값보다 먼저 덤프 ...
-        for (auto& attr : prop.attributes) {
-            auto attr_memory = attr.get(memory);
-        }
-
-        break_indent(to, indent_dir::apply);
-        out << '"' << prop.tag << "\": ";
-
-        // 오브젝트 타입별로 다른 동작
-        switch (prop.type.value_type()) {
-            case element_type::null: out << "null"; break;
-            case element_type::boolean: DO_GENERATE(bool);
-            case element_type::integer: DO_GENERATE(int64_t);
-            case element_type::floating_point: DO_GENERATE(double);
-            case element_type::string: DO_GENERATE(u8string);
-            case element_type::binary: DO_GENERATE(binary_chunk);
-            case element_type::object: to_json_value_from_object(to, memory, prop); break;
-            default:;
-        }
-
-        if (i + 1 < props.size()) { out << ','; }
-    }
-
-    break_indent(to, indent_dir::conf_bwd);
-    break_indent(to, indent_dir::apply);
-    out << '}';
-}
-#undef DO_GENERATE
-
+/** TO_STRING과 유사한 역할 수행 */
 template <typename Ty_> void to_json_value(json_dump& to, Ty_ const& v)
 {
-    if constexpr (kangsw::templates::is_specialization<Ty_, std::vector>::value) {
-        to.dest << '[';
-        break_indent(to, indent_dir::conf_fwd);
+    to.buff += std::to_string(v);
+}
+template <> void to_json_value(json_dump& to, bool const& v) { to.buff += (v ? "true" : "false"); }
+template <> void to_json_value(json_dump& to, nullptr_t const& v) { to.buff += "null"; }
 
-        for (size_t i = 0, iend = v.size(); i < iend; ++i) {
-            break_indent(to, indent_dir::apply);
-            to_json_value(to, v[i]);
-
-            if (i + 1 < iend) { to.dest << ','; }
-        }
-
-        break_indent(to, indent_dir::conf_bwd);
-        break_indent(to, indent_dir::apply);
-        to.dest << ']';
-    }
-    else if constexpr (kangsw::templates::is_specialization<Ty_, std::map>::value) {
-        // TODO map 처리
-    }
-    else {
-        to.dest << v;
-    }
+template <>
+void to_json_value(json_dump& to, kangsw::markup::u8string const& v)
+{
+    to.buff | '"' | v | '"';
 }
 
-void to_json_value_from_object(json_dump& to, void const* m, property const& prop)
+template <> void
+to_json_value(json_dump& to, binary_chunk const& v)
 {
-    if (prop.type.is_array()) {
-        auto fn = prop.as_array();
-        assert(fn);
+    to.buff | '"';
+    kangsw::base64::encode(v.bytes().data(), v.bytes().size(), std::back_inserter(to.buff));
+    to.buff | '"';
+}
 
-        to.dest << '[';
-        break_indent(to, indent_dir::conf_fwd);
+template <typename Ty_>
+void to_json_array(json_dump& to, array_proxy<Ty_, void const*> const& proxy);
 
-        for (size_t i = 0, iend = fn->size(m); i < iend; ++i) {
-            break_indent(to, indent_dir::apply);
+/** 오브젝트 덤핑 로직 */
+template <> void to_json_value(json_dump& to, object const& v)
+{
+    to.buff += '{';
+    break_indent(to, indent::conf_fwd);
+    auto& props = v.props();
 
-            to_json_value(to, *fn->at(m, i));
-            if (i + 1 < iend) { to.dest << ','; }
+    for (auto& prop : props) {
+        break_indent(to);
+
+        auto prop_memory  = prop.memory(&v);
+        size_t prop_index = &prop - props.data();
+
+        if (!prop.attributes.empty()) {
+            // 어트리뷰트 덤프
+            to.buff | '"' | prop.tag | "~@@ATTR@@" | "\": {";
+            break_indent(to, indent::conf_fwd);
+
+            for (auto& attr : prop.attributes) {
+                break_indent(to);
+
+                size_t attr_index       = &attr - prop.attributes.data();
+                void const* attr_memory = attr.memory(prop_memory);
+
+                to.buff | '"' | attr.name | "\": ";
+                select_type_handler_attr(
+                    attr.type, attr_memory,
+                    [&to](auto& v) { to_json_value(to, v); });
+
+                if (attr_index + 1 < prop.attributes.size()) { to.buff | ','; }
+            }
+
+            break_indent(to, indent::conf_bwd | indent::apply);
+            to.buff | "}, ";
+            break_indent(to); // for property ...
         }
 
-        break_indent(to, indent_dir::conf_bwd);
-        break_indent(to, indent_dir::apply);
-        to.dest << ']';
+        { // 프로퍼티 덤프
+            to.buff | '"' | prop.tag | '"' | ": ";
+            select_type_handler(
+                prop,
+                prop.value(prop_memory),
+                [&to](auto& v) { to_json_value(to, v); },
+                [&to](auto& v) { to_json_array(to, v); },
+                [&to](auto& v) { /*TODO*/ });
+        }
+
+        if (prop_index + 1 < props.size()) { to.buff | ','; }
     }
-    else if (prop.type.is_map()) {
-        // TODO: map 처리
+
+    break_indent(to, indent::conf_bwd | indent::apply);
+    to.buff += '}';
+}
+
+template <typename Ty_>
+void to_json_array(json_dump& to, array_proxy<Ty_, void const*> const& proxy)
+{
+    to.buff | '[';
+    break_indent(to, indent::conf_fwd);
+
+    for (size_t i = 0, end = proxy.size(); i < end; ++i) {
+        break_indent(to);
+        typename array_proxy<Ty_, void const*>::const_reference e = proxy[i];
+        to_json_value(to, e);
+
+        if (i + 1 < end) { to.buff | ','; }
     }
-    else {
-        to_json_value(to, *(object const*)m);
-    }
+
+    break_indent(to, indent::conf_bwd | indent::apply);
+    to.buff | ']';
 }
 
 } // namespace
@@ -157,7 +147,7 @@ kangsw::markup::marshalerr_t
 kangsw::markup::dump(json_dump& to, object const& from)
 {
     to_json_value(to, from);
-    break_indent(to, indent_dir::apply);
+    break_indent(to, indent::apply);
     return marshalerr_t::ok;
 }
 
@@ -188,6 +178,7 @@ size_t find_initial_char(u8string_view const& src, u8string_view const& allowed,
 template <typename Ty_>
 marshalerr_t parse_array(parser_context& context, Ty_& to, u8string_view& ss)
 {
+    // TODO
     return marshalerr_t::fail;
 }
 
@@ -210,7 +201,7 @@ marshalerr_t parse_value(parser_context& context, Ty_& to, u8string_view& ss)
 template <>
 marshalerr_t parse_value(parser_context& context, u8string& to, u8string_view& ss)
 {
-    static const std::regex match_str{R"_("((?:[^"\\]|\\.)*)")_"};
+    static const std::regex match_str{R"_("((?:[|"\\]|\\.)*)")_"};
     auto& match = context._match_result_memory;
     if (!std::regex_search(ss.begin(), ss.end(), match, match_str)) {
         return marshalerr_t::invalid_format;
@@ -311,7 +302,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
     }
 
     for (bool do_continue = true; do_continue;) {
-        static const std::regex regex_tag{R"_(\s*"((?:[^"\\]|\\.)*)"\s*:\s*)_"};
+        static const std::regex regex_tag{R"_(\s*"((?:[|"\\]|\\.)*)"\s*:\s*)_"};
         auto& result = context._match_result_memory;
 
         // 2. 태그 찾기
@@ -339,12 +330,12 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             auto pprop = to.find_property(tag);
             if (pprop == nullptr) { continue; } // 없으면 그냥 무시
 
-            auto prop_memory = pprop->get(&to);
+            auto prop_memory = pprop->memory(&to);
             auto& attrs      = pprop->attributes;
 
             // 2.5.1 각 어트리뷰트에 대해 파서 돌리기
             for (auto& attr : attrs) {
-                auto memory = attr.get(prop_memory);
+                auto memory = attr.memory(prop_memory);
 
                 auto parse_result = parse_memory(context, pprop->type, memory, ss);
                 if (parse_result != marshalerr_t::ok) { return parse_result; }
@@ -354,7 +345,7 @@ marshalerr_t parse_value(parser_context& context, object& to, u8string_view& ss)
             // 3. 태그에 대응되는 프로퍼티 찾기
             auto pprop = to.find_property(tag);
             if (pprop == nullptr) { continue; } // 없으면 그냥 무시
-            auto memory = pprop->get(&to);
+            auto memory = pprop->memory(&to);
 
             auto parse_result = parse_memory(context, pprop->type, memory, ss);
             if (parse_result != marshalerr_t::ok) { return parse_result; }

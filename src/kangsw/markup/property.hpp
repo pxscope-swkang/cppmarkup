@@ -31,9 +31,7 @@ public:
         void const* base(object const* obj) const { return reinterpret_cast<char const*>(obj) + offset_from_owner_object; }
 
         template <typename Ty_>
-        Ty_ const* as(object* obj) const
-        {
-        }
+        auto& as(object const* obj) const { return *static_cast<etype::deduce_result_t<Ty_>*>((*this)(obj)); }
     };
 
     struct attribute {
@@ -48,8 +46,7 @@ public:
     property(u8str&& tag, u8str&& doc, memory_layout&& value)
         : _tag(std::move(tag))
         , _doc(std::move(doc))
-        , _memory(std::move(value))
-    {}
+        , _memory(std::move(value)) {}
 
     // for internal usage
     void _add_attr(attribute&& attr) { _attr.push_back(std::move(attr)); }

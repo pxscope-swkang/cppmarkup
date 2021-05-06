@@ -31,13 +31,11 @@ constexpr uint8_t _table_decode[256] = {
     // clang-format on
 };
 
-constexpr bool is_valid_b64_char(char ch)
-{
+constexpr bool is_valid_b64_char(char ch) {
     return _table_decode[ch] != 0xcc;
 }
 
-inline void _encode_blk(char* o, void const* i)
-{
+inline void _encode_blk(char* o, void const* i) {
     auto ch = (uint8_t*)i;
     o[0]    = _table_encode[ch[0] >> 2];
     o[1]    = _table_encode[((ch[0] & 0x03) << 4) | (ch[1] >> (8 - 4))];
@@ -46,8 +44,7 @@ inline void _encode_blk(char* o, void const* i)
 }
 
 template <typename OutIt_>
-void encode(void const* data, size_t len, OutIt_&& o)
-{
+void encode(void const* data, size_t len, OutIt_&& o) {
     for (; len >= 3; len -= 3, data = (void*)(intptr_t(data) + 3)) {
         char oblk[4];
         _encode_blk(oblk, data);
@@ -73,8 +70,7 @@ void encode(void const* data, size_t len, OutIt_&& o)
 }
 
 template <typename InIt_, typename OutIt_>
-bool decode(InIt_ start, InIt_ const end, OutIt_ o)
-{
+bool decode(InIt_ start, InIt_ const end, OutIt_ o) {
     // TODO: 입력 이터레이터 타입인 InIt_를 항상 random_access_iterator로 가정하여 최적화하는 로직 추가; if constexpr로 이터레이터 검사해서 루틴 분리. 지금 로직도 필요는 함 ... (스트림 입력 등 읽어오기 위해)
     static_assert(sizeof *start == 1);
 

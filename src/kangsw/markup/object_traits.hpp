@@ -1,11 +1,8 @@
 #pragma once
 
-namespace kangsw::refl
-{
+namespace kangsw::refl {
 
-struct object_traits
-{
-    
+struct object_traits {
 };
 
-}
+} // namespace kangsw::refl

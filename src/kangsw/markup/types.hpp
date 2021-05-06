@@ -75,8 +75,7 @@ public:
 
 public:
     template <typename Ty_>
-    constexpr static etype from_type()
-    {
+    constexpr static etype from_type() {
         using namespace templates;
         using namespace std;
         using eval_type = std::remove_const_t<std::remove_reference_t<Ty_>>;
@@ -108,8 +107,7 @@ public:
 
 private:
     template <int V_>
-    static constexpr decltype(auto) _deduce_from_exact()
-    {
+    static constexpr decltype(auto) _deduce_from_exact() {
         auto constexpr V = V_ & ~number;
 
         // clang-format off
@@ -124,8 +122,7 @@ private:
     }
 
     template <int V_>
-    static constexpr decltype(auto) _deduce_from()
-    {
+    static constexpr decltype(auto) _deduce_from() {
         auto constexpr V = V_ & ~number;
 
         if constexpr (!etype(V).is_container()) {
@@ -148,36 +145,33 @@ private:
             std::remove_reference_t<decltype(*_deduce_from<V_>())> const*,
             std::remove_reference_t<decltype(*_deduce_from<V_>())>*>;
 
-    template <typename Ty_>
-    using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
-
 public:
     template <typename Ty_>
-    static decltype(auto) deduce(Ty_&& v)
-    {
+    using deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
+
+    template <typename Ty_>
+    static decltype(auto) deduce(Ty_&& v) {
         if constexpr (std::is_base_of_v<refl::object, Ty_>) {
             return std::forward<Ty_>(v);
         } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
             return nullptr;
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
-            return _deduce_result_t<Ty_>(v.begin(), v.end());
+            return deduce_result_t<Ty_>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
-            return _deduce_result_t<Ty_>(v.begin(), v.end());
+            return deduce_result_t<Ty_>(v.begin(), v.end());
         } else {
-            return _deduce_result_t<Ty_>(std::forward<Ty_>(v));
+            return deduce_result_t<Ty_>(std::forward<Ty_>(v));
         }
     }
 
     template <typename Ty_, size_t N>
-    static decltype(auto) deduce(Ty_ (&v)[N])
-    {
+    static decltype(auto) deduce(Ty_ (&v)[N]) {
         return u8str(v);
     }
 
     template <typename Ty_>
-    static decltype(auto) deduce(std::initializer_list<Ty_> v)
-    {
-        return std::vector<_deduce_result_t<Ty_>>(v.begin(), v.end());
+    static decltype(auto) deduce(std::initializer_list<Ty_> v) {
+        return std::vector<deduce_result_t<Ty_>>(v.begin(), v.end());
     }
 
 private:

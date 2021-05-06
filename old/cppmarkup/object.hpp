@@ -257,10 +257,10 @@ constexpr element_type get_element_type()
     else if constexpr (std::is_same_v<Ty_, u8string>) {
         return element_type::string;
     }
-    else if constexpr (templates::is_specialization<Ty_, std::vector>::value) {
+    else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
         return get_element_type<typename Ty_::value_type>() | element_type::array;
     }
-    else if constexpr (templates::is_specialization<Ty_, std::map>::value) {
+    else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
         return get_element_type<typename Ty_::mapped_type>() | element_type::map;
     }
     else {
@@ -406,12 +406,12 @@ namespace impl {
     template <typename Ty_>
     constexpr container_type check_object_container()
     {
-        if constexpr (templates::is_specialization<Ty_, std::vector>::value) {
+        if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
             return std::is_base_of_v<object, typename Ty_::value_type>
                        ? container_type::object_array
                        : container_type::other;
         }
-        else if constexpr (templates::is_specialization<Ty_, std::map>::value) {
+        else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
             return std::is_base_of_v<object, typename Ty_::mapped_type>
                        ? container_type::object_map
                        : container_type::other;

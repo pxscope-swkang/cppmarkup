@@ -1,9 +1,8 @@
 #pragma once
-#include "types.hpp"
 #include <vector>
+#include "types.hpp"
 
 namespace kangsw::refl {
-
 /**
  * 
  */
@@ -11,7 +10,7 @@ class property {
 public:
     struct memory_layout {
         /** */
-        element_type type;
+        etype type;
 
         /** */
         size_t offset_from_owner_object;
@@ -31,10 +30,9 @@ public:
         void* base(object* obj) const { return reinterpret_cast<char*>(obj) + offset_from_owner_object; }
         void const* base(object const* obj) const { return reinterpret_cast<char const*>(obj) + offset_from_owner_object; }
 
-        template<typename Ty_>
+        template <typename Ty_>
         Ty_ const* as(object* obj) const
         {
-            
         }
     };
 
@@ -60,7 +58,7 @@ public:
     auto& attr() const { return _attr; }
     auto& tag() const { return _tag; }
     auto& doc() const { return _doc; }
-    auto& memory() const {}
+    auto& memory() const { return _memory; }
 
 private:
     u8str _tag;

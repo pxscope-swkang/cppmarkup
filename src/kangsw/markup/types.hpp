@@ -13,13 +13,22 @@ using u8str      = std::string;
 using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 
 /** bin_pack */
-struct binary_chunk {
-    auto& bytes() const { return _data; }
-    auto& bytes() { return _data; }
-    auto& chars() const { return reinterpret_cast<std::vector<char> const&>(_data); }
-    auto& chars() { return reinterpret_cast<std::vector<char>&>(_data); }
+struct binary_chunk : std::vector<std::byte> {
+    using super = std::vector<std::byte>;
+    using super::super;
 
-    std::vector<std::byte> _data;
+    auto& chars() const { return reinterpret_cast<std::vector<char> const&>(*this); }
+    auto& chars() { return reinterpret_cast<std::vector<char>&>(*this); }
+};
+
+/** bool wrapper for boolean vector. Maps to bool 1:1 */
+struct boolean_t {
+    boolean_t(bool value) { *this = value; }
+    boolean_t& operator=(bool value) { return _value = value, *this; }
+    operator bool&() { return _value; }
+    operator bool const &() const { return _value; }
+
+    bool _value;
 };
 
 /** element type */
@@ -74,6 +83,7 @@ public:
 
         // clang-format off
         if      constexpr(is_same_v<eval_type, bool>) { return boolean; }
+        else if constexpr(is_same_v<eval_type, nullptr_t>) { return null; }
         else if constexpr(is_same_v<eval_type, binary_chunk>) { return binary; }
         else if constexpr(is_integral_v<eval_type>) { return integer | number; }
         else if constexpr(is_floating_point_v<eval_type>) { return floating_point | number; }
@@ -103,8 +113,9 @@ private:
         auto constexpr V = V_ & ~number;
 
         // clang-format off
+        if constexpr (V == null)   { return nullptr; }
         if constexpr (V == object) { return static_cast<refl::object*>(nullptr); }
-        if constexpr (V == boolean) { return static_cast<bool*>(nullptr);}
+        if constexpr (V == boolean) { return static_cast<boolean_t*>(nullptr);}
         if constexpr (V == integer) { return static_cast<int64_t*>(nullptr); }
         if constexpr (V == floating_point) { return static_cast<double*>(nullptr); }
         if constexpr (V == binary) { return static_cast<binary_chunk*>(nullptr); }
@@ -131,14 +142,14 @@ private:
     }
 
     template <int V_, typename Ty_>
-    using deduced_type_t =
+    using _deduced_type_t =
         std::conditional_t<
             std::is_const_v<std::remove_reference_t<Ty_>>,
             std::remove_reference_t<decltype(*_deduce_from<V_>())> const*,
             std::remove_reference_t<decltype(*_deduce_from<V_>())>*>;
 
-    template<typename Ty_>
-    using deduce_result_t = std::remove_pointer_t<deduced_type_t<from_type<Ty_>(), Ty_>>;
+    template <typename Ty_>
+    using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
 
 public:
     template <typename Ty_>
@@ -146,12 +157,14 @@ public:
     {
         if constexpr (std::is_base_of_v<refl::object, Ty_>) {
             return std::forward<Ty_>(v);
+        } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
+            return nullptr;
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
-            return deduce_result_t<Ty_>(v.begin(), v.end());
+            return _deduce_result_t<Ty_>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
-            return deduce_result_t<Ty_>(v.begin(), v.end());
+            return _deduce_result_t<Ty_>(v.begin(), v.end());
         } else {
-            return deduce_result_t<Ty_>(std::forward<Ty_>(v));
+            return _deduce_result_t<Ty_>(std::forward<Ty_>(v));
         }
     }
 
@@ -164,7 +177,7 @@ public:
     template <typename Ty_>
     static decltype(auto) deduce(std::initializer_list<Ty_> v)
     {
-        return std::vector<deduce_result_t<Ty_>>(v.begin(), v.end());
+        return std::vector<_deduce_result_t<Ty_>>(v.begin(), v.end());
     }
 
 private:

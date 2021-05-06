@@ -16,10 +16,17 @@ static_assert(std::is_same_v<decltype(etype::deduce(324)), int64_t>);
 static_assert(std::is_same_v<decltype(etype::deduce(324.23f)), double>);
 static_assert(std::is_same_v<decltype(etype::deduce("hell, world!")), u8str>);
 static_assert(std::is_same_v<decltype(etype::deduce(std::vector<int>{})), std::vector<int64_t>>);
-static_assert(std::is_same_v<decltype(etype::deduce({1,2,4})), std::vector<int64_t>>);
+static_assert(std::is_same_v<decltype(etype::deduce({1, 2, 4})), std::vector<int64_t>>);
+static_assert(std::is_same_v<decltype(etype::deduce(nullptr)), nullptr_t>);
+static_assert(std::is_same_v<decltype(etype::deduce(false)), boolean_t>);
 
-void foo()
+namespace tests::types {
+TEST_SUITE("Types")
 {
-    int v[] = {1, 2, 3, 4, 5};
-    std::initializer_list<int> r(std::begin(v), std::end(v));
+    TEST_CASE("Compilation")
+    {
+        static_assert(kangsw::templates::is_specialization_of<
+                          binary_chunk, std::vector>::value == false);
+    }
 }
+} // namespace tests::types

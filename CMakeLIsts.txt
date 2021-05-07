@@ -13,10 +13,9 @@ add_subdirectory            (third)
 ## === TARGET: CPPMARKUP --------------------------------------------------------------------------
 # -- SOURCE 
 set                         (ROOT_SRC_DIR                   ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set                         (CPPMARKUP_INCLUDE_DIR          ${ROOT_SRC_DIR})
+set                         (CPPMARKUP_INCLUDE_DIR          ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-aux_source_directory        (${ROOT_SRC_DIR}/kangsw        CPPMARKUP_LIB_SOURCE)
-aux_source_directory        (${ROOT_SRC_DIR}/kangsw/markup CPPMARKUP_LIB_SOURCE)
+aux_source_directory        (${ROOT_SRC_DIR}              CPPMARKUP_LIB_SOURCE)
 
 # -- TARGET LIBRARY
 add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOURCE})

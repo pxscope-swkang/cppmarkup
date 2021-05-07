@@ -1,6 +1,7 @@
 #pragma once
 #include "template_utils.hxx"
 #include <string>
+#include <string_view>
 #include <vector>
 #include <chrono>
 
@@ -10,6 +11,7 @@ class object;
 
 /** aliases */
 using u8str      = std::string;
+using u8str_view = std::string_view;
 using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 
 /** bin_pack */

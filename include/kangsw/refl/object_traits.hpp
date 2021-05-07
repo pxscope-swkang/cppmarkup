@@ -8,6 +8,10 @@ namespace kangsw::refl {
 class object_traits_base {
 public:
     auto& props() const { return _props; }
+    auto begin() { return _props.begin(); }
+    auto begin() const { return _props.begin(); }
+    auto end() { return _props.end(); }
+    auto end() const { return _props.end(); }
 
 public:
     /** Add new or find existing property. */
@@ -39,12 +43,6 @@ public:
     }
 
     // .remove_property
-
-public:
-    auto begin() { return _props.begin(); }
-    auto begin() const { return _props.begin(); }
-    auto end() { return _props.end(); }
-    auto end() const { return _props.end(); }
 
 private:
     std::vector<property> _props;

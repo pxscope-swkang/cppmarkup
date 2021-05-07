@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <vector>
 #include "types.hpp"
 
@@ -28,22 +29,17 @@ public:
         etype type;
 
         /** */
-        size_t offset_from_owner_object;
-
-        /** */
-        size_t offset_from_base;
+        size_t offset;
 
         /** */
         size_t size;
 
         /** initializes memory represented by this property */
-        void (*pinit)(void*);
+        std::function<void(void*)> init_fn;
 
         /** */
-        void* operator()(void* obj) const { return static_cast<char*>(obj) + offset_from_owner_object + offset_from_base; }
-        void const* operator()(void const* obj) const { return static_cast<char const*>(obj) + offset_from_owner_object + offset_from_base; }
-        void* base(void* obj) const { return static_cast<char*>(obj) + offset_from_owner_object; }
-        void const* base(void const* obj) const { return static_cast<char const*>(obj) + offset_from_owner_object; }
+        void* operator()(void* obj) const { return static_cast<char*>(obj) + offset; }
+        void const* operator()(void const* obj) const { return static_cast<char const*>(obj) + offset; }
 
         template <typename Ty_>
         auto as(object const* obj) const {
@@ -71,26 +67,29 @@ public:
         : _tag(std::move(tag)) {}
 
     // for internal usage
-    void _set_defaults(u8str&& tag, u8str&& doc, property_flag_t flag, memory_layout&& memory) {
-        if (_is_valid) { throw property_already_initialized_exception(tag); }
-        _tag      = std::move(tag);
+    void _set_defaults(u8str&& doc, property_flag_t flag, memory_layout&& memory) {
+        if (_is_valid) { throw property_already_initialized_exception(_tag); }
         _doc      = std::move(doc);
         _flag     = flag;
         _memory   = std::move(memory);
         _is_valid = true;
     }
 
-    void _add_attr(attribute&& attr) { _attr.push_back(std::move(attr)); }
+    void _add_attr(attribute&& attr)
+    {
+        // TODO: throw logic error on duplicated attribute registering
+        _attr.push_back(std::move(attr));
+    }
 
 public:
     bool is_valid_property() const { return _is_valid; }
-    auto& attr() const { return _attr; }
+    auto& attributes() const { return _attr; }
     auto& tag() const { return _tag; }
     auto& doc() const { return _doc; }
     auto& memory() const { return _memory; }
 
 private:
-    u8str _tag                   = {};
+    u8str const _tag             = {};
     u8str _doc                   = {};
     property_flag_t _flag        = {};
     memory_layout _memory        = {};

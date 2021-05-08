@@ -10,7 +10,7 @@ static_assert(etype::from_type<double>().exact_type() == etype::floating_point);
 static_assert(etype::from_type<char const*>().exact_type() == etype::string);
 static_assert(etype::from_type<std::vector<double>>().exact_type() == etype::floating_point);
 static_assert(etype::from_type<std::vector<double>>().is_array());
-static_assert(etype::from_type<std::map<u8str, double>>().is_map());
+static_assert(etype::from_type<str_map<double>>().is_map());
 
 static_assert(std::is_same_v<decltype(etype::deduce(324)), int64_t>);
 static_assert(std::is_same_v<decltype(etype::deduce(324.23f)), double>);
@@ -21,10 +21,8 @@ static_assert(std::is_same_v<decltype(etype::deduce(nullptr)), nullptr_t>);
 static_assert(std::is_same_v<decltype(etype::deduce(false)), boolean_t>);
 
 namespace tests::types {
-TEST_SUITE("Types")
-{
-    TEST_CASE("Compilation")
-    {
+TEST_SUITE("Types") {
+    TEST_CASE("Compilation") {
         static_assert(kangsw::templates::is_specialization_of<
                           binary_chunk, std::vector>::value == false);
     }

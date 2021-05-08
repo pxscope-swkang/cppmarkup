@@ -136,8 +136,12 @@ TEST_SUITE("Static Object") {
 
         INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testvar, "Teststvar", 154, 0);
 
-        INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(embobj, "embobj", 0){
-
+        INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(embobj, "embobj", 0) //
+        {
+            INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
+                testmap, "TestMap",
+                INTERNAL_CPPMARKUP_MAP("hell", 3.14, "world", 2.54),
+                0);
         }
         INTERNAL_CPPMARKUP_EMBED_OBJECT_end(embobj);
 
@@ -194,5 +198,7 @@ TEST_SUITE("Static Object") {
         REQUIRE(tt.traits().find_property("SomeTestVar2")->tag() == "SomeTestVar2");
         REQUIRE(tt.traits().find_property("Teststvar"));
         REQUIRE(tt.traits().find_property("Teststvar")->tag() == "Teststvar");
+
+        auto map = INTERNAL_CPPMARKUP_MAP("abc", 3, "def", 4);
     }
 }

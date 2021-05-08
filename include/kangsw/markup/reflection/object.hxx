@@ -10,7 +10,7 @@ namespace kangsw::refl {
  */
 class object {
 public:
-    virtual ~object() = default;
+    virtual ~object() noexcept = default;
 
 public:
     std::vector<property> const& properties() const { return traits().props(); }

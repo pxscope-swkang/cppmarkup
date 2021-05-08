@@ -14,6 +14,12 @@ using u8str      = std::string;
 using u8str_view = std::string_view;
 using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 
+template <typename Ty_>
+class str_map : public std::map<u8str, Ty_> {
+public:
+    using std::map<u8str, Ty_>::map;
+};
+
 /** bin_pack */
 struct binary_chunk : std::vector<std::byte> {
     using std::vector<std::byte>::vector;
@@ -98,7 +104,7 @@ public:
             static_assert(!from_type<value_type>().is_container(), "nested container is not supported.");
             return array | from_type<value_type>();
         }
-        else if constexpr(is_specialization_of<eval_type, std::map>::value) {
+        else if constexpr(is_specialization_of<eval_type, str_map>::value) {
             using mapped_type = typename eval_type::mapped_type;
             static_assert(!from_type<mapped_type>().is_container(), "nested container is not supported.");
             static_assert(is_same_v<u8str, typename eval_type::key_type>, "key of map type must be 'u8str'");
@@ -138,7 +144,7 @@ private:
         }
         if constexpr (etype(V).is_map()) {
             using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).exact_type()>())>;
-            return static_cast<std::map<u8str, value_type>*>(nullptr);
+            return static_cast<str_map<value_type>*>(nullptr);
         }
     }
 
@@ -162,7 +168,7 @@ public:
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
             return std::vector<deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
-            return std::map<u8str, deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
+            return str_map<deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
         } else {
             return deduce_result_t<Ty_>(std::forward<Ty_>(v));
         }

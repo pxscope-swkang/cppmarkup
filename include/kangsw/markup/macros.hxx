@@ -92,3 +92,26 @@
     static inline const auto _##elem_var##_DEFAULT_VALUE =        \
         []() { return _##elem_var##_VALUE_TYPE::get_default(); }; \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, _##elem_var##_FLAGS)
+
+namespace kangsw::refl::_internal {
+template <typename DTy_, typename Ty_, typename... Args_>
+auto _deduce_map_impl(str_map<DTy_>& acc, u8str_view a, Ty_&& b, Args_&&... args) {
+    acc.emplace(a, std::forward<Ty_>(b));
+    if constexpr (sizeof...(args) > 2)
+        return _deduce_map_impl(acc, std::forward<Args_>(args)...);
+    else
+        return acc;
+}
+
+template <typename Ty_, typename... Args_>
+auto deduce_map(u8str_view a, Ty_&& b, Args_&&... args) {
+    using deduced_t = etype::deduce_result_t<Ty_>;
+    str_map<deduced_t> map;
+    return _deduce_map_impl<deduced_t>(
+        map, a,
+        etype::deduce(std::forward<Ty_>(b)),
+        std::forward<Args_>(args)...);
+}
+} // namespace kangsw::refl::_internal
+
+#define INTERNAL_CPPMARKUP_MAP(...) ::kangsw::refl::_internal::deduce_map(__VA_ARGS__)

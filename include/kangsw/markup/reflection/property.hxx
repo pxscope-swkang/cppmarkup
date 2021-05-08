@@ -67,7 +67,9 @@ public:
     };
 
 public:
-    property(u8str&& tag)
+    property& operator=(property&&) noexcept = default;
+    property(property&&) noexcept            = default;
+    property(u8str&& tag) noexcept
         : _tag(std::move(tag)) {}
 
     // for internal usage
@@ -77,9 +79,9 @@ public:
         memory_layout&& memory) //
     {
         if (_is_valid) { throw property_already_initialized_exception(_tag); }
-        _doc              = std::move(doc);
-        _flag             = flag;
-        _memory           = std::move(memory);
+        _doc    = std::move(doc);
+        _flag   = flag;
+        _memory = std::move(memory);
 
         _is_valid = true;
     }
@@ -97,7 +99,7 @@ public:
     auto& memory() const { return _memory; }
 
 private:
-    u8str const _tag             = {};
+    u8str _tag                   = {};
     u8str _doc                   = {};
     property_flag_t _flag        = {};
     ptrdiff_t _attribute_offset  = {};

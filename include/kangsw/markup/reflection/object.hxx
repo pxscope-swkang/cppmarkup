@@ -18,7 +18,7 @@ public:
 public:
     // .find_subobject -> object*
     // .find -> property_proxy
-    virtual object_traits_base const& traits() const = 0;
+    virtual object_traits const& traits() const = 0;
 
 public:
     void reset() {

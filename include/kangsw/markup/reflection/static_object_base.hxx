@@ -8,15 +8,18 @@
  */
 namespace kangsw::refl {
 
+template <typename Ty_>
+using static_object_traits = templates::singleton<object_traits, Ty_>;
+
 /**  */
 template <typename Ty_>
 class static_object_base : public object {
 public:
     using self_type   = Ty_;
-    using traits_type = object_traits<Ty_>;
+    using traits_type = static_object_traits<Ty_>;
 
 public:
-    object_traits_base const& traits() const override { return traits_type::get(); }
+    object_traits const& traits() const override { return traits_type::get(); }
     static Ty_ get_default() {
         Ty_ o;
         return o.reset(), o;
@@ -37,7 +40,7 @@ public:
         ValueTy_&& initial_value,
         int elem_flags) //
     {
-        using traits_type = object_traits<ObjTy_>;
+        using traits_type = static_object_traits<ObjTy_>;
         auto& prop        = traits_type::get().find_or_add_property(tag);
 
         property::memory_layout m;
@@ -63,7 +66,7 @@ public:
         size_t offset,
         ValueTy_&& initial_value) //
     {
-        using traits_type = object_traits<ObjTy_>;
+        using traits_type = static_object_traits<ObjTy_>;
         auto& prop        = traits_type::get().find_or_add_property(tag);
 
         property::attribute attr;

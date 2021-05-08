@@ -1,11 +1,12 @@
 #pragma once
+#include <algorithm>
 #include <cassert>
 #include "property.hxx"
 #include "../utility/template_utils.hxx"
 
 namespace kangsw::refl {
 
-class object_traits_base {
+class object_traits {
 public:
     auto& props() const { return _props; }
     auto begin() { return _props.begin(); }
@@ -22,24 +23,32 @@ public:
             return *pprop;
         }
 
+        auto it_insert = std::lower_bound(
+            _index.begin(), _index.end(), tag,
+            [](auto&& a, auto&& b) { return a.first < b; });
+
+        auto index = _props.size();
+        for (auto& pair : _index) { pair.second += pair.second >= index; }
+        _index.emplace(it_insert, u8str(tag), index);
+
         return _props.emplace_back(u8str(tag));
     }
 
     /** Finds existing property */
     property const* find_property(u8str_view tag) const {
-        auto prop_it = std::find_if(
-            _props.rbegin(), _props.rend(),
-            [&tag](property const& v) { return v.tag() == tag; });
+        auto it_index = std::lower_bound(
+            _index.begin(), _index.end(), tag,
+            [](auto&& pair, auto&& t) { return pair.first < t; });
 
-        if (prop_it == _props.rend()) {
+        if (it_index == _index.end() || it_index->first != tag) {
             return nullptr;
         } else {
-            return &*prop_it;
+            return &_props[it_index->second];
         }
     }
 
     property* find_property(u8str_view tag) {
-        return const_cast<property*>(((object_traits_base const*)this)
+        return const_cast<property*>(((object_traits const*)this)
                                          ->find_property(tag));
     }
 
@@ -47,9 +56,7 @@ public:
 
 private:
     std::vector<property> _props;
+    std::vector<std::pair<u8str, size_t>> _index;
 };
-
-template <typename Ty_>
-using object_traits = templates::singleton<object_traits_base, Ty_>;
 
 } // namespace kangsw::refl

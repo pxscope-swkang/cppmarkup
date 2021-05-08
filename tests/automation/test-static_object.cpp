@@ -131,7 +131,7 @@ TEST_SUITE("Static Object") {
             attrvarfd, "SomeTestVar2", nullptr, 0,
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false) //
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false);                  //
         );
 
         INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
@@ -151,9 +151,10 @@ TEST_SUITE("Static Object") {
         CHECK(tt.attrvarfd_.attr2 == "pewpew");
         CHECK(tt.attrvarfd_.attr3 == false);
 
+        CHECK(tt.testvar == 154);
+
         REQUIRE(tt.traits().find_property("SomeTestVar1"));
         REQUIRE(tt.traits().find_property("SomeTestVar2"));
         REQUIRE(tt.traits().find_property("Teststvar"));
-
     }
 }

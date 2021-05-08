@@ -37,6 +37,7 @@ public:
             return &*prop_it;
         }
     }
+
     property* find_property(u8str_view tag) {
         return const_cast<property*>(((object_traits_base const*)this)
                                          ->find_property(tag));

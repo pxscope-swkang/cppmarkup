@@ -16,7 +16,11 @@ public:
     using traits_type = object_traits<Ty_>;
 
 public:
-    object_traits_base const& traits() override { return traits_type::get(); }
+    object_traits_base const& traits() const override { return traits_type::get(); }
+
+protected:
+    void* base() override { return this; }
+    void const* base() const override { return this; }
 };
 
 /** Performs element registration */

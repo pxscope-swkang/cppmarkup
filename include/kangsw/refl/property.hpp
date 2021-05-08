@@ -38,6 +38,9 @@ public:
         std::function<void(void*)> init_fn;
 
         /** */
+    private:
+        friend class object;
+
         void* operator()(void* obj) const { return static_cast<char*>(obj) + offset; }
         void const* operator()(void const* obj) const { return static_cast<char const*>(obj) + offset; }
 

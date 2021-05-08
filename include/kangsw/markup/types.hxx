@@ -193,22 +193,25 @@ private:
     //     std::remove_reference_t<decltype(*_deduce_from<V_>())> const*,
     //     std::remove_reference_t<decltype(*_deduce_from<V_>())>*>;
 
-public:
     template <typename Ty_>
-    using deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
+    using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
+
+public:
 
     template <typename Ty_>
     static decltype(auto) deduce(Ty_&& v) {
-        if constexpr (std::is_base_of_v<refl::object, Ty_>) {
-            return Ty_(std::forward<Ty_>(v));
-        } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
+        using eval_type = std::remove_reference_t<Ty_>;
+
+        if constexpr (std::is_base_of_v<refl::object, eval_type>) {
+            return eval_type(std::forward<Ty_>(v));
+        } else if constexpr (std::is_same_v<eval_type, nullptr_t>) {
             return nullptr;
-        } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
+        } else if constexpr (templates::is_specialization_of<eval_type, std::vector>::value) {
             return std::vector<decltype(deduce(v[0]))>(v.begin(), v.end());
-        } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
+        } else if constexpr (templates::is_specialization_of<eval_type, u8str_map>::value) {
             return u8str_map<decltype(deduce(v[""]))>(v.begin(), v.end());
         } else {
-            return deduce_result_t<Ty_>(std::forward<Ty_>(v));
+            return _deduce_result_t<Ty_>(std::forward<eval_type>(v));
         }
     }
 
@@ -219,7 +222,7 @@ public:
 
     template <typename Ty_>
     static decltype(auto) deduce(std::initializer_list<Ty_> v) {
-        return std::vector<deduce_result_t<Ty_>>(v.begin(), v.end());
+        return std::vector<_deduce_result_t<Ty_>>(v.begin(), v.end());
     }
 
 private:

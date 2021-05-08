@@ -34,7 +34,6 @@ public:
     element_regestration_t(
         u8str&& tag,
         size_t offset,
-        size_t attributes_offset,
         ValueTy_&& initial_value,
         int elem_flags) //
     {
@@ -50,8 +49,7 @@ public:
             *(ValueTy_*)pv = _v;
         };
 
-        prop._set_defaults("" /*TODO ...*/, (property_flag_t)elem_flags, std::move(m),
-                           attributes_offset);
+        prop._set_defaults("" /*TODO ...*/, (property_flag_t)elem_flags, std::move(m));
     }
 };
 

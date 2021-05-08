@@ -40,8 +40,8 @@ public:
     void* operator[](property const& p) { return p.memory()(base()); }
     void const* operator[](property const& p) const { return p.memory()(base()); }
 
-    void* operator[](property::attribute const& p) { return p.memory(base(), p.offset()); }
-    void const* operator[](property::attribute const& p) const { return p.memory(base(), p.offset()); }
+    void* operator[](property::attribute const& p) { return p.memory(base()); }
+    void const* operator[](property::attribute const& p) const { return p.memory(base()); }
 };
 
 } // namespace kangsw::refl

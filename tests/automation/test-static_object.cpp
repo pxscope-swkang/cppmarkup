@@ -55,7 +55,6 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
         _elem_var_REGISTER{
             _elem_var_TAG,
             _elem_var_OFFSET(),
-            _elem_var_ATTR_OFFSET(),
             _elem_var_VALUE_TYPE(_elem_var_DEFAULT_VALUE),
             _elem_var_FLAGS};
     // >
@@ -75,25 +74,23 @@ TEST_SUITE("Static Object") {
 
         auto pprop = o.traits().find_property(elem_name);
         REQUIRE(pprop);
-        REQUIRE(pprop->memory().size == sizeof o.elem_var);
-        REQUIRE(pprop->memory().offset == offsetof(object_type, elem_var));
-        REQUIRE(pprop->memory().type == kangsw::refl::etype::string);
+        CHECK(pprop->memory().size == sizeof o.elem_var);
+        CHECK(pprop->memory().offset == offsetof(object_type, elem_var));
+        CHECK(pprop->memory().type == kangsw::refl::etype::string);
 
         REQUIRE(pprop->attributes().size() == 1);
-        REQUIRE(pprop->attributes()[0].name == attrib_name);
-        REQUIRE(pprop->attributes()[0].memory.size == sizeof o.elem_var_.attrib_var);
-        REQUIRE(pprop->attributes()[0].memory.offset == sizeof nullptr);
+        CHECK(pprop->attributes()[0].name == attrib_name);
+        CHECK(pprop->attributes()[0].memory.size == sizeof o.elem_var_.attrib_var);
+        CHECK(pprop->attributes()[0].memory.offset == sizeof nullptr);
     }
-}
 
-INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {
-    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvarf, "SomeTestVar1", 15.42, 0);
-    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvari, "SomeTestVar2", 154, 0);
-    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvars, "SomeTestVar3", "hell, world!", 0);
-    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar3", std::vector({1, 2, 3}), 0);
-};
+    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvarf, "SomeTestVar1", 15.42, 0);
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvari, "SomeTestVar2", 154, 0);
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvars, "SomeTestVar3", "hell, world!", 0);
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar4", std::vector({1, 2, 3}), 0);
+    };
 
-TEST_SUITE("Static Object") {
     TEST_CASE("Internal macro functionality test") {
         auto v = kangsw::refl::etype::deduce("faer");
 
@@ -104,8 +101,59 @@ TEST_SUITE("Static Object") {
         static_assert(std::is_same_v<decltype(k.testvaria), std::vector<int64_t>>);
 
         k.reset();
+        CHECK(k.testvarf == 15.42);
+        CHECK(k.testvari == 154);
+        CHECK(k.testvars == "hell, world!");
+        CHECK(k.testvaria == std::vector<int64_t>({1, 2, 3}));
 
+        k = {};
+        CHECK(k.testvarf == 0);
+        CHECK(k.testvari == 0);
+        CHECK(k.testvars == "");
+        CHECK(k.testvaria == std::vector<int64_t>());
 
         k = testobj::get_default();
+        CHECK(k.testvarf == 15.42);
+        CHECK(k.testvari == 154);
+        CHECK(k.testvars == "hell, world!");
+        CHECK(k.testvaria == std::vector<int64_t>({1, 2, 3}));
+    }
+
+    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(attrtestobj) {
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(
+            attrvarf, "SomeTestVar1", nullptr, 0,
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
+        );
+
+        INTERNAL_CPPMARKUP_ELEMENT_FULL(
+            attrvarfd, "SomeTestVar2", nullptr, 0,
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false) //
+        );
+
+        INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
+    };
+
+    TEST_CASE("Internal macro with attributed elements functionality test") {
+        attrtestobj tt;
+
+        MESSAGE("Size of attrtestobj: ", sizeof tt);
+        tt = attrtestobj ::get_default();
+
+        CHECK(tt.attrvarf_.attr1 == 154);
+        CHECK(tt.attrvarf_.attr2 == "galer");
+        CHECK(tt.attrvarf_.attr3 == true);
+
+        CHECK(tt.attrvarfd_.attr1 == 211);
+        CHECK(tt.attrvarfd_.attr2 == "pewpew");
+        CHECK(tt.attrvarfd_.attr3 == false);
+
+        REQUIRE(tt.traits().find_property("SomeTestVar1"));
+        REQUIRE(tt.traits().find_property("SomeTestVar2"));
+        REQUIRE(tt.traits().find_property("Teststvar"));
+
     }
 }

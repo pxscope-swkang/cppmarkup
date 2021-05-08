@@ -24,6 +24,7 @@ struct binary_chunk : std::vector<std::byte> {
 
 /** bool wrapper for boolean vector. Maps to bool 1:1. To avoid vector<bool> specialization */
 struct boolean_t {
+    boolean_t() = default;
     boolean_t(bool value) { *this = value; }
     boolean_t& operator=(bool value) { return _value = value, *this; }
     operator bool&() { return _value; }
@@ -83,6 +84,7 @@ public:
 
         // clang-format off
         if      constexpr(is_same_v<eval_type, bool>) { return boolean; }
+        else if constexpr(is_same_v<eval_type, boolean_t>) { return boolean; }
         else if constexpr(is_same_v<eval_type, nullptr_t>) { return null; }
         else if constexpr(is_same_v<eval_type, binary_chunk>) { return binary; }
         else if constexpr(is_integral_v<eval_type>) { return integer | number; }

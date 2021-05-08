@@ -64,14 +64,6 @@ public:
 
         /** */
         memory_layout memory;
-
-        /** */
-        ptrdiff_t offset() const { return _owner->attribute_offset(); }
-
-    private:
-        friend class property;
-
-        property* _owner;
     };
 
 public:
@@ -82,21 +74,18 @@ public:
     void _set_defaults(
         u8str&& doc,
         property_flag_t flag,
-        memory_layout&& memory,
-        ptrdiff_t optional_attribute_offset = {}) //
+        memory_layout&& memory) //
     {
         if (_is_valid) { throw property_already_initialized_exception(_tag); }
         _doc              = std::move(doc);
         _flag             = flag;
         _memory           = std::move(memory);
-        _attribute_offset = optional_attribute_offset;
 
         _is_valid = true;
     }
 
     void _add_attr(attribute&& attr) {
         // TODO: throw logic error on duplicated attribute registering
-        attr._owner = this;
         _attr.push_back(std::move(attr));
     }
 
@@ -106,7 +95,6 @@ public:
     auto& tag() const { return _tag; }
     auto& doc() const { return _doc; }
     auto& memory() const { return _memory; }
-    ptrdiff_t attribute_offset() const { return _attribute_offset; }
 
 private:
     u8str const _tag             = {};

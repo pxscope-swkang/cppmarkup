@@ -85,10 +85,10 @@ TEST_SUITE("Static Object") {
     }
 
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvarf, "SomeTestVar1", 15.42, 0);
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvari, "SomeTestVar2", 154, 0);
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvars, "SomeTestVar3", "hell, world!", 0);
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar4", std::vector({1, 2, 3}), 0);
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(testvarf, "SomeTestVar1", 15.42, 0);
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(testvari, "SomeTestVar2", 154, 0);
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(testvars, "SomeTestVar3", "hell, world!", 0);
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(testvaria, "SomeTestVar4", std::vector({1, 2, 3}), 0);
     };
 
     TEST_CASE("Internal macro functionality test") {
@@ -120,41 +120,46 @@ TEST_SUITE("Static Object") {
     }
 
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(attrtestobj) {
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(
             attrvarf, "SomeTestVar1", nullptr, 0,
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
         );
 
-        INTERNAL_CPPMARKUP_ELEMENT_FULL(
+        INTERNAL_CPPMARKUP_ELEMENT_ATTR(
             attrvarfd, "SomeTestVar2", nullptr, 0,
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
         );
 
-        INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
+        INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testvar, "Teststvar", 154, 0);
+
+        INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(embobj, "embobj", 0){
+
+        }
+        INTERNAL_CPPMARKUP_EMBED_OBJECT_end(embobj);
 
         INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(embedded) {
-            INTERNAL_CPPMARKUP_ELEMENT_FULL(
+            INTERNAL_CPPMARKUP_ELEMENT_ATTR(
                 attrvarf, "SomeTestVar1", nullptr, 0,
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
             );
 
-            INTERNAL_CPPMARKUP_ELEMENT_FULL(
+            INTERNAL_CPPMARKUP_ELEMENT_ATTR(
                 attrvarfd, "SomeTestVar2", nullptr, 0,
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
                 INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
             );
 
-            INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
+            INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testvar, "Teststvar", 154, 0);
         };
 
-        INTERNAL_CPPMARKUP_ELEMENT_FLAG(testobj, "TestObj", embedded::get_default(), 0);
+        INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testobj, "TestObj", embedded::get_default(), 0);
     };
 
     TEST_CASE("Internal macro with attributed elements functionality test") {

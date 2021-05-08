@@ -49,7 +49,6 @@
 
 // > INTERNAL_CPPMARKUP_ENTITY_latter(elem_var, elem_name, flags)
 #define INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)                          \
-    constexpr static int _##elem_var##_FLAGS = flags;                              \
     _##elem_var##_VALUE_TYPE elem_var;                                             \
                                                                                    \
     static size_t _##elem_var##_OFFSET() { return offsetof(self_type, elem_var); } \
@@ -59,23 +58,37 @@
         _##elem_var##_TAG,                                                         \
             _##elem_var##_OFFSET(),                                                \
             ::kangsw::refl::etype::deduce(_##elem_var##_DEFAULT_VALUE()),          \
-            _##elem_var##_FLAGS                                                    \
+            flags                                                                  \
     }
 // >
 
 // Custom
-#define INTERNAL_CPPMARKUP_ELEMENT_FULL(elem_var, elem_name, default_value, flags, ...)      \
+#define INTERNAL_CPPMARKUP_ELEMENT_ATTR(elem_var, elem_name, default_value, flags, ...)      \
     INTERNAL_CPPMARKUP_ENTITY_former_ATTR(elem_var, elem_name, ##__VA_ARGS__);               \
     using _##elem_var##_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value)); \
                                                                                              \
     static inline const auto _##elem_var##_DEFAULT_VALUE = []() { return default_value; };   \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)
 
-#define INTERNAL_CPPMARKUP_ELEMENT_FLAG(elem_var, elem_name, default_value, flags)           \
+#define INTERNAL_CPPMARKUP_ELEMENT_NOATTR(elem_var, elem_name, default_value, flags)         \
     INTERNAL_CPPMARKUP_ENTITY_former_NOATTR(elem_var, elem_name);                            \
     using _##elem_var##_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value)); \
                                                                                              \
     static inline const auto _##elem_var##_DEFAULT_VALUE = []() { return default_value; };   \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)
 
-#define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(elem_var)
+#define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(elem_var, elem_name, flags, ...) \
+    static constexpr auto _##elem_var##_FLAGS = flags;                              \
+    INTERNAL_CPPMARKUP_ENTITY_former_ATTR(elem_var, elem_name, ##__VA_ARGS__);      \
+    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(_##elem_var##_VALUE_TYPE)
+
+#define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_NOATTR(elem_var, elem_name, flags) \
+    static constexpr auto _##elem_var##_FLAGS = flags;                           \
+    INTERNAL_CPPMARKUP_ENTITY_former_NOATTR(elem_var, elem_name);                \
+    INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(_##elem_var##_VALUE_TYPE)
+
+#define INTERNAL_CPPMARKUP_EMBED_OBJECT_end(elem_var)             \
+    ;                                                             \
+    static inline const auto _##elem_var##_DEFAULT_VALUE =        \
+        []() { return _##elem_var##_VALUE_TYPE::get_default(); }; \
+    INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, _##elem_var##_FLAGS)

@@ -1,6 +1,7 @@
 #include <optional>
 #include "doctest.h"
-#include "kangsw/refl/static_object_base.hxx"
+#include "kangsw/markup/reflection/static_object_base.hxx"
+#include "kangsw/markup/macros.hxx"
 
 #define default_value "FAS"
 #define elem_name     "hell, wrold!"
@@ -11,12 +12,13 @@
 struct object_type : ::kangsw::refl::static_object_base<object_type> {
     // INTERNAL_CPPMARKUP_ELEMENT(elem_var, elem_name, default_value, flags)
     // INTERNAL_CPPMARKUP_ELEMENT_WITH_ATTR(elem_var, elem_name, default_value, flags, ...)
-    constexpr static auto _elem_var_TAG = elem_name;
+    constexpr static auto _elem_var_TAG  = elem_name;
     constexpr static int _elem_var_FLAGS = elem_flags;
 
     // > INTERNAL_CPPMARKUP_ENTITY_former(elem_var, ...)
     struct _elem_var_HASH_TYPE {};
     struct _elem_var_ATTRIBUTES {
+        using _attributes_SELF_TYPE = _elem_var_ATTRIBUTES;
         // INTERNAL_CPPMARKUP_ATTRIBUTE(attrib_var, attrib_name, default_value)
         using _attrib_var_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value));
         struct _attrib_var_HASH_TYPE {};
@@ -36,6 +38,8 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
 
     } elem_var_;
     // >
+    static size_t _elem_var_ATTR_OFFSET() { return offsetof(self_type, elem_var_); }
+    // static size_t _elem_var_ATTR_OFFSET()
 
     // Custom
     using _elem_var_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value));
@@ -51,6 +55,7 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
         _elem_var_REGISTER{
             _elem_var_TAG,
             _elem_var_OFFSET(),
+            _elem_var_ATTR_OFFSET(),
             _elem_var_VALUE_TYPE(_elem_var_DEFAULT_VALUE),
             _elem_var_FLAGS};
     // >
@@ -78,5 +83,18 @@ TEST_SUITE("Static Object") {
         REQUIRE(pprop->attributes()[0].name == attrib_name);
         REQUIRE(pprop->attributes()[0].memory.size == sizeof o.elem_var_.attrib_var);
         REQUIRE(pprop->attributes()[0].memory.offset == sizeof nullptr);
+    }
+}
+
+INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {
+    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvarf, "SomeTestVar1", 15.42, 0);
+    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvari, "SomeTestVar2", 154, 0);
+    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvars, "SomeTestVar3", "hell, world!", 0);
+    // INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar3", std::vector({1, 2, 3}), 0);
+};
+
+TEST_SUITE("Static Object") {
+    TEST_CASE("Internal macro functionality test") {
+        auto v = kangsw::refl::etype::deduce("faer");
     }
 }

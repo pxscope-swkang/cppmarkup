@@ -1,7 +1,7 @@
 #pragma once
 #include <cassert>
 #include "property.hxx"
-#include "template_utils.hxx"
+#include "../utility/template_utils.hxx"
 
 namespace kangsw::refl {
 

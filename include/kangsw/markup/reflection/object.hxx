@@ -29,8 +29,8 @@ public:
     auto operator[](property const& p) { return p.memory()(base()); }
     auto operator[](property const& p) const { return p.memory()(base()); }
 
-    auto operator[](property::attribute const& p) { return p.memory(base()); }
-    auto operator[](property::attribute const& p) const { return p.memory(base()); }
+    auto operator[](property::attribute const& p) { return p.memory(base(), p.offset()); }
+    auto operator[](property::attribute const& p) const { return p.memory(base(), p.offset()); }
 };
 
 } // namespace kangsw::refl

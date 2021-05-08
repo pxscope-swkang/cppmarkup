@@ -6,11 +6,11 @@ namespace kangsw::templates
 {
 // https://stackoverflow.com/questions/31762958/check-if-class-is-a-template-specialization
 template <class T, template <class...> class Template>
-struct is_specialization : std::false_type {
+struct is_specialization_of : std::false_type {
 };
 
 template <template <class...> class Template, class... Args>
-struct is_specialization<Template<Args...>, Template> : std::true_type {
+struct is_specialization_of<Template<Args...>, Template> : std::true_type {
 };
 
 // https://stackoverflow.com/questions/60113615/how-to-check-if-a-variable-is-a-map-in-c

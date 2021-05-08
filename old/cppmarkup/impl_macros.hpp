@@ -44,7 +44,7 @@ decltype(auto) deduce_fn(Ty_&& v)
     if constexpr (std::is_same_v<Ty_, bool>) { return bool(v); }
     if constexpr (std::is_integral_v<Ty_> && !std::is_same_v<Ty_, bool>) { return int64_t{v}; }
     if constexpr (std::is_floating_point_v<Ty_>) { return double{v}; }
-    if constexpr (templates::is_specialization<Ty_, std::basic_string>::value) { return u8string{v.begin(), v.end()}; }
+    if constexpr (templates::is_specialization_of<Ty_, std::basic_string>::value) { return u8string{v.begin(), v.end()}; }
     if constexpr (std::is_base_of_v<object, Ty_>) { return Ty_(std::move(v)); }
     if constexpr (std::is_same_v<Ty_, u8string::const_pointer>) { return u8string{v}; }
     if constexpr (std::is_same_v<Ty_, nullptr_t>) { return nullptr; }

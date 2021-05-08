@@ -15,7 +15,7 @@ using u8str_view = std::string_view;
 using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 
 template <typename Ty_>
-class str_map : public std::map<u8str, Ty_> {
+class u8str_map : public std::map<u8str, Ty_> {
 public:
     using std::map<u8str, Ty_>::map;
 };
@@ -75,8 +75,16 @@ public:
     constexpr bool is_map() const noexcept { return _value & map; }
     constexpr bool is_array() const noexcept { return _value & array; }
     constexpr bool is_container() const noexcept { return _value & (map | array); }
-    constexpr bool is_object() const noexcept { return exact_type() == object; }
     constexpr bool is_number() const noexcept { return _value & number; }
+
+    constexpr bool is_object() const noexcept { return exact_type() == object; }
+    constexpr bool is_boolean() const noexcept { return exact_type() == boolean; }
+    constexpr bool is_timestamp() const noexcept { return exact_type() == timestamp; }
+    constexpr bool is_binary() const noexcept { return exact_type() == binary; }
+    constexpr bool is_string() const noexcept { return exact_type() == string; }
+    constexpr bool is_null() const noexcept { return exact_type() == null; }
+    constexpr bool is_integer() const noexcept { return exact_type() == integer; }
+    constexpr bool is_floating_point() const noexcept { return exact_type() == floating_point; }
 
     constexpr etype exact_type() const noexcept { return _value & value_mask; }
     constexpr _type get() const noexcept { return _value; }
@@ -104,13 +112,43 @@ public:
             static_assert(!from_type<value_type>().is_container(), "nested container is not supported.");
             return array | from_type<value_type>();
         }
-        else if constexpr(is_specialization_of<eval_type, str_map>::value) {
+        else if constexpr(is_specialization_of<eval_type, u8str_map>::value) {
             using mapped_type = typename eval_type::mapped_type;
             static_assert(!from_type<mapped_type>().is_container(), "nested container is not supported.");
             static_assert(is_same_v<u8str, typename eval_type::key_type>, "key of map type must be 'u8str'");
             return map | from_type<mapped_type>();
         }
         else { static_assert(false, "Unsupported type"); return {}; }
+        // clang-format on
+    }
+
+    template <typename Ty_>
+    constexpr static etype from_type_exact() {
+        using eval_type = Ty_;
+        using namespace templates;
+        using namespace std;
+
+        // clang-format off
+        if      constexpr(is_same_v<Ty_, nullptr_t>) { return null; }
+        else if constexpr(is_same_v<Ty_, boolean_t>) { return boolean; }
+        else if constexpr(is_same_v<Ty_, int64_t>) { return integer | number; }
+        else if constexpr(is_same_v<Ty_, double>) { return floating_point | number; }
+        else if constexpr(is_same_v<Ty_, u8str>) { return string; }
+        else if constexpr(is_same_v<Ty_, binary_chunk>) { return binary; }
+        else if constexpr(is_same_v<Ty_, clock_type>) { return timestamp; }
+        else if constexpr(is_base_of_v<refl::object, Ty_>) { return timestamp; }
+        else if constexpr(is_specialization_of<eval_type, std::vector>::value) {
+            using value_type = typename eval_type::value_type;
+            static_assert(!from_type_exact<value_type>().is_container(), "nested container is not supported.");
+            return array | from_type_exact<value_type>();
+        }
+        else if constexpr(is_specialization_of<eval_type, u8str_map>::value) {
+            using mapped_type = typename eval_type::mapped_type;
+            static_assert(is_same_v<u8str, typename eval_type::key_type>, "key of map type must be 'u8str'");
+            static_assert(!from_type_exact<mapped_type>().is_container(), "nested container is not supported.");
+            return map |   from_type_exact<mapped_type>();
+        }
+        else { static_assert(false, "Not a valid markup object member type"); return {}; }
         // clang-format on
     }
 
@@ -144,16 +182,16 @@ private:
         }
         if constexpr (etype(V).is_map()) {
             using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).exact_type()>())>;
-            return static_cast<str_map<value_type>*>(nullptr);
+            return static_cast<u8str_map<value_type>*>(nullptr);
         }
     }
 
     template <int V_, typename Ty_>
-    using _deduced_type_t =
-        std::conditional_t<
-            std::is_const_v<std::remove_reference_t<Ty_>>,
-            std::remove_reference_t<decltype(*_deduce_from<V_>())> const*,
-            std::remove_reference_t<decltype(*_deduce_from<V_>())>*>;
+    using _deduced_type_t = std::remove_reference_t<decltype(*_deduce_from<V_>())>*;
+    // std::conditional_t<
+    //     std::is_const_v<std::remove_reference_t<Ty_>>,
+    //     std::remove_reference_t<decltype(*_deduce_from<V_>())> const*,
+    //     std::remove_reference_t<decltype(*_deduce_from<V_>())>*>;
 
 public:
     template <typename Ty_>
@@ -166,9 +204,9 @@ public:
         } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
             return nullptr;
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
-            return std::vector<deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
+            return std::vector<decltype(deduce(v[0]))>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
-            return str_map<deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
+            return u8str_map<decltype(deduce(v[""]))>(v.begin(), v.end());
         } else {
             return deduce_result_t<Ty_>(std::forward<Ty_>(v));
         }

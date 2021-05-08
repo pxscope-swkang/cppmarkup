@@ -10,7 +10,7 @@ static_assert(etype::from_type<double>().exact_type() == etype::floating_point);
 static_assert(etype::from_type<char const*>().exact_type() == etype::string);
 static_assert(etype::from_type<std::vector<double>>().exact_type() == etype::floating_point);
 static_assert(etype::from_type<std::vector<double>>().is_array());
-static_assert(etype::from_type<str_map<double>>().is_map());
+static_assert(etype::from_type<u8str_map<double>>().is_map());
 
 static_assert(std::is_same_v<decltype(etype::deduce(324)), int64_t>);
 static_assert(std::is_same_v<decltype(etype::deduce(324.23f)), double>);

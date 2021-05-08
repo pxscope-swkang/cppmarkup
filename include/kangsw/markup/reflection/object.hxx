@@ -20,6 +20,10 @@ public:
     // .find -> property_proxy
     virtual object_traits const& traits() const = 0;
 
+    /** Gets actual origin of contigous memory which is represented by properties. */
+    virtual void* base()             = 0;
+    virtual void const* base() const = 0;
+
 public:
     void reset() {
         for (auto& prop : traits().props()) {
@@ -29,12 +33,6 @@ public:
             }
         }
     }
-
-
-protected:
-    /** Gets actual origin of contigous memory which is represented by properties. */
-    virtual void* base()             = 0;
-    virtual void const* base() const = 0;
 
 public:
     void* operator[](property const& p) { return p.memory()(base()); }

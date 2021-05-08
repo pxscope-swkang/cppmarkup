@@ -142,6 +142,15 @@ TEST_SUITE("Static Object") {
                 testmap, "TestMap",
                 INTERNAL_CPPMARKUP_MAP("hell", 3.14, "world", 2.54),
                 0);
+
+            INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
+                testobjarr, "TestObjArr",
+                std::vector({testobj{}}), 0);
+
+            INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
+                testobjmap, "TestObjMap",
+                INTERNAL_CPPMARKUP_MAP("hell", testobj{}),
+                0);
         }
         INTERNAL_CPPMARKUP_EMBED_OBJECT_end(embobj);
 
@@ -191,6 +200,8 @@ TEST_SUITE("Static Object") {
         CHECK(tt.testobj.attrvarfd_.attr3 == false);
 
         CHECK(tt.testobj.testvar == 154);
+
+        tt.embobj.testobjarr;
 
         REQUIRE(tt.traits().find_property("SomeTestVar1"));
         REQUIRE(tt.traits().find_property("SomeTestVar1")->tag() == "SomeTestVar1");

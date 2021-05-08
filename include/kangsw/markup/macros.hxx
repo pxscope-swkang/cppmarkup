@@ -95,7 +95,7 @@
 
 namespace kangsw::refl::_internal {
 template <typename DTy_, typename Ty_, typename... Args_>
-auto _deduce_map_impl(str_map<DTy_>& acc, u8str_view a, Ty_&& b, Args_&&... args) {
+auto _deduce_map_impl(u8str_map<DTy_>& acc, u8str_view a, Ty_&& b, Args_&&... args) {
     acc.emplace(a, std::forward<Ty_>(b));
     if constexpr (sizeof...(args) > 2)
         return _deduce_map_impl(acc, std::forward<Args_>(args)...);
@@ -106,7 +106,7 @@ auto _deduce_map_impl(str_map<DTy_>& acc, u8str_view a, Ty_&& b, Args_&&... args
 template <typename Ty_, typename... Args_>
 auto deduce_map(u8str_view a, Ty_&& b, Args_&&... args) {
     using deduced_t = etype::deduce_result_t<Ty_>;
-    str_map<deduced_t> map;
+    u8str_map<deduced_t> map;
     return _deduce_map_impl<deduced_t>(
         map, a,
         etype::deduce(std::forward<Ty_>(b)),

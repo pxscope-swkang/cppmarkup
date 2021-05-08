@@ -2,6 +2,7 @@
 #include <functional>
 #include <vector>
 #include "../types.hxx"
+#include "object_container_interface.hxx"
 
 namespace kangsw::refl {
 
@@ -18,13 +19,16 @@ using property_flag_t = property_flag::type;
 struct property_already_initialized_exception : std::logic_error {
     using std::logic_error::logic_error;
 };
+struct invalid_container_interface_setup_exception : std::logic_error {
+    using std::logic_error::logic_error;
+};
 
 /**
  * 
  */
 class property {
 public:
-    struct memory_layout {
+    struct memory_t {
         /** */
         etype type;
 
@@ -37,25 +41,11 @@ public:
         /** initializes memory represented by this property */
         std::function<void(void*)> init_fn;
 
-    private:
-        friend class object;
-
         void* operator()(void* obj) const { return static_cast<char*>(obj) + offset; }
         void const* operator()(void const* obj) const { return static_cast<char const*>(obj) + offset; }
+
         void* operator()(void* obj, ptrdiff_t ofst) const { return static_cast<char*>(obj) + offset + ofst; }
         void const* operator()(void const* obj, ptrdiff_t ofst) const { return static_cast<char const*>(obj) + offset + ofst; }
-
-        template <typename Ty_>
-        auto as(object const* obj) const {
-            if (etype::from_type<Ty_>() != type) { return nullptr; }
-            return static_cast<etype::deduce_result_t<Ty_>*>((*this)(obj));
-        }
-
-        template <typename Ty_>
-        auto as(object* obj) const {
-            if (etype::from_type<Ty_>() != type) { return nullptr; }
-            return static_cast<etype::deduce_result_t<Ty_>*>((*this)(obj));
-        }
     };
 
     struct attribute {
@@ -63,8 +53,18 @@ public:
         u8str name;
 
         /** */
-        memory_layout memory;
+        memory_t memory;
     };
+
+public:
+    bool is_valid_property() const { return _is_valid; }
+    auto& attributes() const { return _attr; }
+    auto& tag() const { return _tag; }
+    auto& doc() const { return _doc; }
+    auto& memory() const { return _memory; }
+
+    auto ovi() const { return _ovi.get(); }
+    auto omi() const { return _omi.get(); }
 
 public:
     property& operator=(property&&) noexcept = default;
@@ -76,7 +76,7 @@ public:
     void _set_defaults(
         u8str&& doc,
         property_flag_t flag,
-        memory_layout&& memory) //
+        memory_t&& memory) //
     {
         if (_is_valid) { throw property_already_initialized_exception(_tag); }
         _doc    = std::move(doc);
@@ -91,21 +91,36 @@ public:
         _attr.push_back(std::move(attr));
     }
 
-public:
-    bool is_valid_property() const { return _is_valid; }
-    auto& attributes() const { return _attr; }
-    auto& tag() const { return _tag; }
-    auto& doc() const { return _doc; }
-    auto& memory() const { return _memory; }
+    // TODO: remove attribute
+
+    // sets ovi or omi
+    void _set_ovi(object_vector_interface* new_ovi) {
+        if (!_is_valid || !(_memory.type.is_object() && _memory.type.is_array())) {
+            throw invalid_container_interface_setup_exception("");
+        }
+        _ovi.reset(new_ovi);
+    }
+
+    void _set_omi(object_map_interface* new_omi) {
+        if (!_is_valid || !(_memory.type.is_object() && _memory.type.is_array())) {
+            throw invalid_container_interface_setup_exception("");
+        }
+        _omi.reset(new_omi);
+    }
 
 private:
-    u8str _tag                   = {};
-    u8str _doc                   = {};
-    property_flag_t _flag        = {};
-    ptrdiff_t _attribute_offset  = {};
-    memory_layout _memory        = {};
+    bool _is_valid = false;
+
+    u8str _tag       = {};
+    memory_t _memory = {};
+
+    u8str _doc            = {};
+    property_flag_t _flag = {};
+
     std::vector<attribute> _attr = {};
-    bool _is_valid               = false;
+
+    std::unique_ptr<object_vector_interface> _ovi = {};
+    std::unique_ptr<object_map_interface> _omi    = {};
 };
 
 } // namespace kangsw::refl

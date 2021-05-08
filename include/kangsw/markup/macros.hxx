@@ -57,15 +57,17 @@
         _##elem_var##_TAG,                                                         \
             _##elem_var##_OFFSET(),                                                \
             _##elem_var##_ATTR_OFFSET(),                                           \
-            ::kangsw::refl::etype::deduce(_##elem_var##_DEFAULT_VALUE),            \
+            ::kangsw::refl::etype::deduce(_##elem_var##_DEFAULT_VALUE()),          \
             _##elem_var##_FLAGS                                                    \
     }
 // >
 
 // Custom
-#define INTERNAL_CPPMARKUP_ELEMENT_FULL(elem_var, elem_name, default_value, flags, ...)       \
-    INTERNAL_CPPMARKUP_ENTITY_former_ATTR(elem_var, elem_name, ##__VA_ARGS__);                \
-    using _##elem_var##_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value));  \
-                                                                                              \
-    static inline const _##elem_var##_VALUE_TYPE _##elem_var##_DEFAULT_VALUE = default_value; \
+#define INTERNAL_CPPMARKUP_ELEMENT_FULL(elem_var, elem_name, default_value, flags, ...)      \
+    INTERNAL_CPPMARKUP_ENTITY_former_ATTR(elem_var, elem_name, ##__VA_ARGS__);               \
+    using _##elem_var##_VALUE_TYPE = decltype(::kangsw::refl::etype::deduce(default_value)); \
+                                                                                             \
+    static inline const auto _##elem_var##_DEFAULT_VALUE = []() { return default_value; };   \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)
+
+   

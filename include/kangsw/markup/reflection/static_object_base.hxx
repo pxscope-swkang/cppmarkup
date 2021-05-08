@@ -17,6 +17,10 @@ public:
 
 public:
     object_traits_base const& traits() const override { return traits_type::get(); }
+    static Ty_ get_default() {
+        Ty_ o;
+        return o.reset(), o;
+    }
 
 protected:
     void* base() override { return this; }
@@ -38,8 +42,8 @@ public:
         auto& prop        = traits_type::get().find_or_add_property(tag);
 
         property::memory_layout m;
-        m.type                     = etype::from_type<ValueTy_>();
-        m.size                     = sizeof(ValueTy_);
+        m.type   = etype::from_type<ValueTy_>();
+        m.size   = sizeof(ValueTy_);
         m.offset = offset;
 
         m.init_fn = [_v = std::move(initial_value)](void* pv) {
@@ -65,10 +69,14 @@ public:
         auto& prop        = traits_type::get().find_or_add_property(tag);
 
         property::attribute attr;
-        attr.name                            = std::move(name);
-        attr.memory.size                     = sizeof(ValueTy_);
+        attr.name          = std::move(name);
+        attr.memory.size   = sizeof(ValueTy_);
         attr.memory.offset = offset;
-        attr.memory.type                     = etype::from_type<ValueTy_>();
+        attr.memory.type   = etype::from_type<ValueTy_>();
+
+        constexpr auto type = etype::from_type<ValueTy_>();
+        static_assert(!type.is_container());
+        static_assert(!type.is_object());
 
         attr.memory.init_fn = [_v = std::move(initial_value)](void* pv) {
             *(ValueTy_*)pv = _v;

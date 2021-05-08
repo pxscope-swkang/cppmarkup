@@ -90,11 +90,22 @@ INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {
     INTERNAL_CPPMARKUP_ELEMENT_FULL(testvarf, "SomeTestVar1", 15.42, 0);
     INTERNAL_CPPMARKUP_ELEMENT_FULL(testvari, "SomeTestVar2", 154, 0);
     INTERNAL_CPPMARKUP_ELEMENT_FULL(testvars, "SomeTestVar3", "hell, world!", 0);
-    // INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar3", std::vector({1, 2, 3}), 0);
+    INTERNAL_CPPMARKUP_ELEMENT_FULL(testvaria, "SomeTestVar3", std::vector({1, 2, 3}), 0);
 };
 
 TEST_SUITE("Static Object") {
     TEST_CASE("Internal macro functionality test") {
         auto v = kangsw::refl::etype::deduce("faer");
+
+        testobj k;
+        static_assert(std::is_same_v<decltype(k.testvarf), double>);
+        static_assert(std::is_same_v<decltype(k.testvari), int64_t>);
+        static_assert(std::is_same_v<decltype(k.testvars), kangsw::refl::u8str>);
+        static_assert(std::is_same_v<decltype(k.testvaria), std::vector<int64_t>>);
+
+        k.reset();
+
+
+        k = testobj::get_default();
     }
 }

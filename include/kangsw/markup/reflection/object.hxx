@@ -20,17 +20,28 @@ public:
     // .find -> property_proxy
     virtual object_traits_base const& traits() const = 0;
 
+public:
+    void reset() {
+        for (auto& prop : traits().props()) {
+            prop.memory().init_fn((*this)[prop]);
+            for (auto& attr : prop.attributes()) {
+                attr.memory.init_fn((*this)[attr]);
+            }
+        }
+    }
+
+
 protected:
     /** Gets actual origin of contigous memory which is represented by properties. */
     virtual void* base()             = 0;
     virtual void const* base() const = 0;
 
 public:
-    auto operator[](property const& p) { return p.memory()(base()); }
-    auto operator[](property const& p) const { return p.memory()(base()); }
+    void* operator[](property const& p) { return p.memory()(base()); }
+    void const* operator[](property const& p) const { return p.memory()(base()); }
 
-    auto operator[](property::attribute const& p) { return p.memory(base(), p.offset()); }
-    auto operator[](property::attribute const& p) const { return p.memory(base(), p.offset()); }
+    void* operator[](property::attribute const& p) { return p.memory(base(), p.offset()); }
+    void const* operator[](property::attribute const& p) const { return p.memory(base(), p.offset()); }
 };
 
 } // namespace kangsw::refl

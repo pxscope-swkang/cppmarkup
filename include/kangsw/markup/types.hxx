@@ -68,7 +68,7 @@ public:
     constexpr bool is_map() const noexcept { return _value & map; }
     constexpr bool is_array() const noexcept { return _value & array; }
     constexpr bool is_container() const noexcept { return _value & (map | array); }
-    constexpr bool is_object() const noexcept { return _value & object; }
+    constexpr bool is_object() const noexcept { return exact_type() == object; }
     constexpr bool is_number() const noexcept { return _value & number; }
 
     constexpr etype exact_type() const noexcept { return _value & value_mask; }
@@ -115,6 +115,7 @@ private:
         if constexpr (V == null)   { return nullptr; }
         if constexpr (V == object) { return static_cast<refl::object*>(nullptr); }
         if constexpr (V == boolean) { return static_cast<boolean_t*>(nullptr);}
+        if constexpr (V == string) { return static_cast<u8str*>(nullptr); }
         if constexpr (V == integer) { return static_cast<int64_t*>(nullptr); }
         if constexpr (V == floating_point) { return static_cast<double*>(nullptr); }
         if constexpr (V == binary) { return static_cast<binary_chunk*>(nullptr); }
@@ -157,9 +158,9 @@ public:
         } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
             return nullptr;
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {
-            return deduce_result_t<Ty_>(v.begin(), v.end());
+            return std::vector<deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<Ty_, std::map>::value) {
-            return deduce_result_t<Ty_>(v.begin(), v.end());
+            return std::map<u8str, deduce_result_t<typename Ty_::value_type>>(v.begin(), v.end());
         } else {
             return deduce_result_t<Ty_>(std::forward<Ty_>(v));
         }

@@ -77,3 +77,5 @@
                                                                                              \
     static inline const auto _##elem_var##_DEFAULT_VALUE = []() { return default_value; };   \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)
+
+#define INTERNAL_CPPMARKUP_EMBED_OBJECT_begin(elem_var)

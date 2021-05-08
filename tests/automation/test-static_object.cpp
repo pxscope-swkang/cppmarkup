@@ -131,10 +131,30 @@ TEST_SUITE("Static Object") {
             attrvarfd, "SomeTestVar2", nullptr, 0,
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
             INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false);                  //
+            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
         );
 
         INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
+
+        INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(embedded) {
+            INTERNAL_CPPMARKUP_ELEMENT_FULL(
+                attrvarf, "SomeTestVar1", nullptr, 0,
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
+            );
+
+            INTERNAL_CPPMARKUP_ELEMENT_FULL(
+                attrvarfd, "SomeTestVar2", nullptr, 0,
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
+                INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
+            );
+
+            INTERNAL_CPPMARKUP_ELEMENT_FLAG(testvar, "Teststvar", 154, 0);
+        };
+
+        INTERNAL_CPPMARKUP_ELEMENT_FLAG(testobj, "TestObj", embedded::get_default(), 0);
     };
 
     TEST_CASE("Internal macro with attributed elements functionality test") {
@@ -153,8 +173,21 @@ TEST_SUITE("Static Object") {
 
         CHECK(tt.testvar == 154);
 
+        CHECK(tt.testobj.attrvarf_.attr1 == 154);
+        CHECK(tt.testobj.attrvarf_.attr2 == "galer");
+        CHECK(tt.testobj.attrvarf_.attr3 == true);
+
+        CHECK(tt.testobj.attrvarfd_.attr1 == 211);
+        CHECK(tt.testobj.attrvarfd_.attr2 == "pewpew");
+        CHECK(tt.testobj.attrvarfd_.attr3 == false);
+
+        CHECK(tt.testobj.testvar == 154);
+
         REQUIRE(tt.traits().find_property("SomeTestVar1"));
+        REQUIRE(tt.traits().find_property("SomeTestVar1")->tag() == "SomeTestVar1");
         REQUIRE(tt.traits().find_property("SomeTestVar2"));
+        REQUIRE(tt.traits().find_property("SomeTestVar2")->tag() == "SomeTestVar2");
         REQUIRE(tt.traits().find_property("Teststvar"));
+        REQUIRE(tt.traits().find_property("Teststvar")->tag() == "Teststvar");
     }
 }

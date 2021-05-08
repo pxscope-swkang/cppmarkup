@@ -92,7 +92,7 @@ public:
         else if constexpr(is_same_v<eval_type, char const*>) { return string; }
         else if constexpr(is_specialization_of<eval_type, basic_string>::value) { return string; }
         else if constexpr(is_specialization_of<eval_type, std::chrono::time_point>::value) { return timestamp; }
-        else if constexpr(is_base_of_v<refl::object&, eval_type>) { return object; }
+        else if constexpr(is_base_of_v<refl::object, eval_type>) { return object; }
         else if constexpr(is_specialization_of<eval_type, std::vector>::value) {
             using value_type = typename eval_type::value_type;
             static_assert(!from_type<value_type>().is_container(), "nested container is not supported.");
@@ -156,7 +156,7 @@ public:
     template <typename Ty_>
     static decltype(auto) deduce(Ty_&& v) {
         if constexpr (std::is_base_of_v<refl::object, Ty_>) {
-            return std::forward<Ty_>(v);
+            return Ty_(std::forward<Ty_>(v));
         } else if constexpr (std::is_same_v<Ty_, nullptr_t>) {
             return nullptr;
         } else if constexpr (templates::is_specialization_of<Ty_, std::vector>::value) {

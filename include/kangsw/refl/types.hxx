@@ -16,14 +16,13 @@ using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chron
 
 /** bin_pack */
 struct binary_chunk : std::vector<std::byte> {
-    using super = std::vector<std::byte>;
-    using super::super;
+    using std::vector<std::byte>::vector;
 
     auto& chars() const { return reinterpret_cast<std::vector<char> const&>(*this); }
     auto& chars() { return reinterpret_cast<std::vector<char>&>(*this); }
 };
 
-/** bool wrapper for boolean vector. Maps to bool 1:1 */
+/** bool wrapper for boolean vector. Maps to bool 1:1. To avoid vector<bool> specialization */
 struct boolean_t {
     boolean_t(bool value) { *this = value; }
     boolean_t& operator=(bool value) { return _value = value, *this; }

@@ -1,5 +1,5 @@
 #pragma once
-#include "object.hpp"
+#include "object.hxx"
 
 /**
  * Static object interface ...

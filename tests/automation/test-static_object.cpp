@@ -1,6 +1,6 @@
 #include <optional>
 #include "doctest.h"
-#include "kangsw/refl/static_object_base.hpp"
+#include "kangsw/refl/static_object_base.hxx"
 
 #define default_value "FAS"
 #define elem_name     "hell, wrold!"

@@ -1,5 +1,5 @@
 #pragma once
-#include "object_traits.hpp"
+#include "object_traits.hxx"
 
 namespace kangsw::refl {
 

@@ -1,5 +1,5 @@
 #include "doctest.h"
-#include "kangsw/refl/property.hpp"
+#include "kangsw/refl/property.hxx"
 
 using namespace kangsw::refl;
 

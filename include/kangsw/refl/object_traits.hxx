@@ -1,6 +1,6 @@
 #pragma once
 #include <cassert>
-#include "property.hpp"
+#include "property.hxx"
 #include "template_utils.hxx"
 
 namespace kangsw::refl {

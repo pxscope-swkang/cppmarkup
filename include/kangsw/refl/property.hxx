@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 #include <vector>
-#include "types.hpp"
+#include "types.hxx"
 
 namespace kangsw::refl {
 

@@ -10,11 +10,11 @@ namespace kangsw ::refl {
 class object;
 
 /** aliases */
-using u8str      = std::string;
-using u8str_view = std::string_view;
+using u8str       = std::string;
+using u8str_view  = std::string_view;
 using timestamp_t = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
-using integer_t  = int64_t;
-using float_t    = double;
+using integer_t   = int64_t;
+using float_t     = double;
 
 template <typename Ty_>
 class u8str_map : public std::map<u8str, Ty_> {
@@ -26,17 +26,17 @@ public:
 struct binary_chunk : std::vector<std::byte> {
     using std::vector<std::byte>::vector;
 
-    auto& chars() const { return reinterpret_cast<std::vector<char> const&>(*this); }
-    auto& chars() { return reinterpret_cast<std::vector<char>&>(*this); }
+    auto& chars() const noexcept { return reinterpret_cast<std::vector<char> const&>(*this); }
+    auto& chars() noexcept { return reinterpret_cast<std::vector<char>&>(*this); }
 };
 
 /** bool wrapper for boolean vector. Maps to bool 1:1. To avoid vector<bool> specialization */
 struct boolean_t {
-    boolean_t() = default;
-    boolean_t(bool value) { *this = value; }
-    boolean_t& operator=(bool value) { return _value = value, *this; }
-    operator bool&() { return _value; }
-    operator bool const &() const { return _value; }
+    boolean_t() noexcept = default;
+    boolean_t(bool value) noexcept { *this = value; }
+    boolean_t& operator=(bool value) noexcept { return _value = value, *this; }
+    operator bool&() noexcept { return _value; }
+    operator bool const &() const noexcept { return _value; }
 
     bool _value;
 };
@@ -156,34 +156,30 @@ public:
 private:
     template <int V_>
     static constexpr decltype(auto) _deduce_from_exact() {
-        enum { V = V_ };
-
         // clang-format off
-        if constexpr (V == null)   { return nullptr; }
-        if constexpr (V == object) { return static_cast<refl::object*>(nullptr); }
-        if constexpr (V == boolean) { return static_cast<boolean_t*>(nullptr);}
-        if constexpr (V == string) { return static_cast<u8str*>(nullptr); }
-        if constexpr (V == integer) { return static_cast<int64_t*>(nullptr); }
-        if constexpr (V == floating_point) { return static_cast<double*>(nullptr); }
-        if constexpr (V == binary) { return static_cast<binary_chunk*>(nullptr); }
-        if constexpr (V == timestamp) { return static_cast<timestamp_t*>(nullptr); }
+        if constexpr (V_ == null)   { return static_cast<nullptr_t*>(nullptr); }
+        if constexpr (V_ == object) { return static_cast<refl::object*>(nullptr); }
+        if constexpr (V_ == boolean) { return static_cast<boolean_t*>(nullptr);}
+        if constexpr (V_ == string) { return static_cast<u8str*>(nullptr); }
+        if constexpr (V_ == integer) { return static_cast<int64_t*>(nullptr); }
+        if constexpr (V_ == floating_point) { return static_cast<double*>(nullptr); }
+        if constexpr (V_ == binary) { return static_cast<binary_chunk*>(nullptr); }
+        if constexpr (V_ == timestamp) { return static_cast<timestamp_t*>(nullptr); }
         // clang-format on
     }
 
     template <int V_>
     static constexpr decltype(auto) _deduce_from() {
-        enum { V = V_ };
-
-        if constexpr (!etype(V).is_container()) {
-            return _deduce_from_exact<V_>();
-        }
-        if constexpr (etype(V).is_array()) {
-            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).leap()>())>;
+        if constexpr (etype(V_).is_array()) {
+            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V_).leap()>())>;
             return static_cast<std::vector<value_type>*>(nullptr);
         }
-        if constexpr (etype(V).is_map()) {
-            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).leap()>())>;
+        if constexpr (etype(V_).is_map()) {
+            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V_).leap()>())>;
             return static_cast<u8str_map<value_type>*>(nullptr);
+        }
+        if constexpr (!etype(V_).is_container()) {
+            return _deduce_from_exact<V_>();
         }
     }
 

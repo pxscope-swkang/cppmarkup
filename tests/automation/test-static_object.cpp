@@ -212,4 +212,49 @@ TEST_SUITE("Static Object") {
 
         auto map = INTERNAL_CPPMARKUP_MAP("abc", 3, "def", 4);
     }
+
+    // new macro test
+    CPPMARKUP_OBJECT_TEMPLATE(newmacrotest) {
+        CPPMARKUP_ELEMENT(SomeBoolean, true);
+        CPPMARKUP_ELEMENT(SomeInt, 134);
+        CPPMARKUP_ELEMENT(SomeFloat, 134.341f);
+        CPPMARKUP_ELEMENT_A(
+            SomeNullWithAttr, nullptr,
+            CPPMARKUP_ATTRIBUTE(At1, 100);
+            CPPMARKUP_ATTRIBUTE(At2, false);
+            CPPMARKUP_ATTRIBUTE(At3, "SomeStr"););
+
+        CPPMARKUP_EMBED_OBJECT_begin(SomeEmbed) //
+        {
+            CPPMARKUP_ELEMENT(SomeBoolean, false);
+            CPPMARKUP_ELEMENT(SomeInt, 1345);
+            CPPMARKUP_ELEMENT(SomeFloat, 134.561f);
+            CPPMARKUP_ELEMENT_A(
+                SomeNullWithAttr, nullptr,
+                CPPMARKUP_ATTRIBUTE(At1, 101);
+                CPPMARKUP_ATTRIBUTE(At2, true);
+                CPPMARKUP_ATTRIBUTE(At3, "SomeStr2"););
+        }
+        CPPMARKUP_EMBED_OBJECT_end(SomeEmbed);
+
+        CPPMARKUP_EMBED_OBJECT_A_begin(SomeEmbed2,
+                                       CPPMARKUP_ATTRIBUTE(At1, 141);
+                                       CPPMARKUP_ATTRIBUTE(At2, "abcd");
+                                       CPPMARKUP_ATTRIBUTE(At3, 331.411);) //
+        {
+            CPPMARKUP_ELEMENT(SomeInt, 511);
+            CPPMARKUP_ELEMENT(SomeArr, std::vector({1.4, 1.5, 3.11}));
+        }
+        CPPMARKUP_EMBED_OBJECT_end(SomeEmbed2);
+    };
+
+    TEST_CASE("API macros test") {
+        auto f = newmacrotest::get_default();
+
+        REQUIRE(f.SomeEmbed.SomeNullWithAttr_.At3 == "SomeStr2");
+        REQUIRE(f.SomeEmbed2.SomeArr == std::vector({1.4, 1.5, 3.11}));
+
+        static_assert(std::is_move_assignable_v<newmacrotest>);
+        static_assert(std::is_move_constructible_v<newmacrotest>);
+    }
 }

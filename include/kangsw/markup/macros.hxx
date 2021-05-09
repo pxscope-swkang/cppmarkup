@@ -112,6 +112,44 @@ auto deduce_map(u8str_view a, Ty_&& b, Args_&&... args) {
         (std::forward<Ty_>(b)),
         std::forward<Args_>(args)...);
 }
+
+template <size_t N>
+#if __cplusplus >= 202000
+constexpr char const* to_cstr(char8_t const (&str)[N])
+#else
+constexpr char const* to_cstr(char const (&str)[N])
+#endif
+{
+    return (char const*)str;
+}
 } // namespace kangsw::refl::_internal
 
 #define INTERNAL_CPPMARKUP_MAP(...) ::kangsw::refl::_internal::deduce_map(__VA_ARGS__)
+
+#define CPPMARKUP_OBJECT_TEMPLATE(objtype) INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(objtype)
+
+#define CPPMARKUP_ELEMENT_AF(tag, default_value, flags, ...) INTERNAL_CPPMARKUP_ELEMENT_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), default_value, flags, ##__VA_ARGS__);
+#define CPPMARKUP_ELEMENT_A(tag, default_value, ...)         INTERNAL_CPPMARKUP_ELEMENT_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), default_value, 0, ##__VA_ARGS__);
+#define CPPMARKUP_ELEMENT_F(tag, default_value, flags)       INTERNAL_CPPMARKUP_ELEMENT_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), default_value, flags);
+#define CPPMARKUP_ELEMENT(tag, default_value)                INTERNAL_CPPMARKUP_ELEMENT_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), default_value, 0);
+#define CPPMARKUP_ATTRIBUTE(name, default_value)             INTERNAL_CPPMARKUP_ATTRIBUTE(name, ::kangsw::refl::_internal::to_cstr(u8## #name), default_value);
+
+#define CPPMARKUP_EMBED_OBJECT_AF_begin(tag, flags, ...) INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), flags, __VA_ARGS__)
+#define CPPMARKUP_EMBED_OBJECT_A_begin(tag, ...)         INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), 0, __VA_ARGS__)
+#define CPPMARKUP_EMBED_OBJECT_F_begin(tag, flags)       INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), flags)
+#define CPPMARKUP_EMBED_OBJECT_begin(tag)                INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), 0)
+#define CPPMARKUP_EMBED_OBJECT_end(tag)                  INTERNAL_CPPMARKUP_EMBED_OBJECT_end(tag)
+
+// #define CPPMARKUP_EMBED_OBJECT_AF_begin(tag, flags, ...) INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), flags, __VA_ARGS__)
+// #define CPPMARKUP_EMBED_OBJECT_A_begin(tag, ...)         INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), 0, __VA_ARGS__)
+// #define CPPMARKUP_EMBED_OBJECT_F_begin(tag, flags)       INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), flags)
+// #define CPPMARKUP_EMBED_OBJECT_begin(tag)                INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_NOATTR(tag, ::kangsw::refl::_internal::to_cstr(u8## #tag), 0)
+// #define CPPMARKUP_EMBED_OBJECT_end(tag)                  INTERNAL_CPPMARKUP_EMBED_OBJECT_end(tag)
+//
+// #define INTERNAL_CPPMARKUP_WRAP_ATTRIBUTES(...) __VA_ARGS__
+// #define CPPMARKUP_WRAP_ATTRIBUTES(...)          INTERNAL_CPPMARKUP_WRAP_ATTRIBUTES(__VA_ARGS__)
+//
+// #define CPPMARKUP_EMBED_OBJECT_AF(tag, flags, attrs, ...) CPPMARKUP_EMBED_OBJECT_AF_begin(tag, flags, attrs){__VA_ARGS__} CPPMARKUP_EMBED_OBJECT_end(tag);
+// #define CPPMARKUP_EMBED_OBJECT_F(tag, flags, ...)         CPPMARKUP_EMBED_OBJECT_F_begin(tag, flags){__VA_ARGS__} CPPMARKUP_EMBED_OBJECT_end(tag);
+// #define CPPMARKUP_EMBED_OBJECT_A(tag, attrs, ...)         CPPMARKUP_EMBED_OBJECT_AF(tag, 0, attrs, __VA_ARGS__)
+// #define CPPMARKUP_EMBED_OBJECT(tag, ...)                  CPPMARKUP_EMBED_OBJECT_F(tag, 0, __VA_ARGS__)

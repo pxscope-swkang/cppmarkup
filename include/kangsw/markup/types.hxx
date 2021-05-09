@@ -132,8 +132,8 @@ public:
         // clang-format off
         if      constexpr(is_same_v<Ty_, nullptr_t>) { return null; }
         else if constexpr(is_same_v<Ty_, boolean_t>) { return boolean; }
-        else if constexpr(is_same_v<Ty_, int64_t>) { return integer | number; }
-        else if constexpr(is_same_v<Ty_, double>) { return floating_point | number; }
+        else if constexpr(is_same_v<Ty_, int64_t>) { return integer; }
+        else if constexpr(is_same_v<Ty_, double>) { return floating_point; }
         else if constexpr(is_same_v<Ty_, u8str>) { return string; }
         else if constexpr(is_same_v<Ty_, binary_chunk>) { return binary; }
         else if constexpr(is_same_v<Ty_, timestamp_t>) { return timestamp; }
@@ -194,6 +194,16 @@ private:
     using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
 
 public:
+    template <typename Ty_, size_t N>
+    static decltype(auto) deduce(Ty_ (&v)[N]) {
+        return u8str(reinterpret_cast<const char*>(v));
+    }
+
+    template <typename Ty_>
+    static decltype(auto) deduce(std::initializer_list<Ty_> v) {
+        return std::vector<_deduce_result_t<Ty_>>(v.begin(), v.end());
+    }
+
     template <typename Ty_>
     static decltype(auto) deduce(Ty_&& v) {
         using eval_type = std::remove_reference_t<Ty_>;
@@ -203,22 +213,32 @@ public:
         } else if constexpr (std::is_same_v<eval_type, nullptr_t>) {
             return nullptr;
         } else if constexpr (templates::is_specialization_of<eval_type, std::vector>::value) {
-            return std::vector<decltype(deduce(v[0]))>(v.begin(), v.end());
+            return std::vector<decltype(deduce(typename Ty_::value_type{}))>(v.begin(), v.end());
         } else if constexpr (templates::is_specialization_of<eval_type, u8str_map>::value) {
-            return u8str_map<decltype(deduce(v[""]))>(v.begin(), v.end());
+            return u8str_map<decltype(deduce(typename Ty_::mapped_type{}))>(v.begin(), v.end());
+        } else if constexpr (templates::is_specialization_of<eval_type, std::chrono::time_point>::value) {
+            return std::chrono::time_point_cast<timestamp_t::duration, timestamp_t::clock>(v);
         } else {
-            return _deduce_result_t<Ty_>(std::forward<eval_type>(v));
+            // return _deduce_result_t<Ty_>(std::forward<eval_type>(v));
+
+            using namespace std;
+            using namespace templates;
+
+            // clang-format off
+            if      constexpr(is_same_v<eval_type, bool>) { return boolean_t(v); }
+            else if constexpr(is_same_v<eval_type, boolean_t>) { return boolean_t(v); }
+            else if constexpr(is_same_v<eval_type, nullptr_t>) { return nullptr; }
+            else if constexpr(is_same_v<eval_type, binary_chunk>) { return binary_chunk{std::forward<Ty_>(v)}; }
+            else if constexpr(is_integral_v<eval_type>) { return integer_t(v); }
+            else if constexpr(is_floating_point_v<eval_type>) { return float_t(v); }
+            else if constexpr(is_same_v<eval_type, char const*>) { return u8str(v); }
+#if __cplusplus >= 202000
+            else if constexpr(is_same_v<eval_type, char8_t const*>) { return u8str(reinterpret_cast<char const*>(v)); }
+#endif
+            else if constexpr(is_specialization_of<eval_type, basic_string>::value) { return u8str(v.begin(), v.end()); }
+            else { static_assert("unsupported type"); }
+            // clang-format on
         }
-    }
-
-    template <typename Ty_, size_t N>
-    static decltype(auto) deduce(Ty_ (&v)[N]) {
-        return u8str(v);
-    }
-
-    template <typename Ty_>
-    static decltype(auto) deduce(std::initializer_list<Ty_> v) {
-        return std::vector<_deduce_result_t<Ty_>>(v.begin(), v.end());
     }
 
 private:

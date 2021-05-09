@@ -104,7 +104,7 @@ public:
     }
 
     void _set_omi(object_map_interface* new_omi) {
-        if (!_is_valid || !(_memory.type.is_object() && _memory.type.is_array())) {
+        if (!_is_valid || !(_memory.type.is_object() && _memory.type.is_map())) {
             throw invalid_container_interface_setup_exception("");
         }
         _omi.reset(new_omi);

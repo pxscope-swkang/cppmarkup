@@ -25,7 +25,6 @@ public:
         return o.reset(), o;
     }
 
-protected:
     void* base() override { return this; }
     void const* base() const override { return this; }
 };
@@ -76,11 +75,13 @@ public:
     }
 
     object const& at(void const* p, u8str_view s) const override {
-        return static_cast<cptr>(p)->at(s);
+        if (auto found = find(p, s)) { return *found; }
+        throw std::out_of_range{""};
     }
 
     object& at(void* p, u8str_view s) const override {
-        return static_cast<ptr>(p)->at(s);
+        if (auto found = find(p, s)) { return *found; }
+        throw std::out_of_range{""};
     }
 
     object const* find(void const* p, u8str_view s) const override {
@@ -91,15 +92,16 @@ public:
     }
 
     object* find(void* p, u8str_view s) const override {
-        return const_cast<object*>(find((void const*)p, s));
+        return const_cast<object*>(find(static_cast<void const*>(p), s));
     }
 
     object& insert(void* p, u8str_view s) const override {
-        return (*static_cast<ptr>(p))[s];
+        if (auto found = find(p, s)) { return *found; }
+        return (*static_cast<ptr>(p)).try_emplace(u8str(s)).first->second;
     }
 
     void erase(void* p, u8str_view s) const override {
-        static_cast<ptr>(p)->erase(s);
+        // static_cast<ptr>(p)->erase(s);
     }
 
     void for_each(void* p, std::function<void(u8str_view, object&)> const& fn) override {
@@ -140,7 +142,7 @@ public:
             prop._set_ovi(new static_object_vector_iface<typename ValueTy_::value_type>);
         }
         if constexpr (type.is_object() && type.is_map()) {
-          //  prop._set_omi(new static_object_map_iface<typename ValueTy_::mapped_type>);
+            prop._set_omi(new static_object_map_iface<typename ValueTy_::mapped_type>);
         }
     }
 };
@@ -159,7 +161,7 @@ public:
         auto& prop        = traits_type::get().find_or_add_property(tag);
 
         property::attribute attr;
-        attr.name          = std::move(name);
+        attr.name           = std::move(name);
         attr._memory.size   = sizeof(ValueTy_);
         attr._memory.offset = offset;
         attr._memory.type   = etype::from_type<ValueTy_>();

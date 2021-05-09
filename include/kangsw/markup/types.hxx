@@ -17,9 +17,9 @@ using integer_t   = int64_t;
 using float_t     = double;
 
 template <typename Ty_>
-class u8str_map : public std::map<u8str, Ty_> {
+class u8str_map : public std::map<u8str, Ty_, std::less<>> {
 public:
-    using std::map<u8str, Ty_>::map;
+    using std::map<u8str, Ty_, std::less<>>::map;
 };
 
 /** bin_pack */
@@ -137,7 +137,7 @@ public:
         else if constexpr(is_same_v<Ty_, u8str>) { return string; }
         else if constexpr(is_same_v<Ty_, binary_chunk>) { return binary; }
         else if constexpr(is_same_v<Ty_, timestamp_t>) { return timestamp; }
-        else if constexpr(is_base_of_v<refl::object, Ty_>) { return timestamp; }
+        else if constexpr(is_base_of_v<refl::object, Ty_>) { return object; }
         else if constexpr(is_specialization_of<eval_type, std::vector>::value) {
             using value_type = typename eval_type::value_type;
             static_assert(!from_type_exact<value_type>().is_container(), "nested container is not supported.");

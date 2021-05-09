@@ -1,5 +1,6 @@
 #pragma once
 #include "reflection/static_object_base.hxx"
+#include "reflection/property_proxy.hxx"
 
 // INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(object_type)
 #define INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(object_type) \

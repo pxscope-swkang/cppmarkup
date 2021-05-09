@@ -16,7 +16,7 @@ public:
 };
 
 // Supports non-const, const version both.
-template <typename Ty_, bool Constant_>
+template <typename Ty_, bool Constant_ = true>
 class property_proxy {
 public:
     using void_pointer = std::conditional_t<Constant_, void const*, void*>;
@@ -30,6 +30,9 @@ public:
     property_proxy(property::attribute const& m, void_pointer ptr) : _p(static_cast<pointer>(ptr)) {
         property_type_mismatch_exception::verify<Ty_>(m._memory);
     }
+
+    template <bool OtherConstant_>
+    property_proxy(property_proxy<Ty_, OtherConstant_> other) : _p(other._p) {}
 
 public:
     reference operator*() const { return *_p; }
@@ -56,6 +59,9 @@ public:
         property_type_mismatch_exception::verify<Ty_>(m.memory());
     }
 
+    template <bool OtherConstant_>
+    property_proxy(property_proxy<Ty_, OtherConstant_> other) : _p(other._p) {}
+
     auto size() const { return _p->size(); }
     auto empty() const { return _p->empty(); }
     auto& emplace_back() { return _p->emplace_back(); }
@@ -76,6 +82,7 @@ template <bool Constant_>
 class property_proxy<std::vector<object>, Constant_> {
 public:
     using Vty_         = object;
+    using Ty_          = std::vector<Vty_>;
     using void_pointer = std::conditional_t<Constant_, void const*, void*>;
 
 public:
@@ -83,6 +90,9 @@ public:
         assert(_if);
         property_type_mismatch_exception::verify<std::vector<Vty_>>(m.memory());
     }
+
+    template <bool OtherConstant_>
+    property_proxy(property_proxy<Ty_, OtherConstant_> other) : _if(other._if), _p(other._p) {}
 
     auto size() const { return _if->size(_p); }
     auto empty() const { return size() == 0; }
@@ -115,6 +125,9 @@ public:
     property_proxy(property const& m, void_pointer ptr) : _p(static_cast<pointer>(ptr)) {
         property_type_mismatch_exception::verify<Ty_>(m.memory());
     }
+
+    template <bool OtherConstant_>
+    property_proxy(property_proxy<Ty_, OtherConstant_> other) : _p(other._p) {}
 
 public:
     auto size() const { return _p->size(); }
@@ -154,6 +167,7 @@ template <bool Constant_>
 class property_proxy<u8str_map<object>, Constant_> {
 public:
     using Vty_          = object;
+    using Ty_           = u8str_map<object>;
     using void_pointer  = std::conditional_t<Constant_, void const*, void*>;
     using const_pointer = void const*;
 
@@ -161,6 +175,9 @@ public:
         assert(_if);
         property_type_mismatch_exception::verify<u8str_map<Vty_>>(m.memory());
     }
+
+    template <bool OtherConstant_>
+    property_proxy(property_proxy<Ty_, OtherConstant_> other) : _if(other._if), _p(other._p) {}
 
 public:
     auto size() const { return _if->size(_p); }
@@ -194,6 +211,7 @@ auto make_proxy(ObjTy_& obj, property const& m) {
     enum { is_constant = std::is_const_v<ObjTy_> };
     return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
 }
+
 /** Makes property proxy from object instance and attribute property. */
 template <typename Ty_, typename ObjTy_>
 auto make_proxy(ObjTy_& obj, property::attribute const& m) {
@@ -213,7 +231,7 @@ auto make_proxy(ObjTy_& obj, property::attribute const& m) {
  */
 template <typename ObjTy_, typename PropTy_, typename HandleFn_>
 decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
-    static_assert(std::is_same_v<object, std::remove_const_t<ObjTy_>>);
+    static_assert(std::is_base_of_v<object, std::remove_const_t<ObjTy_>>);
     static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
 
     property::memory_t const& m = pr.memory();

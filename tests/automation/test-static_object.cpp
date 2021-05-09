@@ -80,8 +80,8 @@ TEST_SUITE("Static Object") {
 
         REQUIRE(pprop->attributes().size() == 1);
         CHECK(pprop->attributes()[0].name == attrib_name);
-        CHECK(pprop->attributes()[0].memory.size == sizeof o.elem_var_.attrib_var);
-        CHECK(pprop->attributes()[0].memory.offset == sizeof nullptr);
+        CHECK(pprop->attributes()[0]._memory.size == sizeof o.elem_var_.attrib_var);
+        CHECK(pprop->attributes()[0]._memory.offset == sizeof nullptr);
     }
 
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(testobj) {

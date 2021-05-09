@@ -160,15 +160,15 @@ public:
 
         property::attribute attr;
         attr.name          = std::move(name);
-        attr.memory.size   = sizeof(ValueTy_);
-        attr.memory.offset = offset;
-        attr.memory.type   = etype::from_type<ValueTy_>();
+        attr._memory.size   = sizeof(ValueTy_);
+        attr._memory.offset = offset;
+        attr._memory.type   = etype::from_type<ValueTy_>();
 
         constexpr auto type = etype::from_type<ValueTy_>();
         static_assert(!type.is_container());
         static_assert(!type.is_object());
 
-        attr.memory.init_fn = [_v = std::move(initial_value)](void* pv) {
+        attr._memory.init_fn = [_v = std::move(initial_value)](void* pv) {
             *(ValueTy_*)pv = _v;
         };
 

@@ -13,6 +13,8 @@ class object;
 using u8str      = std::string;
 using u8str_view = std::string_view;
 using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
+using integer_t  = int64_t;
+using float_t    = double;
 
 template <typename Ty_>
 class u8str_map : public std::map<u8str, Ty_> {
@@ -53,7 +55,6 @@ public:
         object         = 0x07,
 
         reserved_container = 0x10,
-        number             = 0x20,
         map                = 0x40,
         array              = 0x80,
 
@@ -75,18 +76,18 @@ public:
     constexpr bool is_map() const noexcept { return _value & map; }
     constexpr bool is_array() const noexcept { return _value & array; }
     constexpr bool is_container() const noexcept { return _value & (map | array); }
-    constexpr bool is_number() const noexcept { return _value & number; }
+    constexpr bool is_number() const noexcept { return is_integer() || is_floating_point(); }
 
-    constexpr bool is_object() const noexcept { return exact_type() == object; }
-    constexpr bool is_boolean() const noexcept { return exact_type() == boolean; }
-    constexpr bool is_timestamp() const noexcept { return exact_type() == timestamp; }
-    constexpr bool is_binary() const noexcept { return exact_type() == binary; }
-    constexpr bool is_string() const noexcept { return exact_type() == string; }
-    constexpr bool is_null() const noexcept { return exact_type() == null; }
-    constexpr bool is_integer() const noexcept { return exact_type() == integer; }
-    constexpr bool is_floating_point() const noexcept { return exact_type() == floating_point; }
+    constexpr bool is_object() const noexcept { return leap() == object; }
+    constexpr bool is_boolean() const noexcept { return leap() == boolean; }
+    constexpr bool is_timestamp() const noexcept { return leap() == timestamp; }
+    constexpr bool is_binary() const noexcept { return leap() == binary; }
+    constexpr bool is_string() const noexcept { return leap() == string; }
+    constexpr bool is_null() const noexcept { return leap() == null; }
+    constexpr bool is_integer() const noexcept { return leap() == integer; }
+    constexpr bool is_floating_point() const noexcept { return leap() == floating_point; }
 
-    constexpr etype exact_type() const noexcept { return _value & value_mask; }
+    constexpr etype leap() const noexcept { return _value & value_mask; }
     constexpr _type get() const noexcept { return _value; }
 
 public:
@@ -101,8 +102,8 @@ public:
         else if constexpr(is_same_v<eval_type, boolean_t>) { return boolean; }
         else if constexpr(is_same_v<eval_type, nullptr_t>) { return null; }
         else if constexpr(is_same_v<eval_type, binary_chunk>) { return binary; }
-        else if constexpr(is_integral_v<eval_type>) { return integer | number; }
-        else if constexpr(is_floating_point_v<eval_type>) { return floating_point | number; }
+        else if constexpr(is_integral_v<eval_type>) { return integer ; }
+        else if constexpr(is_floating_point_v<eval_type>) { return floating_point ; }
         else if constexpr(is_same_v<eval_type, char const*>) { return string; }
         else if constexpr(is_specialization_of<eval_type, basic_string>::value) { return string; }
         else if constexpr(is_specialization_of<eval_type, std::chrono::time_point>::value) { return timestamp; }
@@ -155,7 +156,7 @@ public:
 private:
     template <int V_>
     static constexpr decltype(auto) _deduce_from_exact() {
-        auto constexpr V = V_ & ~number;
+        enum { V = V_ };
 
         // clang-format off
         if constexpr (V == null)   { return nullptr; }
@@ -171,17 +172,17 @@ private:
 
     template <int V_>
     static constexpr decltype(auto) _deduce_from() {
-        auto constexpr V = V_ & ~number;
+        enum { V = V_ };
 
         if constexpr (!etype(V).is_container()) {
             return _deduce_from_exact<V_>();
         }
         if constexpr (etype(V).is_array()) {
-            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).exact_type()>())>;
+            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).leap()>())>;
             return static_cast<std::vector<value_type>*>(nullptr);
         }
         if constexpr (etype(V).is_map()) {
-            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).exact_type()>())>;
+            using value_type = std::remove_reference_t<decltype(*_deduce_from_exact<etype(V).leap()>())>;
             return static_cast<u8str_map<value_type>*>(nullptr);
         }
     }
@@ -197,7 +198,6 @@ private:
     using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
 
 public:
-
     template <typename Ty_>
     static decltype(auto) deduce(Ty_&& v) {
         using eval_type = std::remove_reference_t<Ty_>;

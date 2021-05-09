@@ -29,7 +29,7 @@ public:
         for (auto& prop : traits().props()) {
             prop.memory().init_fn((*this)[prop]);
             for (auto& attr : prop.attributes()) {
-                attr.memory.init_fn((*this)[attr]);
+                attr._memory.init_fn((*this)[attr]);
             }
         }
     }
@@ -38,8 +38,8 @@ public:
     void* operator[](property const& p) { return p.memory()(base()); }
     void const* operator[](property const& p) const { return p.memory()(base()); }
 
-    void* operator[](property::attribute const& p) { return p.memory(base()); }
-    void const* operator[](property::attribute const& p) const { return p.memory(base()); }
+    void* operator[](property::attribute const& p) { return p._memory(base()); }
+    void const* operator[](property::attribute const& p) const { return p._memory(base()); }
 };
 
 } // namespace kangsw::refl

@@ -53,7 +53,9 @@ public:
         u8str name;
 
         /** */
-        memory_t memory;
+        memory_t _memory;
+
+        auto& memory() const { return _memory; }
     };
 
 public:

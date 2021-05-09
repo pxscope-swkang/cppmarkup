@@ -4,11 +4,11 @@
 using namespace kangsw::refl;
 
 // Types compilation test
-static_assert(etype::from_type<int>().exact_type() == etype::integer);
-static_assert(etype::from_type<bool>().exact_type() == etype::boolean);
-static_assert(etype::from_type<double>().exact_type() == etype::floating_point);
-static_assert(etype::from_type<char const*>().exact_type() == etype::string);
-static_assert(etype::from_type<std::vector<double>>().exact_type() == etype::floating_point);
+static_assert(etype::from_type<int>().leap() == etype::integer);
+static_assert(etype::from_type<bool>().leap() == etype::boolean);
+static_assert(etype::from_type<double>().leap() == etype::floating_point);
+static_assert(etype::from_type<char const*>().leap() == etype::string);
+static_assert(etype::from_type<std::vector<double>>().leap() == etype::floating_point);
 static_assert(etype::from_type<std::vector<double>>().is_array());
 static_assert(etype::from_type<u8str_map<double>>().is_map());
 

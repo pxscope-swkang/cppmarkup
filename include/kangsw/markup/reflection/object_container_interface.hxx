@@ -31,8 +31,8 @@ public:
     virtual object& insert(void* p, u8str_view s) const = 0;
     virtual void erase(void* p, u8str_view s) const     = 0;
 
-    virtual void for_each(void* p, std::function<void(u8str_view, object*)> const&)             = 0;
-    virtual void for_each(void const* p, std::function<void(u8str_view, object const*)> const&) = 0;
+    virtual void for_each(void* p, std::function<void(u8str_view, object&)> const&)             = 0;
+    virtual void for_each(void const* p, std::function<void(u8str_view, object const&)> const&) = 0;
 };
 
 } // namespace kangsw::refl

@@ -102,11 +102,11 @@ public:
         static_cast<ptr>(p)->erase(s);
     }
 
-    void for_each(void* p, std::function<void(u8str_view, object*)> const& fn) override {
+    void for_each(void* p, std::function<void(u8str_view, object&)> const& fn) override {
         for (auto& pair : *static_cast<ptr>(p)) { fn(pair.first, pair.second); }
     }
 
-    void for_each(void const* p, std::function<void(u8str_view, object const*)> const& fn) override {
+    void for_each(void const* p, std::function<void(u8str_view, object const&)> const& fn) override {
         for (auto& pair : *static_cast<cptr>(p)) { fn(pair.first, pair.second); }
     }
 };

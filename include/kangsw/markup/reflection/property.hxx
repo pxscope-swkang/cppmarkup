@@ -119,8 +119,8 @@ private:
 
     std::vector<attribute> _attr = {};
 
-    std::unique_ptr<object_vector_interface> _ovi = {};
-    std::unique_ptr<object_map_interface> _omi    = {};
+    std::unique_ptr<object_vector_interface const> _ovi = {};
+    std::unique_ptr<object_map_interface const> _omi    = {};
 };
 
 } // namespace kangsw::refl

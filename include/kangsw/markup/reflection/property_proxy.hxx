@@ -28,7 +28,7 @@ public:
         property_type_mismatch_exception::verify<Ty_>(m.memory());
     }
     property_proxy(property::attribute const& m, void_pointer ptr) : _p(static_cast<pointer>(ptr)) {
-        property_type_mismatch_exception::verify<Ty_>(m.memory);
+        property_type_mismatch_exception::verify<Ty_>(m._memory);
     }
 
 public:
@@ -188,21 +188,79 @@ using array_proxy = property_proxy<std::vector<Ty_>, Constant_>;
 template <typename Ty_, bool Constant_>
 using map_proxy = property_proxy<u8str_map<Ty_>, Constant_>;
 
-/** */
+/** Makes property proxy from object instance and property. */
 template <typename Ty_, typename ObjTy_>
-auto make_proxy(ObjTy_* obj, property const& m) {
+auto make_proxy(ObjTy_& obj, property const& m) {
     enum { is_constant = std::is_const_v<ObjTy_> };
-    return property_proxy<Ty_, is_constant>{m, m.memory()(obj->base())};
+    return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
 }
+/** Makes property proxy from object instance and attribute property. */
 template <typename Ty_, typename ObjTy_>
-auto make_proxy(ObjTy_* obj, property::attribute const& m) {
+auto make_proxy(ObjTy_& obj, property::attribute const& m) {
     enum { is_constant = std::is_const_v<ObjTy_> };
-    return property_proxy<Ty_, is_constant>{m, m.memory(obj->base())};
+    return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
+}
+
+/**
+ * \brief 
+ * \tparam ObjTy_ 'object' or 'object const'
+ * \tparam PropTy_ 'property' or 'property::attribute'
+ * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
+ * \param obj 
+ * \param pr 
+ * \param fn 
+ * \return invocation result of HandleFn_
+ */
+template <typename ObjTy_, typename PropTy_, typename HandleFn_>
+decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
+    static_assert(std::is_same_v<object, std::remove_const_t<ObjTy_>>);
+    static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
+
+    property::memory_t const& m = pr.memory();
+
+    switch (m.type.get()) {
+        case etype::null: return fn(make_proxy<nullptr_t>(obj, pr));
+        case etype::boolean: return fn(make_proxy<boolean_t>(obj, pr));
+        case etype::integer: return fn(make_proxy<integer_t>(obj, pr));
+        case etype::floating_point: return fn(make_proxy<float_t>(obj, pr));
+        case etype::string: return fn(make_proxy<u8str>(obj, pr));
+        case etype::timestamp: return fn(make_proxy<timestamp_t>(obj, pr));
+        case etype::binary: return fn(make_proxy<binary_chunk>(obj, pr));
+        case etype::object: return fn(make_proxy<object>(obj, pr));
+        default:;
+    }
+
+    if constexpr (std::is_same_v<PropTy_, property>) {
+        if (m.type.is_array()) {
+            switch (m.type.leap()) {
+                case etype::null: return fn(make_proxy<std::vector<nullptr_t>>(obj, pr));
+                case etype::boolean: return fn(make_proxy<std::vector<boolean_t>>(obj, pr));
+                case etype::integer: return fn(make_proxy<std::vector<integer_t>>(obj, pr));
+                case etype::floating_point: return fn(make_proxy<std::vector<float_t>>(obj, pr));
+                case etype::string: return fn(make_proxy<std::vector<u8str>>(obj, pr));
+                case etype::timestamp: return fn(make_proxy<std::vector<timestamp_t>>(obj, pr));
+                case etype::binary: return fn(make_proxy<std::vector<binary_chunk>>(obj, pr));
+                case etype::object: return fn(make_proxy<std::vector<object>>(obj, pr));
+                default:;
+            }
+        } else if (m.type.is_map()) {
+            switch (m.type.leap()) {
+                case etype::null: return fn(make_proxy<u8str_map<nullptr_t>>(obj, pr));
+                case etype::boolean: return fn(make_proxy<u8str_map<boolean_t>>(obj, pr));
+                case etype::integer: return fn(make_proxy<u8str_map<integer_t>>(obj, pr));
+                case etype::floating_point: return fn(make_proxy<u8str_map<float_t>>(obj, pr));
+                case etype::string: return fn(make_proxy<u8str_map<u8str>>(obj, pr));
+                case etype::timestamp: return fn(make_proxy<u8str_map<timestamp_t>>(obj, pr));
+                case etype::binary: return fn(make_proxy<u8str_map<binary_chunk>>(obj, pr));
+                case etype::object: return fn(make_proxy<u8str_map<object>>(obj, pr));
+                default:;
+            }
+        } else {
+            assert(0 && "invalid container type specified.");
+        }
+    } else {
+        assert(0 && "fatal logic error: attribute must not have container type");
+    }
 }
 
 } // namespace kangsw::refl
-
-void pewpew() {
-    using namespace kangsw::refl;
-    auto r = make_proxy<object>((object*)nullptr, property::attribute{""});
-}

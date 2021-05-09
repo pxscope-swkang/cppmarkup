@@ -12,7 +12,7 @@ class object;
 /** aliases */
 using u8str      = std::string;
 using u8str_view = std::string_view;
-using clock_type = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
+using timestamp_t = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 using integer_t  = int64_t;
 using float_t    = double;
 
@@ -136,7 +136,7 @@ public:
         else if constexpr(is_same_v<Ty_, double>) { return floating_point | number; }
         else if constexpr(is_same_v<Ty_, u8str>) { return string; }
         else if constexpr(is_same_v<Ty_, binary_chunk>) { return binary; }
-        else if constexpr(is_same_v<Ty_, clock_type>) { return timestamp; }
+        else if constexpr(is_same_v<Ty_, timestamp_t>) { return timestamp; }
         else if constexpr(is_base_of_v<refl::object, Ty_>) { return timestamp; }
         else if constexpr(is_specialization_of<eval_type, std::vector>::value) {
             using value_type = typename eval_type::value_type;
@@ -166,7 +166,7 @@ private:
         if constexpr (V == integer) { return static_cast<int64_t*>(nullptr); }
         if constexpr (V == floating_point) { return static_cast<double*>(nullptr); }
         if constexpr (V == binary) { return static_cast<binary_chunk*>(nullptr); }
-        if constexpr (V == timestamp) { return static_cast<clock_type*>(nullptr); }
+        if constexpr (V == timestamp) { return static_cast<timestamp_t*>(nullptr); }
         // clang-format on
     }
 

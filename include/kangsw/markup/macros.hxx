@@ -103,12 +103,12 @@ auto _deduce_map_impl(u8str_map<DTy_>& acc, u8str_view a, Ty_&& b, Args_&&... ar
         return acc;
 }
 
-template <typename Ty_, typename... Args_>
-auto deduce_map(u8str_view a, Ty_&& b, Args_&&... args) {
+template <typename Ch_, size_t N, typename Ty_, typename... Args_>
+auto deduce_map(Ch_ const (&a)[N], Ty_&& b, Args_&&... args) {
     using deduced_t = decltype(etype::deduce(b));
     u8str_map<deduced_t> map;
     return _deduce_map_impl<deduced_t>(
-        map, a,
+        map, reinterpret_cast<char const*>(a),
         (std::forward<Ty_>(b)),
         std::forward<Args_>(args)...);
 }
@@ -125,6 +125,7 @@ constexpr char const* to_cstr(char const (&str)[N])
 } // namespace kangsw::refl::_internal
 
 #define INTERNAL_CPPMARKUP_MAP(...) ::kangsw::refl::_internal::deduce_map(__VA_ARGS__)
+#define CPPMARKUP_MAP(...)          INTERNAL_CPPMARKUP_MAP(__VA_ARGS__)
 
 #define CPPMARKUP_OBJECT_TEMPLATE(objtype) INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(objtype)
 

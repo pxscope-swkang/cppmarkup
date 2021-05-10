@@ -3,6 +3,13 @@
 
 namespace kangsw::refl {
 
+/**
+ * Performs strict compile-time and runtime type check.
+ *
+ * In compile time, it checks whether Ty_ is one of object member types.
+ *
+ * In runtime, it checks whether given property's underlying type is same with Ty_.
+ */
 class property_type_mismatch_exception : public std::logic_error {
 public:
     using std::logic_error::logic_error;
@@ -15,7 +22,11 @@ public:
     }
 };
 
-// Supports non-const, const version both.
+/**
+ * Generic property proxy type to manipulate trivial types.
+ *
+ * Single class can handle both of const and non-const instance of original reference.
+ */
 template <typename Ty_, bool Constant_ = true>
 class property_proxy {
 public:
@@ -44,6 +55,11 @@ private:
     pointer _p;
 };
 
+/**
+ * Vector specialization of property_proxy.
+ *
+ * Which wraps several vector operations into few common APIs which can be shared with object_vector_interface.
+ */
 template <typename ValueTy_, bool Constant_>
 class property_proxy<std::vector<ValueTy_>, Constant_> {
 public:
@@ -82,6 +98,10 @@ private:
     pointer _p;
 };
 
+/**
+ * Object vector specialized version of property_proxy.
+ * Wraps object_vector_interface
+ */
 template <bool Constant_>
 class property_proxy<std::vector<object>, Constant_> {
 public:
@@ -119,6 +139,9 @@ private:
     void_pointer _p;
 };
 
+/**
+ * Works similar way with vector specialization of \ref property_proxy
+ */
 template <typename ValueTy_, bool Constant_>
 class property_proxy<u8str_map<ValueTy_>, Constant_> {
 public:
@@ -175,6 +198,9 @@ private:
     pointer _p;
 };
 
+/**
+ * Works similar way with object vector specialization of \ref property_proxy
+ */
 template <bool Constant_>
 class property_proxy<u8str_map<object>, Constant_> {
 public:
@@ -215,20 +241,22 @@ private:
     void_pointer _p;
 };
 
-template <typename Ty_, bool Constant_>
-using array_proxy = property_proxy<std::vector<Ty_>, Constant_>;
-
-template <typename Ty_, bool Constant_>
-using map_proxy = property_proxy<u8str_map<Ty_>, Constant_>;
-
-/** Makes property proxy from object instance and property. */
+/**
+ * Creates property proxy from object instance and property.
+ *
+ * Runtime type check will be performed.
+ */
 template <typename Ty_, typename ObjTy_>
 auto make_proxy(ObjTy_& obj, property const& m) {
     enum { is_constant = std::is_const_v<ObjTy_> };
     return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
 }
 
-/** Makes property proxy from object instance and attribute property. */
+/**
+ * Makes property proxy from object instance and attribute property.
+ *
+ * Runtime type check will be performed. Attributes must not be any of container types or object type.
+ */
 template <typename Ty_, typename ObjTy_>
 auto make_proxy(ObjTy_& obj, property::attribute const& m) {
     enum { is_constant = std::is_const_v<ObjTy_> };
@@ -287,13 +315,13 @@ decltype(auto) _apply_property_op_impl(ObjTy_& obj, PropTy_ const& pr, HandleFn_
 } // namespace impl
 
 /**
- * \brief 
+ * \brief On property, invoke operation which will be applied on its actual underlying type. 
  * \tparam ObjTy_ 'object' or 'object const'
  * \tparam PropTy_ 'property' or 'property::attribute'
  * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
  * \param obj 
  * \param pr 
- * \param fn 
+ * \param fn This should be template function, which will be instanciated per available property types.
  * \return invocation result of HandleFn_
  */
 template <typename ObjTy_, typename PropTy_, typename HandleFn_>
@@ -306,3 +334,4 @@ decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn)
 }
 
 } // namespace kangsw::refl
+

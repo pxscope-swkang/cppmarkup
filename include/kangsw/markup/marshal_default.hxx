@@ -2,23 +2,45 @@
 #include <cassert>
 #include <charconv>
 #include <optional>
-#include <regex>
 #include "types.hxx"
 #include "utility/base64.hxx"
 
 namespace kangsw::refl {
 
-template <typename Ty_> struct generic_can_trivially_marshalable {
+/**
+ * TODO: json marshal context
+ */
+
+/**
+ * TODO: XML marshal context
+ */
+
+/**
+ * TODO: BSON marshal context
+ */
+
+/**
+ * TODO: Rapid Codec marshal context
+ */
+
+namespace impl {
+template <typename Ty_> struct _generic_can_trivially_marshalable {
     constexpr bool operator()() {
         auto constexpr type = etype::from_type<Ty_>();
         return !type.is_container() && !type.is_object() && !type.is_string();
     }
 };
+} // namespace impl
 
+/**
+ * Checks given type can be marshaled via generic marshaling methods
+ */
 template <typename Ty_>
-inline constexpr bool generic_can_trivially_marshalable_v = generic_can_trivially_marshalable<Ty_>{}();
+inline constexpr bool generic_can_trivially_marshalable_v = impl::_generic_can_trivially_marshalable<Ty_>{}();
 
-/** Predict required capacity to stringfy given element */
+/**
+ * Predict required capacity to stringfy given element
+ */
 template <typename Ty_>
 struct genenric_predict_buffer_length {
     size_t operator()(Ty_ const& i) const {
@@ -43,6 +65,9 @@ struct genenric_predict_buffer_length {
     }
 };
 
+/**
+ * Stringfy trivial types into string
+ */
 template <typename Ty_> struct generic_stringfy {
     template <typename OutIt_>
     void operator()(Ty_ const& i, OutIt_ o) const {
@@ -82,9 +107,12 @@ template <typename Ty_> struct generic_stringfy {
     }
 };
 
+/**
+ * Parse trivial types from string
+ */
 template <typename Ty_> struct generic_parse {
 
-#if _WIN32 // Cross-platform way
+#if _WIN32 // Cross-platform support
     static time_t timegm(tm* t) { return _mkgmtime(t); }
 #endif
 

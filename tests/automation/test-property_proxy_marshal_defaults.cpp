@@ -7,13 +7,27 @@ using namespace kangsw;
 struct visitor {
     template <typename Ty_>
     void operator()(refl::property_proxy<Ty_, false> pr) {
-        if constexpr (refl::generic_can_trivially_marshalable_v<Ty_>) {
-            std::string o;
-            refl::generic_stringfy<Ty_>{}(*pr, std::back_inserter(o));
+        auto stringfy_trivial = [this](auto const& pv) {
+            using type = std::remove_const_t<std::remove_reference_t<decltype(pv)>>;
+            if constexpr (refl::generic_can_trivially_marshalable_v<type>) {
+                std::string ostr1, ostr2;
+                refl::generic_stringfy<type>{}(pv, std::back_inserter(ostr1));
 
-            MESSAGE(name, ": ", typeid(Ty_).name(), " [", o, "] ");
-        } else {
-            MESSAGE(name, ": ", typeid(Ty_).name());
+                type v;
+                refl::generic_parse<type>{}(ostr1.begin(), ostr1.end(), v);
+                refl::generic_stringfy<type>{}(v, std::back_inserter(ostr2));
+
+                MESSAGE(name, ": ", typeid(type).name(), " [", ostr1, "] -> [", ostr2, "]");
+                REQUIRE(ostr1 == ostr2);
+            }
+        };
+
+        if constexpr (refl::generic_can_trivially_marshalable_v<Ty_>) {
+            stringfy_trivial(*pr);
+        } else if constexpr (pr.type().is_array()) {
+            for (int i = 0; i < pr.size(); ++i) {
+                stringfy_trivial(pr[i]);
+            }
         }
     }
 

@@ -72,7 +72,11 @@ void encode(void const* data, size_t len, OutIt_&& o) {
 template <typename InIt_, typename OutIt_>
 bool decode(InIt_ start, InIt_ const end, OutIt_ o) {
     // TODO: 입력 이터레이터 타입인 InIt_를 항상 random_access_iterator로 가정하여 최적화하는 로직 추가; if constexpr로 이터레이터 검사해서 루틴 분리. 지금 로직도 필요는 함 ... (스트림 입력 등 읽어오기 위해)
-    static_assert(sizeof *start == 1);
+    using ivalue_type = typename std::iterator_traits<InIt_>::value_type;
+    using ovalue_type = typename OutIt_::container_type::value_type;
+    static_assert(sizeof(ivalue_type) == 1);
+    static_assert(sizeof(ovalue_type) == 1);
+    static_assert(std::is_trivial_v<ovalue_type>);
 
     for (auto it = start; it != end;) {
         char iblk[4] = {};
@@ -92,7 +96,7 @@ bool decode(InIt_ start, InIt_ const end, OutIt_ o) {
         auto& chset = reinterpret_cast<std::array<const char, 3>&>(oblk);
         int n_bin   = (pad_pos == 4) ? 3 : (pad_pos == 3) ? 2 : 1;
 
-        for (int i = 0; i < n_bin; ++i) { o = chset[2 - i]; }
+        for (int i = 0; i < n_bin; ++i) { o = static_cast<ovalue_type>(chset[2 - i]); }
     }
 
     return true;

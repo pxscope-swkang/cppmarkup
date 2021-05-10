@@ -34,6 +34,8 @@ public:
     template <bool OtherConstant_>
     property_proxy(property_proxy<Ty_, OtherConstant_> other) : _p(other._p) {}
 
+    constexpr auto type() { return etype::from_type<Ty_>(); }
+
 public:
     reference operator*() const { return *_p; }
     pointer operator->() const { return _p; }
@@ -74,6 +76,8 @@ public:
     void erase(size_t from, size_t to) { _p->erase(_p->begin() + from, _p->begin() + to); }
     void erase(size_t at) { erase(at, at + 1); }
 
+    constexpr auto type() { return etype::from_type<Ty_>(); }
+
 private:
     pointer _p;
 };
@@ -84,6 +88,8 @@ public:
     using Vty_         = object;
     using Ty_          = std::vector<Vty_>;
     using void_pointer = std::conditional_t<Constant_, void const*, void*>;
+
+    using value_type = object;
 
 public:
     property_proxy(property const& m, void_pointer ptr) : _if(m.ovi()), _p(ptr) {
@@ -106,6 +112,8 @@ public:
     void erase(size_t from, size_t to) { _if->erase(_p, from, to); }
     void erase(size_t at) { _if->erase(_p, at, at + 1); }
 
+    constexpr auto type() { return etype::from_type<Ty_>(); }
+
 private:
     object_vector_interface const* _if;
     void_pointer _p;
@@ -121,6 +129,8 @@ public:
     using pointer       = src_type*;
     using const_pointer = Ty_ const*;
     using reference     = src_type&;
+
+    using mapped_type = typename src_type::mapped_type;
 
     property_proxy(property const& m, void_pointer ptr) : _p(static_cast<pointer>(ptr)) {
         property_type_mismatch_exception::verify<Ty_>(m.memory());
@@ -159,6 +169,8 @@ public:
         for (auto& pair : *static_cast<const_pointer>(_p)) { fn(pair.first, pair.second); }
     }
 
+    constexpr auto type() { return etype::from_type<Ty_>(); }
+
 private:
     pointer _p;
 };
@@ -170,6 +182,8 @@ public:
     using Ty_           = u8str_map<object>;
     using void_pointer  = std::conditional_t<Constant_, void const*, void*>;
     using const_pointer = void const*;
+
+    using mapped_type = object;
 
     property_proxy(property const& m, void_pointer ptr) : _if(m.omi()), _p(ptr) {
         assert(_if);
@@ -193,6 +207,8 @@ public:
 
     template <typename Fn_>
     void for_each(Fn_&& fn) const { _if->for_each(const_cast<const_pointer>(_p), std::forward<Fn_>(fn)); }
+
+    constexpr auto type() { return etype::from_type<Ty_>(); }
 
 private:
     object_map_interface const* _if;

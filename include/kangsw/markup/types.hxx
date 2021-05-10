@@ -41,7 +41,7 @@ struct binary_chunk : std::vector<std::byte> {
     template <typename Ty_>
     void write(Ty_ const* data, const size_t n) {
         static_assert(std::is_trivial_v<Ty_>);
-        this->reserve(std::max(capacity(), size() + n * sizeof(Ty_)));
+        this->reserve(size() + n * sizeof(Ty_));
 
         std::initializer_list const il(
             reinterpret_cast<std::byte const*>(data),
@@ -54,7 +54,7 @@ struct binary_chunk : std::vector<std::byte> {
         using Ty_ = typename std::iterator_traits<It_>::value_type;
         static_assert(std::is_trivial_v<Ty_>);
         auto dist = std::distance(begin, end);
-        this->reserve(std::max(capacity(), size() + dist * sizeof(Ty_)));
+        this->reserve(size() + dist * sizeof(Ty_));
 
         for (; begin != end; ++begin) {
             this->write(*begin);

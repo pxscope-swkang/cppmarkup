@@ -28,6 +28,49 @@ struct binary_chunk : std::vector<std::byte> {
 
     auto& chars() const noexcept { return reinterpret_cast<std::vector<char> const&>(*this); }
     auto& chars() noexcept { return reinterpret_cast<std::vector<char>&>(*this); }
+
+    template <typename Ty_>
+    void write(Ty_ const& value) {
+        static_assert(std::is_trivial_v<Ty_>);
+        std::initializer_list il(
+            reinterpret_cast<std::byte const*>(&value),
+            reinterpret_cast<std::byte const*>(&value + 1));
+        this->insert(this->end(), il);
+    }
+
+    template <typename Ty_>
+    void write(Ty_ const* data, const size_t n) {
+        static_assert(std::is_trivial_v<Ty_>);
+        this->reserve(std::max(capacity(), size() + n * sizeof(Ty_)));
+
+        std::initializer_list const il(
+            reinterpret_cast<std::byte const*>(data),
+            reinterpret_cast<std::byte const*>(data + n));
+        this->insert(this->end(), il);
+    }
+
+    template <typename It_>
+    void write(It_ begin, It_ end) {
+        using Ty_ = typename std::iterator_traits<It_>::value_type;
+        static_assert(std::is_trivial_v<Ty_>);
+        auto dist = std::distance(begin, end);
+        this->reserve(std::max(capacity(), size() + dist * sizeof(Ty_)));
+
+        for (; begin != end; ++begin) {
+            this->write(*begin);
+        }
+    }
+
+    template <typename... Args_>
+    void write_many(Args_&&... args) {
+        (this->write(std::forward<Args_>(args)), ...);
+    }
+
+    template <typename... Args_>
+    static binary_chunk from(Args_&&... args) {
+        binary_chunk out;
+        return out.write_many(std::forward<Args_>(args)...), out;
+    }
 };
 
 /** bool wrapper for boolean vector. Maps to bool 1:1. To avoid vector<bool> specialization */

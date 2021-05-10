@@ -25,6 +25,7 @@ add_library                 (cppmarkup::static  ALIAS       CPPMARKUP_lib)
 
 target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_17)
 target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR})
+target_compile_definitions  (CPPMARKUP_lib      PUBLIC      "_CRT_SECURE_NO_WARNINGS")
 
 # -- INSTALLATIONS
 

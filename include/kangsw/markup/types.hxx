@@ -12,7 +12,7 @@ class object;
 /** aliases */
 using u8str       = std::string;
 using u8str_view  = std::string_view;
-using timestamp_t = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
+using timestamp_t = std::chrono::system_clock::time_point; //std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;
 using integer_t   = int64_t;
 using float_t     = double;
 
@@ -194,6 +194,9 @@ private:
     using _deduce_result_t = std::remove_pointer_t<_deduced_type_t<from_type<Ty_>(), Ty_>>;
 
 public:
+    template <int V_>
+    using to_type_t = std::remove_pointer_t<decltype(_deduce_from<V_>())>;
+
     template <typename Ty_, size_t N>
     static decltype(auto) deduce(Ty_ (&v)[N]) {
         return u8str(reinterpret_cast<const char*>(v));
@@ -246,3 +249,7 @@ private:
 };
 
 } // namespace kangsw::refl
+
+namespace kangsw {
+namespace markup = refl;
+}

@@ -219,21 +219,9 @@ auto make_proxy(ObjTy_& obj, property::attribute const& m) {
     return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
 }
 
-/**
- * \brief 
- * \tparam ObjTy_ 'object' or 'object const'
- * \tparam PropTy_ 'property' or 'property::attribute'
- * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
- * \param obj 
- * \param pr 
- * \param fn 
- * \return invocation result of HandleFn_
- */
+namespace impl {
 template <typename ObjTy_, typename PropTy_, typename HandleFn_>
-decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
-    static_assert(std::is_base_of_v<object, std::remove_const_t<ObjTy_>>);
-    static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
-
+decltype(auto) _apply_property_op_impl(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
     property::memory_t const& m = pr.memory();
 
     switch (m.type.get()) {
@@ -279,6 +267,26 @@ decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn)
     } else {
         assert(0 && "fatal logic error: attribute must not have container type");
     }
+}
+} // namespace impl
+
+/**
+ * \brief 
+ * \tparam ObjTy_ 'object' or 'object const'
+ * \tparam PropTy_ 'property' or 'property::attribute'
+ * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
+ * \param obj 
+ * \param pr 
+ * \param fn 
+ * \return invocation result of HandleFn_
+ */
+template <typename ObjTy_, typename PropTy_, typename HandleFn_>
+decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
+    static_assert(std::is_base_of_v<object, std::remove_const_t<ObjTy_>>);
+    static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
+    using base_type = std::conditional_t<std::is_const_v<ObjTy_>, const object, object>;
+
+    impl::_apply_property_op_impl(static_cast<base_type&>(obj), pr, std::forward<HandleFn_>(fn));
 }
 
 } // namespace kangsw::refl

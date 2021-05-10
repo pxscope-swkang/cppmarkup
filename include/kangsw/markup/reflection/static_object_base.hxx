@@ -8,8 +8,29 @@
  */
 namespace kangsw::refl {
 
-template <typename Ty_>
-using static_object_traits = templates::singleton<object_traits, Ty_>;
+using static_object_list = templates::singleton<std::vector<object_traits const*>>;
+
+template <typename ObjTy_>
+struct static_object_traits : object_traits {
+private:
+    friend struct templates::singleton<static_object_traits, ObjTy_>;
+    static_object_traits() = default;
+
+    static inline struct register_traits {
+        register_traits() {
+            static_object_list::get().push_back(&get());
+        }
+    } _reg;
+
+public:
+    static auto& get() {
+        return templates::singleton<static_object_traits, ObjTy_>::get();
+    }
+
+    std::unique_ptr<object> create_empty() override {
+        return std::make_unique<ObjTy_>();
+    }
+};
 
 /**  */
 template <typename Ty_>

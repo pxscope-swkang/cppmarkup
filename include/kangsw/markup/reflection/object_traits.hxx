@@ -8,11 +8,15 @@ namespace kangsw::refl {
 
 class object_traits {
 public:
+    virtual ~object_traits() = default;
+
     auto& props() const { return _props; }
     auto begin() { return _props.begin(); }
     auto begin() const { return _props.begin(); }
     auto end() { return _props.end(); }
     auto end() const { return _props.end(); }
+
+    virtual std::unique_ptr<object> create_empty() = 0;
 
 public:
     /** Add new or find existing property. */

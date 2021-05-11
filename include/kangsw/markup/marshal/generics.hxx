@@ -27,9 +27,11 @@ struct string_output {
     int indent_init  = 0;
 
     template <typename Ty_>
-    string_output& operator<<(Ty_&& other) { return out += other, *this; }
-
+    string_output& operator<<(Ty_&& other) { return out += std::forward<Ty_>(other), *this; }
     string_output& operator<<(indent_t) { return _break_indent(), *this; }
+
+    template <typename Wrap_, typename... Ty_>
+    string_output& wrap(Wrap_&& s, Ty_&&... other) { return *this << std::forward<Wrap_>(s), ((*this << std::forward<Ty_>(other)), ...) << s; }
 
     void operator++() { _conf_indent_f(); }
     void operator--() { _conf_indent_f(); }

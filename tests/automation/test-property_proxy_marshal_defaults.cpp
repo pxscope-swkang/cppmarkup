@@ -9,7 +9,7 @@ struct visitor {
     void operator()(refl::property_proxy<Ty_, false> pr) {
         auto stringfy_trivial = [this](auto const& pv) {
             using type = std::remove_const_t<std::remove_reference_t<decltype(pv)>>;
-            if constexpr (refl::generic_can_trivially_marshalable_v<type>) {
+            if constexpr (refl::generic_is_trivially_marshalable_v<type>) {
                 std::string ostr1, ostr2;
                 refl::generic_stringfy<type>{}(pv, std::back_inserter(ostr1));
 
@@ -22,7 +22,7 @@ struct visitor {
             }
         };
 
-        if constexpr (refl::generic_can_trivially_marshalable_v<Ty_>) {
+        if constexpr (refl::generic_is_trivially_marshalable_v<Ty_>) {
             stringfy_trivial(*pr);
         } else if constexpr (pr.type().is_array()) {
             for (int i = 0; i < pr.size(); ++i) {

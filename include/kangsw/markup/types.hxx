@@ -97,11 +97,10 @@ public:
         binary         = 0x06,
         object         = 0x07,
 
-        reserved_container = 0x10,
         map                = 0x40,
         array              = 0x80,
 
-        value_mask = 0x07,
+        _value_mask = 0x07,
     };
 
 public:
@@ -130,7 +129,12 @@ public:
     constexpr bool is_integer() const noexcept { return leap() == integer; }
     constexpr bool is_floating_point() const noexcept { return leap() == floating_point; }
 
-    constexpr etype leap() const noexcept { return _value & value_mask; }
+    template <typename... Args_> // requires std::is_same_v<Args_, _type>
+    constexpr bool is_one_of(Args_... args) {
+        return ((leap() == args) || ...);
+    }
+
+    constexpr etype leap() const noexcept { return _value & _value_mask; }
     constexpr _type get() const noexcept { return _value; }
 
 public:

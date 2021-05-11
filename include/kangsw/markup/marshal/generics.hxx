@@ -16,14 +16,35 @@ template <typename Ty_> struct _generic_can_trivially_marshalable {
 } // namespace impl
 
 /**
- * Indent options
+ * Generic string output
  */
+struct indent_t {};
+constexpr inline static indent_t break_indent;
+
+struct string_output {
+    u8str& out;
+    int indent_width = -1;
+    int indent_init  = 0;
+
+    template <typename Ty_>
+    string_output& operator<<(Ty_&& other) { return out += other, *this; }
+
+    string_output& operator<<(indent_t) { return _break_indent(), *this; }
+
+    void operator++() { _conf_indent_f(); }
+    void operator--() { _conf_indent_f(); }
+
+private:
+    void _break_indent();
+    void _conf_indent_f() { indent_init += indent_width; }
+    void _conf_indent_b() { indent_init -= indent_width; }
+};
 
 /**
  * Checks given type can be marshaled via generic marshaling methods
  */
 template <typename Ty_>
-inline constexpr bool generic_can_trivially_marshalable_v = impl::_generic_can_trivially_marshalable<Ty_>{}();
+inline constexpr bool generic_is_trivially_marshalable_v = impl::_generic_can_trivially_marshalable<Ty_>{}();
 
 /**
  * Predict required capacity to stringfy given element
@@ -47,13 +68,18 @@ template <typename Ty_> struct generic_parse {
 
     char const* _impl(char const* begin, char const* end, Ty_& dest) const;
 
-    template <typename It_>
-    char const* operator()(It_ begin, It_ end, Ty_& dest) {
-        return this->_impl(
-          static_cast<char const*>(&*begin),
-          static_cast<char const*>(&*begin) + (end - begin), dest);
-    }
+    template <typename It_> char const* operator()(It_ begin, It_ end, Ty_& dest);
 };
+
+// //////////////////////////////////// IMPLEMENTATION ////////////////////////////////////  //
+// //////////////////////////////////// IMPLEMENTATION ////////////////////////////////////  //
+
+inline void string_output::_break_indent() {
+    if (indent_width < 0) { return; }
+
+    out += '\n';
+    if (indent_width > 0) { out.append(indent_init, ' '); }
+}
 
 template <typename Ty_> size_t genenric_predict_buffer_length<Ty_>::operator()(Ty_ const& i) const {
     auto constexpr type = etype::from_type<Ty_>();
@@ -205,5 +231,11 @@ template <typename Ty_> char const* generic_parse<Ty_>::_impl(char const* begin,
         static_assert("This type can't be trivially stringfy-ied");
         return nullptr;
     }
+}
+
+template <typename Ty_> template <typename It_> char const* generic_parse<Ty_>::operator()(It_ begin, It_ end, Ty_& dest) {
+    return this->_impl(
+      static_cast<char const*>(&*begin),
+      static_cast<char const*>(&*begin) + (end - begin), dest);
 }
 } // namespace kangsw::refl

@@ -45,11 +45,11 @@ public:
 
 namespace json {
 template <typename Ty_>
-static void _dump(Ty_ const& v, string_output& o) {
+void _dump(Ty_ const& v, string_output& o) {
 }
 
 template <>
-static void _dump<object>(object const& v, string_output& o) {
+inline void _dump<object>(object const& v, string_output& o) {
     o << '{', ++o; // Write value first -> indent later
 
     for (auto& prop : v.properties()) {
@@ -86,11 +86,11 @@ static void _dump<object>(object const& v, string_output& o) {
 }
 
 template <typename Ty_>
-static void _dump(property_proxy<std::vector<Ty_>, true> v, string_output& o) {
+void _dump(property_proxy<std::vector<Ty_>, true> v, string_output& o) {
 }
 
 template <typename Ty_>
-static void _dump(property_proxy<u8str_map<Ty_>, true> v, string_output& o) {
+void _dump(property_proxy<u8str_map<Ty_>, true> v, string_output& o) {
 }
 
 } // namespace json

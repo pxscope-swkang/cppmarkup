@@ -26,7 +26,6 @@ struct outer {
     static inline poc _1{"6. outer"};
 };
 
-int main(void)
-{
+int main(void) {
     return 0;
 }

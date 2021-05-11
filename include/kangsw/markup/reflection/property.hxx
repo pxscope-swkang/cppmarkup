@@ -72,13 +72,13 @@ public:
     property& operator=(property&&) noexcept = default;
     property(property&&) noexcept            = default;
     property(u8str&& tag) noexcept
-        : _tag(std::move(tag)) {}
+      : _tag(std::move(tag)) {}
 
     // for internal usage
     void _set_defaults(
-        u8str&& doc,
-        property_flag_t flag,
-        memory_t&& memory) //
+      u8str&& doc,
+      property_flag_t flag,
+      memory_t&& memory) //
     {
         if (_is_valid) { throw property_already_initialized_exception(_tag); }
         _doc    = std::move(doc);

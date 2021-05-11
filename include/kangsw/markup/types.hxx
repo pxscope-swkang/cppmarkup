@@ -33,8 +33,8 @@ struct binary_chunk : std::vector<std::byte> {
     void write(Ty_ const& value) {
         static_assert(std::is_trivial_v<Ty_>);
         std::initializer_list il(
-            reinterpret_cast<std::byte const*>(&value),
-            reinterpret_cast<std::byte const*>(&value + 1));
+          reinterpret_cast<std::byte const*>(&value),
+          reinterpret_cast<std::byte const*>(&value + 1));
         this->insert(this->end(), il);
     }
 
@@ -44,8 +44,8 @@ struct binary_chunk : std::vector<std::byte> {
         this->reserve(size() + n * sizeof(Ty_));
 
         std::initializer_list const il(
-            reinterpret_cast<std::byte const*>(data),
-            reinterpret_cast<std::byte const*>(data + n));
+          reinterpret_cast<std::byte const*>(data),
+          reinterpret_cast<std::byte const*>(data + n));
         this->insert(this->end(), il);
     }
 

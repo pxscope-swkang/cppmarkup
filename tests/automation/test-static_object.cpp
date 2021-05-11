@@ -29,12 +29,12 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
         }
 
         static inline ::kangsw::refl::attribute_registration_t<
-            self_type, _attrib_var_VALUE_TYPE, _attrib_var_HASH_TYPE>
-            _attrib_var_REGISTER{
-                _elem_var_TAG,
-                attrib_name,
-                _attrib_var_OFFSET(),
-                ::kangsw::refl::etype::deduce(default_value)};
+          self_type, _attrib_var_VALUE_TYPE, _attrib_var_HASH_TYPE>
+          _attrib_var_REGISTER{
+            _elem_var_TAG,
+            attrib_name,
+            _attrib_var_OFFSET(),
+            ::kangsw::refl::etype::deduce(default_value)};
 
     } elem_var_;
     // >
@@ -51,12 +51,12 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
 
     static size_t _elem_var_OFFSET() { return offsetof(object_type, elem_var); }
     static inline ::kangsw::refl::element_regestration_t<
-        self_type, _elem_var_VALUE_TYPE, _elem_var_HASH_TYPE>
-        _elem_var_REGISTER{
-            _elem_var_TAG,
-            _elem_var_OFFSET(),
-            _elem_var_VALUE_TYPE(_elem_var_DEFAULT_VALUE),
-            _elem_var_FLAGS};
+      self_type, _elem_var_VALUE_TYPE, _elem_var_HASH_TYPE>
+      _elem_var_REGISTER{
+        _elem_var_TAG,
+        _elem_var_OFFSET(),
+        _elem_var_VALUE_TYPE(_elem_var_DEFAULT_VALUE),
+        _elem_var_FLAGS};
     // >
 
     struct _embobj_var_VALUE_TYPE {
@@ -121,17 +121,17 @@ TEST_SUITE("Static Object") {
 
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(attrtestobj) {
         INTERNAL_CPPMARKUP_ELEMENT_ATTR(
-            attrvarf, "SomeTestVar1", nullptr, 0,
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
+          attrvarf, "SomeTestVar1", nullptr, 0,
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
         );
 
         INTERNAL_CPPMARKUP_ELEMENT_ATTR(
-            attrvarfd, "SomeTestVar2", nullptr, 0,
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
-            INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
+          attrvarfd, "SomeTestVar2", nullptr, 0,
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
+          INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
         );
 
         INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testvar, "Teststvar", 154, 0);
@@ -139,34 +139,34 @@ TEST_SUITE("Static Object") {
         INTERNAL_CPPMARKUP_EMBED_OBJECT_begin_ATTR(embobj, "embobj", 0) //
         {
             INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
-                testmap, "TestMap",
-                INTERNAL_CPPMARKUP_MAP("hell", 3.14, "world", 2.54),
-                0);
+              testmap, "TestMap",
+              INTERNAL_CPPMARKUP_MAP("hell", 3.14, "world", 2.54),
+              0);
 
             INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
-                testobjarr, "TestObjArr",
-                std::vector({testobj{}}), 0);
+              testobjarr, "TestObjArr",
+              std::vector({testobj{}}), 0);
 
             INTERNAL_CPPMARKUP_ELEMENT_NOATTR(
-                testobjmap, "TestObjMap",
-                INTERNAL_CPPMARKUP_MAP("hell", testobj{}),
-                0);
+              testobjmap, "TestObjMap",
+              INTERNAL_CPPMARKUP_MAP("hell", testobj{}),
+              0);
         }
         INTERNAL_CPPMARKUP_EMBED_OBJECT_end(embobj);
 
         INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(embedded) {
             INTERNAL_CPPMARKUP_ELEMENT_ATTR(
-                attrvarf, "SomeTestVar1", nullptr, 0,
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
+              attrvarf, "SomeTestVar1", nullptr, 0,
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1", 154);
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2", "galer");
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3", true) //
             );
 
             INTERNAL_CPPMARKUP_ELEMENT_ATTR(
-                attrvarfd, "SomeTestVar2", nullptr, 0,
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
-                INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
+              attrvarfd, "SomeTestVar2", nullptr, 0,
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr1, "Attr1b", 211);
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr2, "Attr2b", "pewpew");
+              INTERNAL_CPPMARKUP_ATTRIBUTE(attr3, "Attr3b", false); //
             );
 
             INTERNAL_CPPMARKUP_ELEMENT_NOATTR(testvar, "Teststvar", 154, 0);
@@ -219,10 +219,10 @@ TEST_SUITE("Static Object") {
         CPPMARKUP_ELEMENT(SomeInt, 134);
         CPPMARKUP_ELEMENT(SomeFloat, 134.341f);
         CPPMARKUP_ELEMENT_A(
-            SomeNullWithAttr, nullptr,
-            CPPMARKUP_ATTRIBUTE(At1, 100);
-            CPPMARKUP_ATTRIBUTE(At2, false);
-            CPPMARKUP_ATTRIBUTE(At3, "SomeStr"););
+          SomeNullWithAttr, nullptr,
+          CPPMARKUP_ATTRIBUTE(At1, 100);
+          CPPMARKUP_ATTRIBUTE(At2, false);
+          CPPMARKUP_ATTRIBUTE(At3, "SomeStr"););
 
         CPPMARKUP_EMBED_OBJECT_begin(SomeEmbed) //
         {
@@ -230,10 +230,10 @@ TEST_SUITE("Static Object") {
             CPPMARKUP_ELEMENT(SomeInt, 1345);
             CPPMARKUP_ELEMENT(SomeFloat, 134.561f);
             CPPMARKUP_ELEMENT_A(
-                SomeNullWithAttr, nullptr,
-                CPPMARKUP_ATTRIBUTE(At1, 101);
-                CPPMARKUP_ATTRIBUTE(At2, true);
-                CPPMARKUP_ATTRIBUTE(At3, "SomeStr2"););
+              SomeNullWithAttr, nullptr,
+              CPPMARKUP_ATTRIBUTE(At1, 101);
+              CPPMARKUP_ATTRIBUTE(At2, true);
+              CPPMARKUP_ATTRIBUTE(At3, "SomeStr2"););
         }
         CPPMARKUP_EMBED_OBJECT_end(SomeEmbed);
 

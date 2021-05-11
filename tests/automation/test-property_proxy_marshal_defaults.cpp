@@ -1,6 +1,6 @@
 #include "doctest.h"
 #include "test_type.hxx"
-#include "kangsw/markup/marshal/generics.hxx" 
+#include "kangsw/markup/marshal/generics.hxx"
 
 using namespace kangsw;
 

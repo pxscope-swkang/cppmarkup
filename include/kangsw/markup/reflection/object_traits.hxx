@@ -28,8 +28,8 @@ public:
         }
 
         auto it_insert = std::lower_bound(
-            _index.begin(), _index.end(), tag,
-            [](auto&& a, auto&& b) { return a.first < b; });
+          _index.begin(), _index.end(), tag,
+          [](auto&& a, auto&& b) { return a.first < b; });
 
         auto index = _props.size();
         for (auto& pair : _index) { pair.second += pair.second >= index; }
@@ -41,8 +41,8 @@ public:
     /** Finds existing property */
     property const* find_property(u8str_view tag) const {
         auto it_index = std::lower_bound(
-            _index.begin(), _index.end(), tag,
-            [](auto&& pair, auto&& t) { return pair.first < t; });
+          _index.begin(), _index.end(), tag,
+          [](auto&& pair, auto&& t) { return pair.first < t; });
 
         if (it_index == _index.end() || it_index->first != tag) {
             return nullptr;
@@ -53,7 +53,7 @@ public:
 
     property* find_property(u8str_view tag) {
         return const_cast<property*>(((object_traits const*)this)
-                                         ->find_property(tag));
+                                       ->find_property(tag));
     }
 
     // .remove_property

@@ -24,7 +24,7 @@ namespace tests::types {
 TEST_SUITE("Types") {
     TEST_CASE("Compilation") {
         static_assert(kangsw::templates::is_specialization_of<
-                          binary_chunk, std::vector>::value == false);
+                        binary_chunk, std::vector>::value == false);
     }
 }
 } // namespace tests::types

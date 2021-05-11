@@ -41,12 +41,12 @@
     }                                                                                           \
                                                                                                 \
     static inline ::kangsw::refl::attribute_registration_t<                                     \
-        self_type, _##attrib_var##_VALUE_TYPE, _##attrib_var##_HASH_TYPE>                       \
-        _##attrib_var##_REGISTER{                                                               \
-            _owner_element_TAG,                                                                 \
-            attrib_name,                                                                        \
-            _##attrib_var##_OFFSET(),                                                           \
-            ::kangsw::refl::etype::deduce(default_value)};
+      self_type, _##attrib_var##_VALUE_TYPE, _##attrib_var##_HASH_TYPE>                         \
+      _##attrib_var##_REGISTER{                                                                 \
+        _owner_element_TAG,                                                                     \
+        attrib_name,                                                                            \
+        _##attrib_var##_OFFSET(),                                                               \
+        ::kangsw::refl::etype::deduce(default_value)};
 
 // > INTERNAL_CPPMARKUP_ENTITY_latter(elem_var, elem_name, flags)
 #define INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, flags)                          \
@@ -54,12 +54,12 @@
                                                                                    \
     static size_t _##elem_var##_OFFSET() { return offsetof(self_type, elem_var); } \
     static inline ::kangsw::refl::element_regestration_t<                          \
-        self_type, _##elem_var##_VALUE_TYPE, _##elem_var##_HASH_TYPE>              \
-        _##elem_var##_REGISTER {                                                   \
+      self_type, _##elem_var##_VALUE_TYPE, _##elem_var##_HASH_TYPE>                \
+      _##elem_var##_REGISTER {                                                     \
         _##elem_var##_TAG,                                                         \
-            _##elem_var##_OFFSET(),                                                \
-            ::kangsw::refl::etype::deduce(_##elem_var##_DEFAULT_VALUE()),          \
-            flags                                                                  \
+          _##elem_var##_OFFSET(),                                                  \
+          ::kangsw::refl::etype::deduce(_##elem_var##_DEFAULT_VALUE()),            \
+          flags                                                                    \
     }
 // >
 
@@ -88,10 +88,10 @@
     INTERNAL_CPPMARKUP_ENTITY_former_NOATTR(elem_var, elem_name);                \
     INTERNAL_CPPMARKUP_OBJECT_TEMPLATE(_##elem_var##_VALUE_TYPE)
 
-#define INTERNAL_CPPMARKUP_EMBED_OBJECT_end(elem_var)             \
-    ;                                                             \
-    static inline const auto _##elem_var##_DEFAULT_VALUE =        \
-        []() { return _##elem_var##_VALUE_TYPE::get_default(); }; \
+#define INTERNAL_CPPMARKUP_EMBED_OBJECT_end(elem_var)           \
+    ;                                                           \
+    static inline const auto _##elem_var##_DEFAULT_VALUE =      \
+      []() { return _##elem_var##_VALUE_TYPE::get_default(); }; \
     INTERNAL_CPPMAKRUP_ENTITY_latter(elem_var, _##elem_var##_FLAGS)
 
 namespace kangsw::refl::_internal {
@@ -109,9 +109,9 @@ auto deduce_map(Ch_ const (&a)[N], Ty_&& b, Args_&&... args) {
     using deduced_t = decltype(etype::deduce(b));
     u8str_map<deduced_t> map;
     return _deduce_map_impl<deduced_t>(
-        map, reinterpret_cast<char const*>(a),
-        (std::forward<Ty_>(b)),
-        std::forward<Args_>(args)...);
+      map, reinterpret_cast<char const*>(a),
+      (std::forward<Ty_>(b)),
+      std::forward<Args_>(args)...);
 }
 
 template <size_t N>

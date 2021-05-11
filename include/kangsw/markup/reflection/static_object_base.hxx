@@ -139,10 +139,10 @@ template <typename ObjTy_, typename ValueTy_, typename HashTy_>
 class element_regestration_t {
 public:
     element_regestration_t(
-        u8str&& tag,
-        size_t offset,
-        ValueTy_&& initial_value,
-        int elem_flags) //
+      u8str&& tag,
+      size_t offset,
+      ValueTy_&& initial_value,
+      int elem_flags) //
     {
         using traits_type = static_object_traits<ObjTy_>;
         auto& prop        = traits_type::get().find_or_add_property(tag);
@@ -173,10 +173,10 @@ template <typename ObjTy_, typename ValueTy_, typename HashTy_>
 class attribute_registration_t {
 public:
     attribute_registration_t(
-        u8str_view tag,
-        u8str&& name,
-        size_t offset,
-        ValueTy_&& initial_value) //
+      u8str_view tag,
+      u8str&& name,
+      size_t offset,
+      ValueTy_&& initial_value) //
     {
         using traits_type = static_object_traits<ObjTy_>;
         auto& prop        = traits_type::get().find_or_add_property(tag);

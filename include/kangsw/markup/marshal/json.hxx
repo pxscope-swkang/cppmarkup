@@ -13,11 +13,9 @@ class json {
 };
 
 struct _impl {
-    
 };
 
 template <typename OutIt_>
 void json::dump(object& obj, OutIt_ o) {
-
 }
 } // namespace kangsw::refl::marshal

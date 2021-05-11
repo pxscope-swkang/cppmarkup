@@ -45,17 +45,13 @@ template <typename Ty_> struct generic_stringfy {
  */
 template <typename Ty_> struct generic_parse {
 
-#if _WIN32 // Cross-platform support
-    static time_t timegm(tm* t) { return _mkgmtime(t); }
-#endif
-
     char const* _impl(char const* begin, char const* end, Ty_& dest) const;
 
     template <typename It_>
     char const* operator()(It_ begin, It_ end, Ty_& dest) {
         return this->_impl(
-            static_cast<char const*>(&*begin),
-            static_cast<char const*>(&*begin) + (end - begin), dest);
+          static_cast<char const*>(&*begin),
+          static_cast<char const*>(&*begin) + (end - begin), dest);
     }
 };
 
@@ -116,6 +112,10 @@ template <typename Ty_> template <typename OutIt_> void generic_stringfy<Ty_>::o
     }
 }
 
+#if _WIN32 // Cross-platform support
+static time_t timegm(tm* t) { return _mkgmtime(t); }
+#endif
+
 template <typename Ty_> char const* generic_parse<Ty_>::_impl(char const* begin, char const* end, Ty_& dest) const {
     auto constexpr type = etype::from_type<Ty_>();
     auto const maxlen   = end - begin;
@@ -167,12 +167,12 @@ template <typename Ty_> char const* generic_parse<Ty_>::_impl(char const* begin,
 
         tm tm;
         const std::pair<int*, std::pair<size_t /*from*/, size_t /*to*/>> assigns[] = {
-            {&tm.tm_year, {0, 4}},
-            {&tm.tm_mon, {5, 7}},
-            {&tm.tm_mday, {8, 10}},
-            {&tm.tm_hour, {11, 13}},
-            {&tm.tm_min, {14, 16}},
-            {&tm.tm_sec, {17, 19}}};
+          {&tm.tm_year, {0, 4}},
+          {&tm.tm_mon, {5, 7}},
+          {&tm.tm_mday, {8, 10}},
+          {&tm.tm_hour, {11, 13}},
+          {&tm.tm_min, {14, 16}},
+          {&tm.tm_sec, {17, 19}}};
 
         for (auto [target, pair] : assigns) {
             auto [from, to] = pair;

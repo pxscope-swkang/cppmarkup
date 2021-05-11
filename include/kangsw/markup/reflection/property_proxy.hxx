@@ -334,4 +334,3 @@ decltype(auto) visit_property(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
 }
 
 } // namespace kangsw::refl
-

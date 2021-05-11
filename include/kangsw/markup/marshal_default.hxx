@@ -1,8 +1,7 @@
 #pragma once
 #include "types.hxx"
 
-namespace kangsw::refl
-{
+namespace kangsw::refl::marshal {
 
 /**
  * TODO: json marshal context
@@ -20,4 +19,4 @@ namespace kangsw::refl
  * TODO: Rapid Codec marshal context
  */
 
-}
+} // namespace kangsw::refl::marshal

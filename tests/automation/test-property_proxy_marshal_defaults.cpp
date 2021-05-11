@@ -1,6 +1,6 @@
 #include "doctest.h"
 #include "test_type.hxx"
-#include "kangsw/markup/marshal/generic_marshaling.hxx" 
+#include "kangsw/markup/marshal/generics.hxx" 
 
 using namespace kangsw;
 
@@ -41,9 +41,9 @@ TEST_SUITE("Types") {
         ss.some_obj_arr_.encrypt.write(cr.begin(), cr.end());
 
         for (auto& prop : ss.properties()) {
-            refl::apply_property_op(ss, prop, visitor{prop.tag()});
+            refl::visit_property(ss, prop, visitor{prop.tag()});
             for (auto& attr : prop.attributes()) {
-                refl::apply_property_op(ss, attr, visitor{attr.name});
+                refl::visit_property(ss, attr, visitor{attr.name});
             }
         }
 

@@ -325,7 +325,7 @@ decltype(auto) _apply_property_op_impl(ObjTy_& obj, PropTy_ const& pr, HandleFn_
  * \return invocation result of HandleFn_
  */
 template <typename ObjTy_, typename PropTy_, typename HandleFn_>
-decltype(auto) apply_property_op(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
+decltype(auto) visit_property(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
     static_assert(std::is_base_of_v<object, std::remove_const_t<ObjTy_>>);
     static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
     using base_type = std::conditional_t<std::is_const_v<ObjTy_>, const object, object>;

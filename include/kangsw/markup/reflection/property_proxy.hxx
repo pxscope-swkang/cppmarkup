@@ -27,7 +27,7 @@ public:
  *
  * Single class can handle both of const and non-const instance of original reference.
  */
-template <typename Ty_, bool Constant_ = true>
+template <typename Ty_, bool Constant_>
 class property_proxy {
 public:
     using void_pointer = std::conditional_t<Constant_, void const*, void*>;

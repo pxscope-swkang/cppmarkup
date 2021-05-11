@@ -27,7 +27,7 @@ public:
         return templates::singleton<static_object_traits, ObjTy_>::get();
     }
 
-    std::unique_ptr<object> create_empty() override {
+    std::unique_ptr<object> create_empty_object() override {
         return std::make_unique<ObjTy_>();
     }
 };

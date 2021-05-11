@@ -11,7 +11,7 @@ namespace kangsw::refl {
 using static_object_list = templates::singleton<std::vector<object_traits const*>>;
 
 template <typename ObjTy_>
-struct static_object_traits : object_traits {
+class static_object_traits : public object_traits {
 private:
     friend struct templates::singleton<static_object_traits, ObjTy_>;
     static_object_traits() = default;

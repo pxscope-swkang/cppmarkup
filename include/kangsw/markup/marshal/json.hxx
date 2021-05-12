@@ -37,7 +37,7 @@ public:
 /** Dump given object as json */
 class json_dump {
 public:
-    void operator()(object const& obj, string_output& o);
+    void operator()(object const& obj, string_output o);
 
     struct _visitor {
         template <typename Ty_> void operator()(property_proxy<Ty_, true> p);
@@ -55,10 +55,10 @@ void _dump(Ty_ const& v, string_output& o) {
     using E          = etype::_type;
 
     if constexpr (T.is_one_of(E::floating_point, E::integer, E::boolean, E::null)) {
-        generic_stringfy<Ty_>{}(v, std::back_inserter(o.out));
+        generic_stringfy<Ty_>{}(v, std::back_inserter(o.str()));
     } else if constexpr (T.is_one_of(etype::string, etype::timestamp, etype::binary)) {
         o << '"';
-        generic_stringfy<Ty_>{}(v, std::back_inserter(o.out));
+        generic_stringfy<Ty_>{}(v, std::back_inserter(o.str()));
         o << '"';
     } else {
         static_assert(false, "Should not enter here.");
@@ -147,7 +147,7 @@ void json_dump::_visitor::operator()(property_proxy<Ty_, true> p) {
     }
 }
 
-inline void json_dump::operator()(object const& obj, string_output& o) {
+inline void json_dump::operator()(object const& obj, string_output o) {
     json::_dump(obj, o);
     o << break_indent;
 }

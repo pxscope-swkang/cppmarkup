@@ -14,6 +14,6 @@ TEST_SUITE("Marshal.Json") {
         marshal::string_output os{s, 4};
         marshal::json_dump{}(mk, os);
 
-        MESSAGE(os.out);
+        MESSAGE(s);
     }
 }

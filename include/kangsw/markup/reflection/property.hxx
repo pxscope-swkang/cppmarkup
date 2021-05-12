@@ -56,6 +56,7 @@ public:
         memory_t _memory;
 
         auto& memory() const { return _memory; }
+        auto& type() const { return _memory.type; }
     };
 
 public:
@@ -64,6 +65,7 @@ public:
     auto& tag() const { return _tag; }
     auto& doc() const { return _doc; }
     auto& memory() const { return _memory; }
+    auto& type() const { return _memory.type; }
 
     auto ovi() const { return _ovi.get(); }
     auto omi() const { return _omi.get(); }

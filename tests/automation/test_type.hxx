@@ -3,11 +3,13 @@
 
 CPPMARKUP_OBJECT_TEMPLATE(my_markup_type) {
     CPPMARKUP_ELEMENT(is_valid, false);
+
     CPPMARKUP_OBJECT_TEMPLATE(internal_object_type) {
         CPPMARKUP_ELEMENT_A(single_elem, nullptr,
                             CPPMARKUP_ATTRIBUTE(creation, kangsw::refl::timestamp_t::clock::now());
                             CPPMARKUP_ATTRIBUTE(ref_path, "/doc/args"));
     };
+
     CPPMARKUP_ELEMENT(list_author, std::vector({"abc", "Def"}));
     CPPMARKUP_ELEMENT_A(some_obj_arr, std::vector({internal_object_type::get_default()}),
                         CPPMARKUP_ATTRIBUTE(encrypt, kangsw::refl::binary_chunk::from("hello, world!", 32, 42));

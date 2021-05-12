@@ -53,12 +53,24 @@ public:
 namespace json {
 template <typename Ty_>
 void _dump(Ty_ const& v, string_output& o) {
+    auto constexpr T = etype::from_type<Ty_>();
+    using E          = etype::_type;
+
+    if constexpr (T.is_one_of(E::floating_point, E::integer, E::boolean, E::null)) {
+        generic_stringfy<Ty_>{}(v, std::back_inserter(o.out));
+    } else if constexpr (T.is_one_of(etype::string, etype::timestamp, etype::binary)) {
+        o << '"';
+        generic_stringfy<Ty_>{}(v, std::back_inserter(o.out));
+        o << '"';
+    } else {
+        static_assert(false, "Should not enter here.");
+    }
 }
 
 template <>
 inline void _dump<object>(object const& v, string_output& o) {
     o << '{', ++o; // Write value first -> indent later
-    auto base = v.base();
+    auto const baseaddr = v.base();
 
     for (auto& prop : v.properties()) {
         o << break_indent;
@@ -73,7 +85,7 @@ inline void _dump<object>(object const& v, string_output& o) {
 
                 // "Attribute tag": value
                 o.wrap('"', attr.name) << ": ";
-                visit_property(base, attr, json_dump::_visitor{o});
+                visit_property(baseaddr, attr, json_dump::_visitor{o});
 
                 size_t attr_idx = &attr - prop.attributes().data();
                 if (attr_idx + 1 < prop.attributes().size()) { o << ','; }
@@ -84,7 +96,7 @@ inline void _dump<object>(object const& v, string_output& o) {
         }
 
         o.wrap('"', prop.tag()) << ": ";
-        visit_property(base, prop, json_dump::_visitor{o});
+        visit_property(baseaddr, prop, json_dump::_visitor{o});
 
         size_t prop_idx = &prop - v.properties().data();
         if (prop_idx + 1 < v.properties().size()) { o << ','; }
@@ -95,10 +107,34 @@ inline void _dump<object>(object const& v, string_output& o) {
 
 template <typename Ty_>
 void _dump(property_proxy<std::vector<Ty_>, true> v, string_output& o) {
+    o << '[', ++o;
+
+    for (size_t i = 0, end = v.size(); i < end; ++i) {
+        o << break_indent;
+        auto& elem = v[i];
+        _dump(elem, o);
+
+        if (i + 1 < end) { o << ", "; }
+    }
+
+    --o, o << break_indent << ']';
 }
 
 template <typename Ty_>
 void _dump(property_proxy<u8str_map<Ty_>, true> v, string_output& o) {
+    o << '{', ++o;
+    size_t counter = 0;
+    size_t size    = v.size();
+
+    v.for_each([&o, &counter, size](u8str_view s, Ty_ const& v_i) {
+        o << break_indent;
+        o.wrap('"', s) << ": ";
+        _dump(v_i, o);
+
+        if (++counter < size) { o << ", "; }
+    });
+
+    --o, o << break_indent << ']';
 }
 
 } // namespace json

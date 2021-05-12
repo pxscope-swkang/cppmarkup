@@ -10,7 +10,7 @@ namespace impl {
 template <typename Ty_> struct _generic_can_trivially_marshalable {
     constexpr bool operator()() {
         auto constexpr type = etype::from_type<Ty_>();
-        return !type.is_container() && !type.is_object() && !type.is_string();
+        return !type.is_container() && !type.is_object();
     }
 };
 } // namespace impl
@@ -171,8 +171,9 @@ template <typename Ty_> char const* generic_parse<Ty_>::_impl(char const* begin,
             return nullptr;
         }
     } else if constexpr (type.is_string()) {
-        static_assert("string may not be appropriate to be built by generic_parse");
-        return nullptr;
+        u8str& out = dest;
+        out.append(begin, end);
+        return end;
     } else if constexpr (type.is_null()) {
         if (maxlen >= 4 && memcmp(begin, "null", 4) == 0) {
             return begin + 4;

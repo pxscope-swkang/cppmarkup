@@ -131,7 +131,7 @@ public:
     constexpr bool is_floating_point() const noexcept { return leap() == floating_point; }
 
     template <typename... Args_> // requires std::is_same_v<Args_, _type>
-    constexpr bool is_one_of(Args_... args) {
+    constexpr bool is_one_of(Args_... args) const noexcept {
         return ((leap() == args) || ...);
     }
 

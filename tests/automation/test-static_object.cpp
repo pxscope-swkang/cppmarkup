@@ -63,7 +63,7 @@ struct object_type : ::kangsw::refl::static_object_base<object_type> {
     };
 };
 
-TEST_SUITE("Static Object") {
+TEST_SUITE("Types.Static Object") {
     TEST_CASE("Prove of concept for prototype") {
         object_type o;
 

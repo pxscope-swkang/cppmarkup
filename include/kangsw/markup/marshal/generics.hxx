@@ -5,7 +5,7 @@
 #include "../types.hxx"
 #include "../utility/base64.hxx"
 
-namespace kangsw::refl {
+namespace kangsw::refl::marshal {
 namespace impl {
 template <typename Ty_> struct _generic_can_trivially_marshalable {
     constexpr bool operator()() {
@@ -34,7 +34,7 @@ struct string_output {
     string_output& wrap(Wrap_&& s, Ty_&&... other) { return *this << s, ((*this << std::forward<Ty_>(other)), ...) << std::forward<Wrap_>(s); }
 
     void operator++() { _conf_indent_f(); }
-    void operator--() { _conf_indent_f(); }
+    void operator--() { _conf_indent_b(); }
 
 private:
     void _break_indent();

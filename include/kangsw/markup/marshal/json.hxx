@@ -83,7 +83,7 @@ inline void _dump<object>(object const& v, string_output& o) {
             o << break_indent << "}," << break_indent;
         }
 
-        o.wrap('"', prop.tag()) << ": {";
+        o.wrap('"', prop.tag()) << ": ";
         visit_property(base, prop, json_dump::_visitor{o});
 
         size_t prop_idx = &prop - v.properties().data();

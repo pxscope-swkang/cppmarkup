@@ -20,9 +20,13 @@ public:
     // .find -> property_proxy
     virtual object_traits const& traits() const = 0;
 
+    object_baseaddr_t* base() { return static_cast<object_baseaddr_t*>(_base()); }
+    object_baseaddr_t const* base() const { return static_cast<object_baseaddr_t const*>(_base()); }
+
+protected:
     /** Gets actual origin of contigous memory which is represented by properties. */
-    virtual void* base()             = 0;
-    virtual void const* base() const = 0;
+    virtual void* _base()             = 0;
+    virtual void const* _base() const = 0;
 
 public:
     void reset() {
@@ -35,11 +39,11 @@ public:
     }
 
 public:
-    void* operator[](property const& p) { return p.memory()(base()); }
-    void const* operator[](property const& p) const { return p.memory()(base()); }
+    void* operator[](property const& p) { return p.memory()(_base()); }
+    void const* operator[](property const& p) const { return p.memory()(_base()); }
 
-    void* operator[](property::attribute const& p) { return p._memory(base()); }
-    void const* operator[](property::attribute const& p) const { return p._memory(base()); }
+    void* operator[](property::attribute const& p) { return p._memory(_base()); }
+    void const* operator[](property::attribute const& p) const { return p._memory(_base()); }
 };
 
 } // namespace kangsw::refl

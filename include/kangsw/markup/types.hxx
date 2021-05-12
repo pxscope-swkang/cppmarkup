@@ -8,6 +8,7 @@
 namespace kangsw ::refl {
 /** forwardings */
 class object;
+struct object_baseaddr_t; // Never dereferenced.
 
 /** aliases */
 using u8str       = std::string;

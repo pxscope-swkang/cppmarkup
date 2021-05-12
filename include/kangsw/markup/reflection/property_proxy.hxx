@@ -246,26 +246,28 @@ private:
  *
  * Runtime type check will be performed.
  */
-template <typename Ty_, typename ObjTy_>
-auto make_proxy(ObjTy_& obj, property const& m) {
-    enum { is_constant = std::is_const_v<ObjTy_> };
-    return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
+template <typename Ty_, typename Vp, typename PropTy_>
+auto make_proxy(Vp* base, PropTy_ const& m) {
+    enum { is_constant = std::is_const_v<Vp> };
+    return property_proxy<Ty_, is_constant>{m, m.memory()(base)};
 }
 
 /**
- * Makes property proxy from object instance and attribute property.
- *
- * Runtime type check will be performed. Attributes must not be any of container types or object type.
+ * \brief On property, invoke operation which will be applied on its actual underlying type. 
+ * \tparam BasePtr_ 'object' or 'object const'
+ * \tparam PropTy_ 'property' or 'property::attribute'
+ * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
+ * \param obj 
+ * \param pr 
+ * \param fn This should be template function, which will be instanciated per available property types.
+ * \return invocation result of HandleFn_
  */
-template <typename Ty_, typename ObjTy_>
-auto make_proxy(ObjTy_& obj, property::attribute const& m) {
-    enum { is_constant = std::is_const_v<ObjTy_> };
-    return property_proxy<Ty_, is_constant>{m, m.memory()(obj.base())};
-}
+template <typename BasePtr_, typename PropTy_, typename HandleFn_>
+decltype(auto) visit_property(BasePtr_* obj, PropTy_ const& pr, HandleFn_&& fn) {
+    static_assert(std::is_same_v<object_baseaddr_t, std::remove_const_t<BasePtr_>>);
+    static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
+    using base_type = std::conditional_t<std::is_const_v<BasePtr_>, const object, object>;
 
-namespace impl {
-template <typename ObjTy_, typename PropTy_, typename HandleFn_>
-decltype(auto) _apply_property_op_impl(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
     property::memory_t const& m = pr.memory();
 
     switch (m.type.get()) {
@@ -312,25 +314,4 @@ decltype(auto) _apply_property_op_impl(ObjTy_& obj, PropTy_ const& pr, HandleFn_
         assert(0 && "fatal logic error: attribute must not have container type");
     }
 }
-} // namespace impl
-
-/**
- * \brief On property, invoke operation which will be applied on its actual underlying type. 
- * \tparam ObjTy_ 'object' or 'object const'
- * \tparam PropTy_ 'property' or 'property::attribute'
- * \tparam HandleFn_ return_type HandleFn_(property_proxy<T>)
- * \param obj 
- * \param pr 
- * \param fn This should be template function, which will be instanciated per available property types.
- * \return invocation result of HandleFn_
- */
-template <typename ObjTy_, typename PropTy_, typename HandleFn_>
-decltype(auto) visit_property(ObjTy_& obj, PropTy_ const& pr, HandleFn_&& fn) {
-    static_assert(std::is_base_of_v<object, std::remove_const_t<ObjTy_>>);
-    static_assert(std::is_same_v<property, PropTy_> || std::is_same_v<property::attribute, PropTy_>);
-    using base_type = std::conditional_t<std::is_const_v<ObjTy_>, const object, object>;
-
-    impl::_apply_property_op_impl(static_cast<base_type&>(obj), pr, std::forward<HandleFn_>(fn));
-}
-
 } // namespace kangsw::refl

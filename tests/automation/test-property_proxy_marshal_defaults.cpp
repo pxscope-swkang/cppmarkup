@@ -41,9 +41,9 @@ TEST_SUITE("Types") {
         ss.some_obj_arr_.encrypt.write(cr.begin(), cr.end());
 
         for (auto& prop : ss.properties()) {
-            refl::visit_property(ss, prop, visitor{prop.tag()});
+            refl::visit_property(ss.base(), prop, visitor{prop.tag()});
             for (auto& attr : prop.attributes()) {
-                refl::visit_property(ss, attr, visitor{attr.name});
+                refl::visit_property(ss.base(), attr, visitor{attr.name});
             }
         }
 

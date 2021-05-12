@@ -58,6 +58,7 @@ void _dump(Ty_ const& v, string_output& o) {
 template <>
 inline void _dump<object>(object const& v, string_output& o) {
     o << '{', ++o; // Write value first -> indent later
+    auto base = v.base();
 
     for (auto& prop : v.properties()) {
         o << break_indent;
@@ -72,7 +73,7 @@ inline void _dump<object>(object const& v, string_output& o) {
 
                 // "Attribute tag": value
                 o.wrap('"', attr.name) << ": ";
-                visit_property(v, attr, json_dump::_visitor{o});
+                visit_property(base, attr, json_dump::_visitor{o});
 
                 size_t attr_idx = &attr - prop.attributes().data();
                 if (attr_idx + 1 < prop.attributes().size()) { o << ','; }
@@ -83,7 +84,7 @@ inline void _dump<object>(object const& v, string_output& o) {
         }
 
         o.wrap('"', prop.tag()) << ": {";
-        visit_property(v, prop, json_dump::_visitor{o});
+        visit_property(base, prop, json_dump::_visitor{o});
 
         size_t prop_idx = &prop - v.properties().data();
         if (prop_idx + 1 < v.properties().size()) { o << ','; }

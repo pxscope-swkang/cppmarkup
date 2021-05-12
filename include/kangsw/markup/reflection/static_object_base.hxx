@@ -46,8 +46,8 @@ public:
         return o.reset(), o;
     }
 
-    void* base() override { return this; }
-    void const* base() const override { return this; }
+    void* _base() override { return this; }
+    void const* _base() const override { return this; }
 };
 
 /** Container proxies */

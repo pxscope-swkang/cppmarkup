@@ -5,7 +5,7 @@
 namespace kangsw::refl::marshal {
 
 /**  */
-class json_parse_context {
+class json_parse {
 public:
     /** Input parsing status */
     enum status_type {
@@ -17,10 +17,17 @@ public:
 
 public:
     /** Initialize json parsing context */
-    json_parse_context(object& dest) : _dest(dest) {}
+    json_parse(object& dest) : _dest(dest) {}
 
     /** Parses input stream sequentially. Returns true if next input is available */
     bool operator()(char ch);
+
+    template <typename It_>
+    bool operator()(It_ begin, It_ end) {
+        for (; begin != end; ++begin) {
+            if (!this->operator()(*begin)) { return false; }
+        }
+    }
 
     /** Get current status of json context */
     status_type status() const;

@@ -4,39 +4,37 @@
 
 namespace kangsw::refl::marshal {
 
-/**  */
-class json_parse {
+/**
+ * Finds a complete json object from continuous stream.
+ *
+ * Use this class when you have continous json object stream, but boundary of each object
+ *is unclear, due to various reasons(stream is not devided by null character, or no total
+ *length is provided ... etc)
+ */
+class json_fence {
 public:
-    /** Input parsing status */
-    enum status_type {
-        status_ok   = 0,
-        status_done = 1,
-
-        status_error = std::numeric_limits<std::underlying_type_t<status_type>>::min(),
+    enum result_t {
+        ready,
+        error,
+        done
     };
 
 public:
-    /** Initialize json parsing context */
-    json_parse(object& dest) : _dest(dest) {}
-
-    /** Parses input stream sequentially. Returns true if next input is available */
-    bool operator()(char ch);
-
-    template <typename It_>
-    bool operator()(It_ begin, It_ end) {
-        for (; begin != end; ++begin) {
-            if (!this->operator()(*begin)) { return false; }
-        }
-    }
-
-    /** Get current status of json context */
-    status_type status() const;
+    json_fence(u8str& out) : _out(out) {}
+    result_t operator()(char ch);
 
 private:
-    object& _dest;
+    u8str& _out;
 };
 
-/** Json dump can be done in statelessly. */
+/** Parse string as the schema of given object. */
+class json_parse {
+public:
+    /** Parse input string_view as */
+    bool operator()(object& dest, u8str_view i);
+};
+
+/** Dump given object as json */
 class json_dump {
 public:
     void operator()(object const& obj, string_output& o);

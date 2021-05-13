@@ -70,6 +70,8 @@ public:
     auto ovi() const { return _ovi.get(); }
     auto omi() const { return _omi.get(); }
 
+    object_traits const& get_object_traits() const { return *_traits_if_exist; }
+
 public:
     property& operator=(property&&) noexcept = default;
     property(property&&) noexcept            = default;
@@ -112,6 +114,13 @@ public:
         _omi.reset(new_omi);
     }
 
+    void _set_traits(object_traits const* t) {
+        if (!_is_valid || !_memory.type.is_object()) {
+            throw invalid_container_interface_setup_exception("");
+        }
+        _traits_if_exist = t;
+    }
+
 private:
     bool _is_valid = false;
 
@@ -125,6 +134,8 @@ private:
 
     std::unique_ptr<object_vector_interface const> _ovi = {};
     std::unique_ptr<object_map_interface const> _omi    = {};
+
+    object_traits const* _traits_if_exist = {};
 };
 
 } // namespace kangsw::refl

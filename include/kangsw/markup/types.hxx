@@ -9,8 +9,9 @@ namespace kangsw ::refl {
 /** forwardings */
 class object;
 struct object_baseaddr_t; // Never dereferenced.
+class object_traits;
 
-/** aliases */
+  /** aliases */
 using u8str       = std::string;
 using u8str_view  = std::string_view;
 using timestamp_t = std::chrono::system_clock::time_point; //std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>;

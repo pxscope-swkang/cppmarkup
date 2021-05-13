@@ -159,11 +159,15 @@ public:
 
         prop._set_defaults("" /*TODO ...*/, (property_flag_t)elem_flags, std::move(m));
 
-        if constexpr (type.is_object() && type.is_array()) {
-            prop._set_ovi(new static_object_vector_iface<typename ValueTy_::value_type>);
-        }
-        if constexpr (type.is_object() && type.is_map()) {
-            prop._set_omi(new static_object_map_iface<typename ValueTy_::mapped_type>);
+        if constexpr (type.is_object()) {
+            if constexpr (type.is_array()) {
+                prop._set_ovi(new static_object_vector_iface<typename ValueTy_::value_type>);
+            }
+            if constexpr (type.is_map()) {
+                prop._set_omi(new static_object_map_iface<typename ValueTy_::mapped_type>);
+            }
+
+            prop._set_traits(&traits_type::get());
         }
     }
 };

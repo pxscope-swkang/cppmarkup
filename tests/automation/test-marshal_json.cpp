@@ -11,8 +11,7 @@ TEST_SUITE("Marshal.Json") {
         mk.reset();
 
         refl::u8str s;
-        marshal::string_output os{s, 4};
-        marshal::json_dump{}(mk, os);
+        marshal::json_dump{}(mk, {s,4});
 
         MESSAGE(s);
     }

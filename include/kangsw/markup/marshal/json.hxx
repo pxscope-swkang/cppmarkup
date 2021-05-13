@@ -10,6 +10,8 @@ namespace kangsw::refl::marshal {
  * Use this class when you have continous json object stream, but boundary of each object
  *is unclear, due to various reasons(stream is not devided by null character, or no total
  *length is provided ... etc)
+ *
+ * Automatically minifies input json stream.
  */
 class json_fence {
 public:
@@ -19,12 +21,139 @@ public:
         done
     };
 
+private:
+    enum class _nextc : uint8_t {
+        opening_brace, // always the first
+        closing_brace,
+        comma_or_closing_brace,
+        closing_bracket,          // met [, looking for ']'
+        closing_bracket_or_comma, // met [, looking for ']'
+
+        tag_colon,
+        string_escaped_next, // after '\'
+        string_escape_u_0,   // \u:
+        string_escape_u_1,   // \ux:
+        string_escape_u_2,   // \uxx:
+        string_escape_u_3,   // \uxxx:
+
+        tag_opening_quote,
+        ARG_string_closing_quote,
+
+        value_begin, // expect any value begin character
+        value_end,   // to prevent "abc": 243 142, is treated valid, first searches end of the value.
+        comma,
+
+        begin_comment_next,       // met '/' in non-string context, expecting '/' or '*'
+        line_comment_newline,     // skipping all characters untill met newline
+        block_comment_0_asterisk, // looking for '*' of */
+        block_comment_1_slash,    // after *, looking for '/'
+    };
+
 public:
-    json_fence(u8str& out) : _out(out) {}
-    result_t operator()(char ch);
+    json_fence(u8str& out) : _out(out) {
+        _st.reserve(32);
+        _st.push_back(_nextc::opening_brace);
+        _out.clear();
+    }
+
+    result_t operator()(char ch) {
+        if (_st.empty()) { return error; }
+
+        switch (_st.back()) {
+            case _nextc::opening_brace:
+                if (ch == '{') {
+                    apnd(ch), replace(_nextc::closing_brace);
+                    return ready;
+                } else if (spacechars(ch)) {
+                    return ready;
+                } else {
+                    return error;
+                }
+
+            case _nextc::comma_or_closing_brace:
+                if (ch == ',') {
+                    push(_nextc::tag_colon);
+                    push(_nextc::ARG_string_closing_quote);
+                    push(_nextc::tag_opening_quote); // tag must follow after comma
+                    return ready;
+                }
+                [[fallthrough]];
+            case _nextc::closing_brace:
+                if (ch == '}') {
+                    apnd(ch), pop();
+                    return _st.empty() ? done : ready;
+                } else if (spacechars(ch)) {
+                    return ready;
+                } else if (ch == '"') { // beginning of first-most tag
+                    apnd(ch);
+                    replace(_nextc::comma_or_closing_brace); // can look for next value after all.
+                    push(_nextc::tag_colon);
+                    push(_nextc::ARG_string_closing_quote);
+                    return ready;
+                } else {
+                    return error;
+                }
+
+            case _nextc::ARG_string_closing_quote:
+                if (ch == '\\') { // escape sequence ... does not append
+                    return push(_nextc::string_escaped_next), ready;
+                } else if (ch == '"') {
+                    return apnd(ch), pop(), ready;
+                } else if (valid_char(ch)) {
+                    return apnd(ch), ready;
+                } else {
+                    return error;
+                }
+
+            case _nextc::value_begin:
+                // TODO: replace to value_end (meet non-'"') or string_closing_quote (meet '"')
+
+            case _nextc::tag_colon:
+                // TODO: replaces
+
+            case _nextc::closing_bracket_or_comma:
+            case _nextc::closing_bracket: break;
+
+            case _nextc::string_escaped_next: break;
+            case _nextc::value_end: break;
+            case _nextc::comma: break;
+            case _nextc::begin_comment_next: break;
+            case _nextc::line_comment_newline: break;
+            case _nextc::block_comment_0_asterisk: break;
+            case _nextc::block_comment_1_slash: break;
+
+            case _nextc::string_escape_u_0: break;
+            case _nextc::string_escape_u_1: break;
+            case _nextc::string_escape_u_2: break;
+            case _nextc::string_escape_u_3: break;
+
+            case _nextc::tag_opening_quote: break;
+            default:;
+        }
+
+        return ready;
+    }
+
+private:
+    static bool spacechars(char const ch) {
+        constexpr u8str_view sview = " \t\n\r\f\b";
+        return sview.find(ch) != sview.npos;
+    }
+
+    static bool between(char const ch, char a, char b) { return a <= ch && ch <= b; }
+    static bool digit(char const ch) { return between(ch, '0', '9'); }
+    static bool alphabet(char const ch) { return between(ch, 'a', 'z') | between(ch, 'A', 'Z'); }
+    static bool alphanumeric(char const ch) { return digit(ch) | alphabet(ch) | (ch == '_'); }
+    static bool valid_char(char const ch) { return !iscntrl(ch); }
+
+    void pop() { _st.pop_back(); }
+    void push(_nextc c) { _st.push_back(c); }
+    void replace(_nextc c) { pop(), push(c); }
+    void apnd(char ch) { _out += ch; }
 
 private:
     u8str& _out;
+    std::vector<_nextc> _st = {};
 };
 
 /** Parse string as the schema of given object. */

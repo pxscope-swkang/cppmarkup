@@ -121,8 +121,11 @@ public:
         return (*static_cast<ptr>(p)).try_emplace(u8str(s)).first->second;
     }
 
-    void erase(void* p, u8str_view s) const override {
-        // static_cast<ptr>(p)->erase(s);
+    void erase( void* p, u8str_view s) const override {
+        auto& map = *static_cast<ptr>(p);
+        auto it   = map.find(s);
+        if (it == map.end()) { return; }
+        map.erase(it);
     }
 
     void for_each(void* p, std::function<void(u8str_view, object&)> const& fn) const override {

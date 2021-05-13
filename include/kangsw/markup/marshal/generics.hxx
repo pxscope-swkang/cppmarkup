@@ -124,7 +124,6 @@ template <typename Ty_> template <typename OutIt_> void generic_stringfy<Ty_>::o
         auto const str = i ? "true" : "false";
         std::copy(str, str + (i ? 4 : 5), o);
     } else if constexpr (type.is_binary()) {
-        binary_chunk const& v = i;
         base64::encode(i.data(), i.size(), o);
     } else if constexpr (type.is_string()) {
         std::copy(i.begin(), i.end(), o);
@@ -149,7 +148,7 @@ template <typename Ty_> template <typename OutIt_> void generic_stringfy<Ty_>::o
 }
 
 #if _WIN32 // Cross-platform support
-static time_t timegm(tm* t) { return _mkgmtime(t); }
+inline time_t timegm(tm* t) { return _mkgmtime(t); }
 #endif
 
 template <typename Ty_> char const* generic_parse<Ty_>::_impl(char const* begin, char const* end, Ty_& dest) const {

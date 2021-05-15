@@ -28,7 +28,7 @@ private:
             closing_brace,
             comma_or_closing_brace,
             closing_bracket,          // met [, looking for ']'
-            closing_bracket_or_comma, // met [, looking for ']'
+            comma_or_closing_bracket, // met [, looking for ']'
 
             tag_colon,
             string_escaped_next,                             // after '\'
@@ -219,9 +219,10 @@ inline json_object_from_stream::result_t json_object_from_stream::operator()(cha
 
         case _nextc::comma_or_closing_brace:
             if (ch == ',') {
-                push(_nextc::tag_colon);
-                push(_nextc::string_closing_quote);
-                push(_nextc::tag_opening_quote); // tag must follow after comma
+                apnd(ch),
+                  push(_nextc::tag_colon),
+                  push(_nextc::string_closing_quote),
+                  push(_nextc::tag_opening_quote); // tag must follow after comma
                 return ready;
             }
             [[fallthrough]];
@@ -274,7 +275,7 @@ inline json_object_from_stream::result_t json_object_from_stream::operator()(cha
                 return error;
             }
 
-        case _nextc::closing_bracket_or_comma:
+        case _nextc::comma_or_closing_bracket:
             if (ch == ',') {
                 return apnd(ch), push(_nextc::value_begin), ready;
             }
@@ -282,17 +283,43 @@ inline json_object_from_stream::result_t json_object_from_stream::operator()(cha
         case _nextc::closing_bracket:
             if (ch == ']') {
                 return apnd(ch), pop(), ready;
+            } else if (spacechars(ch)) {
+                return ready;
+            } else if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
+            } else if (ch == '{') {
+                apnd(ch),
+                  replace(_nextc::comma_or_closing_bracket),
+                  push(_nextc::closing_brace);
+                return ready;
+            } else if (ch == '[') {
+                apnd(ch),
+                  replace(_nextc::comma_or_closing_bracket),
+                  push(_nextc::closing_bracket);
+                return ready;
+            } else if (ch == '"') {
+                apnd(ch),
+                  replace(_nextc::comma_or_closing_bracket),
+                  push(_nextc::string_closing_quote);
+                return ready;
+            } else if (one_of("tfn", ch) || digit(ch)) {
+                apnd(ch),
+                  replace(_nextc::comma_or_closing_bracket),
+                  push(_nextc::value_end);
+                return ready;
+            } else {
+                return error;
             }
-            [[fallthrough]];
+
         case _nextc::value_begin:
             if (spacechars(ch)) {
                 return ready;
             } else if (ch == '/') {
                 return push(_nextc::begin_comment_next), ready;
             } else if (ch == '{') {
-                return apnd(ch), push(_nextc::closing_brace), ready;
+                return apnd(ch), replace(_nextc::closing_brace), ready;
             } else if (ch == '[') {
-                return apnd(ch), push(_nextc::closing_bracket), ready;
+                return apnd(ch), replace(_nextc::closing_bracket), ready;
             } else if (ch == '"') {
                 return apnd(ch), replace(_nextc::string_closing_quote), ready;
             } else if (one_of("tfn", ch) || digit(ch)) {

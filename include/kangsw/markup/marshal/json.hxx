@@ -185,7 +185,7 @@ void _dump(property_proxy<u8str_map<Ty_>, true> v, string_output& o) {
         if (++counter < size) { o << ", "; }
     });
 
-    --o, o << break_indent << ']';
+    --o, o << break_indent << '}';
 }
 
 } // namespace json

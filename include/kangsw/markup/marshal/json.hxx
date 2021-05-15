@@ -13,7 +13,7 @@ namespace kangsw::refl::marshal {
  *
  * Automatically minifies input json stream.
  */
-class json_fence {
+class json_object_from_stream {
 public:
     enum result_t {
         ready,
@@ -54,7 +54,7 @@ private:
     }
 
 public:
-    json_fence(u8str& out) : _out(out) {
+    json_object_from_stream(u8str& out) : _out(out) {
         _st.reserve(32);
         _st.push_back(_nextc::opening_brace);
         _out.clear();
@@ -200,7 +200,7 @@ void json_dump::_visitor::operator()(property_proxy<Ty_, true> p) {
     }
 }
 
-inline json_fence::result_t json_fence::operator()(char ch) {
+inline json_object_from_stream::result_t json_object_from_stream::operator()(char ch) {
     if (_st.empty()) { return error; }
 
     switch (auto state = static_cast<std::underlying_type_t<_nextc::type>>(_st.back())) {

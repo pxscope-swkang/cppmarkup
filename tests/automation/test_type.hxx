@@ -10,7 +10,7 @@ CPPMARKUP_OBJECT_TEMPLATE(my_markup_type) {
                             CPPMARKUP_ATTRIBUTE(ref_path, "/doc/args"));
     };
 
-    CPPMARKUP_ELEMENT(list_author, std::vector({"abc", "Def"}));
+    CPPMARKUP_ELEMENT(list_author, std::vector({"abc\t\r\n\x011gaf\f", "Def"}));
     CPPMARKUP_ELEMENT_A(some_obj_arr, std::vector({internal_object_type::get_default()}),
                         CPPMARKUP_ATTRIBUTE(encrypt, kangsw::refl::binary_chunk::from("hello, world!", 32, 42));
                         CPPMARKUP_ATTRIBUTE(stamp, kangsw::refl::timestamp_t::clock::now()));

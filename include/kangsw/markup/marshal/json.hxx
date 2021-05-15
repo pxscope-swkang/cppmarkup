@@ -109,9 +109,37 @@ void _dump(Ty_ const& v, string_output& o) {
 
     if constexpr (T.is_one_of(E::floating_point, E::integer, E::boolean, E::null)) {
         generic_stringfy<Ty_>{}(v, std::back_inserter(o.str()));
-    } else if constexpr (T.is_one_of(etype::string, etype::timestamp, etype::binary)) {
+    } else if constexpr (T.is_one_of(etype::timestamp, etype::binary)) {
         o << '"';
         generic_stringfy<Ty_>{}(v, std::back_inserter(o.str()));
+        o << '"';
+    } else if constexpr (T.is_string()) {
+        o << '"';
+        for (char ch : v) {
+            // Handle escape
+            if (iscntrl(ch)) {
+                switch (ch) {
+                    case '"': o << "\\\""; break;
+                    case '\\': o << "\\\\"; break;
+                    case '\b': o << "\\b"; break;
+                    case '\f': o << "\\f"; break;
+                    case '\n': o << "\\n"; break;
+                    case '\r': o << "\\r"; break;
+                    case '\t': o << "\\t"; break;
+                    default:
+                        if ('\x00' <= ch && ch <= '\x1f') {
+                            o << "\\u";
+                            char buf[5];
+                            snprintf(buf, sizeof buf, "%04x", ch), buf[4] = 0;
+                            o << buf;
+                        } else {
+                            o << ch;
+                        }
+                }
+            } else {
+                o.str() += ch;
+            }
+        }
         o << '"';
     } else {
         static_assert(false, "Should not enter here.");
@@ -248,7 +276,7 @@ inline json_object_from_stream::result_t json_object_from_stream::operator()(cha
         case _nextc::string_closing_quote:
             if (ch == '\\') {
                 // escape sequence ... does not append
-                return push(_nextc::string_escaped_next), ready;
+                return apnd(ch), push(_nextc::string_escaped_next), ready;
             } else if (ch == '"') {
                 return apnd(ch), pop(), ready;
             } else if (!iscntrl(ch)) {

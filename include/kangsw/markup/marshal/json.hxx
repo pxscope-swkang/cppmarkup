@@ -333,14 +333,38 @@ inline json_fence::result_t json_fence::operator()(char ch) {
                 return error;
             }
 
-        case _nextc::string_escape_u_end: return pop(), (*this)(ch);
+        case _nextc::string_escape_u_end:
+            return pop(), (*this)(ch);
 
-        case _nextc::begin_comment_next: break;
-        case _nextc::line_comment_newline: break;
-        case _nextc::block_comment_0_asterisk: break;
-        case _nextc::block_comment_1_slash: break;
+        case _nextc::begin_comment_next:
+            if (ch == '/') {
+                return replace(_nextc::line_comment_newline), ready;
+            } else if (ch == '*') {
+                return replace(_nextc::block_comment_0_asterisk), ready;
+            } else {
+                return error;
+            }
 
-        default:;
+        case _nextc::line_comment_newline:
+            if (ch == '\n') {
+                return pop(), ready;
+            } else {
+                return ready;
+            }
+
+        case _nextc::block_comment_0_asterisk:
+            if (ch == '*') {
+                return replace(_nextc::block_comment_1_slash), ready;
+            } else {
+                return ready;
+            }
+
+        case _nextc::block_comment_1_slash:
+            if (ch == '/') {
+                return pop(), ready;
+            } else {
+                return replace(_nextc::block_comment_0_asterisk), ready;
+            }
     }
 
     return ready;

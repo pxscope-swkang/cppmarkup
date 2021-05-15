@@ -206,7 +206,9 @@ inline json_fence::result_t json_fence::operator()(char ch) {
     switch (auto state = static_cast<std::underlying_type_t<_nextc::type>>(_st.back())) {
             // TODO: 内膏飘 贸府 眠啊 ... 葛电 冀记俊 '/' 贸府 风凭
         case _nextc::opening_brace:
-            if (ch == '{') {
+            if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
+            } else if (ch == '{') {
                 apnd(ch), replace(_nextc::closing_brace);
                 return ready;
             } else if (spacechars(ch)) {
@@ -227,6 +229,8 @@ inline json_fence::result_t json_fence::operator()(char ch) {
             if (ch == '}') {
                 apnd(ch), pop();
                 return _st.empty() ? done : ready;
+            } else if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
             } else if (spacechars(ch)) {
                 return ready;
             } else if (ch == '"') {
@@ -255,6 +259,8 @@ inline json_fence::result_t json_fence::operator()(char ch) {
         case _nextc::tag_opening_quote:
             if (ch == '"') {
                 return apnd(ch), pop(), ready;
+            } else if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
             } else if (spacechars(ch)) {
                 return ready;
             }
@@ -281,6 +287,8 @@ inline json_fence::result_t json_fence::operator()(char ch) {
         case _nextc::value_begin:
             if (spacechars(ch)) {
                 return ready;
+            } else if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
             } else if (ch == '{') {
                 return apnd(ch), push(_nextc::closing_brace), ready;
             } else if (ch == '[') {
@@ -296,6 +304,8 @@ inline json_fence::result_t json_fence::operator()(char ch) {
         case _nextc::value_end:
             if (ch == '.' || alphanumeric(ch)) {
                 return apnd(ch), ready;
+            } else if (ch == '/') {
+                return push(_nextc::begin_comment_next), ready;
             } else if (spacechars(ch)) {
                 return pop(), ready;
             } else if (one_of(",}]", ch)) {

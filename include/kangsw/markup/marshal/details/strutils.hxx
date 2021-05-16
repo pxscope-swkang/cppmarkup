@@ -60,4 +60,14 @@ constexpr auto escape_handling_matcher(char const to_match) {
 
     return _escaped_matcher{to_match};
 }
+
+inline u8str_view remove_suffix_if_found(u8str_view s, u8str_view find) {
+    if (s.size() < find.size()) {
+        return {};
+    } else {
+        return s.substr(s.size() - find.size()) == find
+                 ? s.substr(0, s.size() - find.size() + 1)
+                 : u8str_view{};
+    }
 }
+} // namespace kangsw::refl::marshal::utils

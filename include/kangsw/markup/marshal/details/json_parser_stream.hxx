@@ -1,7 +1,11 @@
 #pragma once
+#include <variant>
+
 #include "strutils.hxx"
 #include "generics.hxx"
 #include "trivial_marshal.hxx"
+#include "kangsw/markup/reflection/object.hxx"
+#include "kangsw/markup/reflection/property.hxx"
 
 namespace kangsw::refl::marshal {
 
@@ -50,11 +54,7 @@ private:
     };
 
 public:
-    json_parser_stream(u8str& out) : _out(out) {
-        _st.reserve(32);
-        _st.push_back(_nextc::opening_brace);
-        _out.clear();
-    }
+    json_parser_stream(object& root, u8str* buf);
 
     result_t operator()(char ch);
 
@@ -64,10 +64,77 @@ private:
     void replace(_nextc::type c) { pop(), push(c); }
     void apnd(char ch) { _out += ch; }
 
+    void tag_token_begin() {
+        _token.begin_index = _out.size();
+        _token.has_escape  = false;
+    }
+
+    void tag_token_end() {
+        auto token = u8str_view{_out}.substr(_token.begin_index);
+
+        // if it has escape, unescape characters into raw.
+        if (_token.has_escape) {
+            // TODO
+        }
+
+        // find property by token name
+
+        // push it to stack.
+    }
+
+    void value_token_begin() {
+        _token.begin_index = _out.size();
+        _token.has_escape  = false;
+    }
+
+    void value_token_end() {
+        auto token = u8str_view{_out}.substr(_token.begin_index);
+
+        // access to topmost property of _context, then pop it.
+    }
+
 private:
-    u8str& _out;
+    enum class _context_state {
+        none, // 루트 오브젝트에만 할당
+        property_attributes,
+        property_value,
+        attribute_value,
+        skipping,
+    };
+
+    struct _parser_context {
+        object_baseaddr_t* addr = {};
+        _context_state state    = _context_state::none;
+        union {
+            property const* prop;
+            property::attribute const* attr;
+        } ptr = {};
+    };
+
+private:
     std::vector<_nextc::type> _st = {};
+    object& _dest_root;
+    u8str& _out;
+    u8str _buf_if_not_specified;
+
+    // used for parsing only for current argument.
+    // detailed information will be represented as parser context.
+    std::vector<_parser_context> _context;
+
+    struct {
+        size_t begin_index = ~size_t{0};
+        bool has_escape    = false;
+    } _token;
 };
+
+inline json_parser_stream::json_parser_stream(object& root, u8str* buf)
+  : _dest_root(root), _out(buf ? *buf : _buf_if_not_specified) {
+    if (!buf) { _buf_if_not_specified.reserve(64); }
+    _st.reserve(32);
+    _st.push_back(_nextc::opening_brace);
+    _context.reserve(32);
+    _context.push_back({root.base(), _context_state::none});
+}
 
 inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
     if (_st.empty()) { return error; }
@@ -90,6 +157,7 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
         case _nextc::comma_or_closing_brace:
             if (ch == ',') {
                 apnd(ch),
+                  push(_nextc::value_begin),
                   push(_nextc::tag_colon),
                   push(_nextc::string_closing_quote),
                   push(_nextc::tag_opening_quote); // tag must follow after comma
@@ -98,6 +166,7 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
             [[fallthrough]];
         case _nextc::closing_brace:
             if (ch == '}') {
+                _context.pop_back(); // Finalize parsing context.
                 apnd(ch), pop();
                 return _st.empty() ? done : ready;
             } else if (ch == '/') {
@@ -105,9 +174,12 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
             } else if (spacechars(ch)) {
                 return ready;
             } else if (ch == '"') {
-                // beginning of first-most tag
+                // beginning of the first-most tag
+                tag_token_begin();
                 apnd(ch);
+
                 replace(_nextc::comma_or_closing_brace); // can look for next value after all.
+                push(_nextc::value_begin);
                 push(_nextc::tag_colon);
                 push(_nextc::string_closing_quote);
                 return ready;
@@ -117,10 +189,18 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
 
         case _nextc::string_closing_quote:
             if (ch == '\\') {
-                // escape sequence ... does not append
+                _token.has_escape = true;
                 return apnd(ch), push(_nextc::string_escaped_next), ready;
             } else if (ch == '"') {
-                return apnd(ch), pop(), ready;
+                pop();
+
+                if (_st.back() == _nextc::tag_colon) {
+                    tag_token_end();
+                } else {
+                    value_token_end();
+                }
+
+                return apnd(ch), ready;
             } else if (!iscntrl(ch)) {
                 return apnd(ch), ready;
             } else {
@@ -129,6 +209,7 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
 
         case _nextc::tag_opening_quote:
             if (ch == '"') {
+                tag_token_begin();
                 return apnd(ch), pop(), ready;
             } else if (ch == '/') {
                 return push(_nextc::begin_comment_next), ready;
@@ -138,7 +219,7 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
 
         case _nextc::tag_colon:
             if (ch == ':') {
-                return apnd(ch), replace(_nextc::value_begin), ready;
+                return apnd(ch), pop(), ready;
             } else if (spacechars(ch)) {
                 return ready;
             } else {
@@ -157,26 +238,10 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
                 return ready;
             } else if (ch == '/') {
                 return push(_nextc::begin_comment_next), ready;
-            } else if (ch == '{') {
-                apnd(ch),
-                  replace(_nextc::comma_or_closing_bracket),
-                  push(_nextc::closing_brace);
-                return ready;
-            } else if (ch == '[') {
-                apnd(ch),
-                  replace(_nextc::comma_or_closing_bracket),
-                  push(_nextc::closing_bracket);
-                return ready;
-            } else if (ch == '"') {
-                apnd(ch),
-                  replace(_nextc::comma_or_closing_bracket),
-                  push(_nextc::string_closing_quote);
-                return ready;
-            } else if (one_of("tfn", ch) || digit(ch)) {
-                apnd(ch),
-                  replace(_nextc::comma_or_closing_bracket),
-                  push(_nextc::value_end);
-                return ready;
+            } else if (one_of("[\"{tfn", ch) || digit(ch)) {
+                replace(_nextc::comma_or_closing_bracket);
+                push(_nextc::value_begin);
+                return (*this)(ch);
             } else {
                 return error;
             }
@@ -187,12 +252,16 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
             } else if (ch == '/') {
                 return push(_nextc::begin_comment_next), ready;
             } else if (ch == '{') {
+                // TODO: Verify whether current property is object
                 return apnd(ch), replace(_nextc::closing_brace), ready;
             } else if (ch == '[') {
+                // TODO: Verify whether current property is array
                 return apnd(ch), replace(_nextc::closing_bracket), ready;
             } else if (ch == '"') {
+                value_token_begin();
                 return apnd(ch), replace(_nextc::string_closing_quote), ready;
             } else if (one_of("tfn", ch) || digit(ch)) {
+                value_token_begin();
                 return apnd(ch), replace(_nextc::value_end), ready;
             } else {
                 return error;
@@ -204,8 +273,10 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
             } else if (ch == '/') {
                 return push(_nextc::begin_comment_next), ready;
             } else if (spacechars(ch)) {
+                value_token_end();
                 return pop(), ready;
             } else if (one_of(",}]", ch)) {
+                value_token_end();
                 return pop(), (*this)(ch);
             } else {
                 return error;
@@ -262,7 +333,7 @@ inline json_parser_stream::result_t json_parser_stream::operator()(char ch) {
             } else {
                 return replace(_nextc::block_comment_0_asterisk), ready;
             }
-        default: ; // nop
+        default:; // nop
     }
 
     return ready;

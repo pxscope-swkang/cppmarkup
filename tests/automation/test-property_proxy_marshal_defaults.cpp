@@ -27,7 +27,7 @@ struct visitor {
         if constexpr (marshal::generic_is_trivially_marshalable_v<Ty_>) {
             stringfy_trivial(*pr);
         } else if constexpr (pr.type().is_array()) {
-            for (int i = 0; i < pr.size(); ++i) {
+            for (size_t i = 0; i < pr.size(); ++i) {
                 stringfy_trivial(pr[i]);
             }
         }

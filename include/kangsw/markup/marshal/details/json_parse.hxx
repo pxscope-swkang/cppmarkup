@@ -2,7 +2,7 @@
 #include "strutils.hxx"
 #include "generics.hxx"
 #include "trivial_marshal.hxx"
-#include "../../reflection/property_proxy.hxx"
+#include "kangsw/markup/reflection/property_proxy.hxx"
 
 namespace kangsw::refl::marshal {
 

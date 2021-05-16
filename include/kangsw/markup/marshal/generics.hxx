@@ -1,9 +1,6 @@
 #pragma once
-#include <cassert>
-#include <charconv>
 #include <optional>
 #include "../types.hxx"
-#include "../utility/base64.hxx"
 #include "details/trivial_marshal.hxx"
 
 namespace kangsw::refl::marshal {

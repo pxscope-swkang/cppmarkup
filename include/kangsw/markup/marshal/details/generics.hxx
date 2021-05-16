@@ -1,7 +1,6 @@
 #pragma once
 #include <optional>
-#include "../types.hxx"
-#include "details/trivial_marshal.hxx"
+#include "../../types.hxx"
 
 namespace kangsw::refl::marshal {
 

@@ -2,8 +2,8 @@
 #include <ctime>
 #include <cassert>
 #include <charconv>
-#include "../types.hxx"
-#include "../utility/base64.hxx"
+#include "../../types.hxx"
+#include "../../utility/base64.hxx"
 
 namespace kangsw::refl::marshal
 {

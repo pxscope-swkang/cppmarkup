@@ -1,6 +1,7 @@
 #include "doctest.h"
 #include "test_type.hxx"
-#include "kangsw/markup/marshal/generics.hxx"
+#include "kangsw/markup/marshal/details/generics.hxx"
+#include "kangsw/markup/marshal/details/trivial_marshal.hxx"
 
 namespace refl    = kangsw::refl;
 namespace marshal = kangsw::refl::marshal;

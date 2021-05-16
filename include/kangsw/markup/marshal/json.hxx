@@ -1,6 +1,9 @@
 #pragma once
+#include <regex>
 #include "../reflection/property_proxy.hxx"
-#include "generics.hxx"
+#include "details/strutils.hxx"
+#include "details/trivial_marshal.hxx"
+#include "details/generics.hxx"
 
 namespace kangsw::refl::marshal {
 

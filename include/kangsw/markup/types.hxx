@@ -1,5 +1,7 @@
 #pragma once
 #include "utility/template_utils.hxx"
+#include <stdexcept>
+#include <iterator>
 #include <string>
 #include <string_view>
 #include <vector>

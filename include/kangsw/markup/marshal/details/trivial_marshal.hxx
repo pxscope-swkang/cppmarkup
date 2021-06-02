@@ -2,6 +2,7 @@
 #include <ctime>
 #include <cassert>
 #include <charconv>
+#include <iostream>
 #include "kangsw/markup/types.hxx"
 #include "kangsw/markup/utility/base64.hxx"
 

@@ -41,4 +41,27 @@ TEST_SUITE("Marshal.Json") {
 
         MESSAGE(js);
     }
+
+    CPPMARKUP_OBJECT_TEMPLATE(parsetest) {
+        CPPMARKUP_ELEMENT(abcd, 0);
+        CPPMARKUP_ELEMENT(alph, std::vector({1, 3}));
+
+        CPPMARKUP_EMBED_OBJECT_begin(CFV) //
+        {
+            CPPMARKUP_ELEMENT(AAD, std::vector<kangsw::refl::boolean_t>());
+        }
+        CPPMARKUP_EMBED_OBJECT_end(CFV);
+
+        CPPMARKUP_ELEMENT(xc, 0);
+        CPPMARKUP_ELEMENT(foov, true);
+    };
+
+    TEST_CASE("Parse") {
+        marshal::json_parse parse;
+        parsetest test;
+        test.reset();
+
+        parse(R"({"abcd":"12345", "alph": [1,2,3,4], "CFV": { "AAD": [false, true, true] }, "xc": 1312.413, "foov" : false})",
+              test);
+    }
 }

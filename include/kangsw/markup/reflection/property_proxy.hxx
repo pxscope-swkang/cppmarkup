@@ -17,9 +17,16 @@ public:
     template <typename Ty_>
     static void verify(property::memory_t const& m) {
         if (m.type != etype::from_type_exact<Ty_>()) {
-            throw property_type_mismatch_exception{"Type mismatch"};
+            auto exception     = property_type_mismatch_exception{"Type mismatch"};
+            exception.expected = etype::from_type_exact<Ty_>();
+            exception.actual   = m.type;
+            throw exception;
         }
     }
+
+public:
+    etype expected;
+    etype actual;
 };
 
 /**

@@ -111,3 +111,4 @@ You'd better to understand markup handling of this library as JSON; simple set o
 # References
 
 1. [`zeux/pugixml`](https://github.com/zeux/pugixml)
+2. [`zserge/jsmn`](https://github.com/zserge/jsmn)

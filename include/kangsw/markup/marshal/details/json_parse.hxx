@@ -11,27 +11,30 @@ namespace kangsw::refl::marshal {
  */
 class json_parse {
 public:
-    enum class result {
-        ok,
-        waiting,
-        error_invalid_token = -1,
-        error_invalid_type  = -2
+    struct failure_report {
+        enum error_code { error_invalid_token,
+                          waiting,
+                          error_invalid_type };
+
+        error_code code;
+        u8str_view where = {};
     };
 
 public:
-    json_parse(size_t num_initial_tokens = 0) noexcept {
+    json_parse(bool is_merge = false, size_t num_initial_tokens = 0) noexcept
+      : _merge_mode(is_merge) {
         _tokens.reserve(num_initial_tokens);
         jsmn::jsmn_init(&_parse);
     }
 
-    result operator()(u8str_view str, object& out) {
+    std::optional<failure_report> operator()(u8str_view str, object& out) {
         auto num_tokens = jsmn::jsmn_parse(&_parse, str.data(), str.size(), nullptr, 0);
         if (num_tokens == jsmn::JSMN_ERROR_INVAL) {
-            return result::error_invalid_token;
+            return failure_report{failure_report::error_invalid_token};
         } else if (num_tokens == jsmn::JSMN_ERROR_PART) {
             // if only part of json string was delievered, buffer it then use later.
             _buffered.append(str.begin(), str.end());
-            return result::waiting;
+            return failure_report{failure_report::waiting};
         }
 
         // if given string was under buffering state previously, then push rest of the string into
@@ -53,7 +56,13 @@ public:
             int idx = 0;          // index 0 is root object
             _str    = str;
             if (!_marshal(out, idx)) {
-                return result::error_invalid_type;
+                failure_report report;
+                report.code = failure_report::error_invalid_type;
+                if (idx < _tokens.size()) {
+                    auto& t      = _tokens[idx];
+                    report.where = u8str_view{_str.data() + t.start, size_t(t.end - t.start)};
+                }
+                return report;
             }
         }
 
@@ -62,7 +71,7 @@ public:
         jsmn::jsmn_init(&_parse);
         _tokens.clear();
 
-        return result::ok;
+        return {};
     }
 
 private:
@@ -117,16 +126,15 @@ private:
                           auto propname_if_attr =
                             utils::remove_suffix_if_found(token_value, ATTR_SUFFIX);
                           propname_if_attr.empty() == false) {
-
                         }
                         prop = traits.find_property(token_value);
                         if (prop == nullptr) {
                             // if given tag does not exist, ignore all children tokens.
                             // if any token's parent index is LE with current, it is sibling or
                             //unrelated node of this.
-                            auto cur_super = token.parent;
-                            while (++token_idx < _tokens.size() &&
-                                   is_token_child_of(cur_super)) {}
+                            for (auto cur_super = token.parent;
+                                 ++token_idx < _tokens.size() && is_token_child_of(cur_super);) //
+                            {}
 
                             continue;
                         }
@@ -140,9 +148,11 @@ private:
                         return false;
                     }
                     break;
+
                 case jsmn::JSMN_OBJECT:
                     assert(prop);
                     if (prop->type().is_map()) {
+                        // TODO
                         // since object map shares structure with general json object,
                         //this token can indicate any map property.
                         if (prop->type().is_object()) {
@@ -165,18 +175,51 @@ private:
                         return false;
                     }
                     break;
+
                 case jsmn::JSMN_ARRAY:
                     assert(prop);
                     if (!prop->type().is_array()) {
                         return false;
                     }
-                    if (prop->type().is_object()) {
-                        // call _marshal() for each array element
-                    } else {
-                        // visit each array element, then parse.
-                    }
 
-                    break;
+                    // visit each array element, then parse.
+                    visit_property(baseaddr, *prop, [&](auto proxy) {
+                        constexpr etype T = proxy.type();
+
+                        if constexpr (!T.is_array()) {
+                            return false;
+                        } else {
+                            using value_type = typename etype::to_type_t<T>::value_type;
+                            if (!_merge_mode) { proxy.erase(0, proxy.size()); }
+
+                            for (auto initial_parent = token.parent;
+                                 ++token_idx < _tokens.size() && is_token_child_of(initial_parent);) //
+                            {
+                                if constexpr (T.is_object()) {
+                                    // parse object array elements
+                                    if (_tokens[token_idx].type != jsmn::JSMN_OBJECT) {
+                                        return false;
+                                    }
+                                    auto& obj = proxy.emplace_back();
+                                    if (!_marshal(obj, token_idx, token_idx)) {
+                                        return false;
+                                    }
+                                } else {
+                                    // parse primitive elements
+                                    auto& tk   = _tokens[token_idx];
+                                    auto value = u8str_view{
+                                      _str.data() + tk.start, size_t(tk.end - tk.start)};
+
+                                    generic_parse<value_type>{}(
+                                      value.begin(), value.end(),
+                                      proxy.emplace_back());
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                    continue;
+
                 case jsmn::JSMN_PRIMITIVE:
                     assert(prop);
                     if (prop->type().is_container() ||
@@ -189,6 +232,7 @@ private:
                     }
                     prop = nullptr;
                     break;
+
                 default: throw std::runtime_error{"Json parsing gone wrong somehow."};
             }
 
@@ -206,6 +250,7 @@ private:
     u8str _buffered;
     u8str_view _str;
     object* _pout;
+    bool _merge_mode;
 };
 
 } // namespace kangsw::refl::marshal

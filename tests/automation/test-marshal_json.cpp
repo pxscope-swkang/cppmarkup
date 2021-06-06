@@ -87,7 +87,14 @@ TEST_SUITE("Marshal.Json") {
 
         SUBCASE("Parse dumped original object into memory") {
             parsetest dest = {};
-            CHECK(marshal::json_parse{128}(str, dest) == marshal::json_parse::result::ok);
+            auto report    = marshal::json_parse{true, 128}(str, dest);
+
+            if(report)
+            {
+                MESSAGE(report->code);
+                MESSAGE(report->where);
+            }
+            REQUIRE(report.has_value() == false);
 
             CHECK(dest.v1_int == test.v1_int);
             CHECK(dest.v2_int_array == test.v2_int_array);

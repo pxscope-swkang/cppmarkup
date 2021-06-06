@@ -20,12 +20,12 @@ set                         (CPPMARKUP_INCLUDE_DIR          ${CMAKE_CURRENT_SOUR
 aux_source_directory        (${ROOT_SRC_DIR}              CPPMARKUP_LIB_SOURCE)
 
 # -- TARGET LIBRARY
-add_library                 (CPPMARKUP_lib      STATIC      ${CPPMARKUP_LIB_SOURCE})
-add_library                 (cppmarkup::static  ALIAS       CPPMARKUP_lib)
+add_library                 (CPPMARKUP_lib      INTERFACE)
+add_library                 (cppmarkup::cppmarkup  ALIAS       CPPMARKUP_lib)
 
-target_compile_features     (CPPMARKUP_lib      PUBLIC      cxx_std_17)
-target_include_directories  (CPPMARKUP_lib      PUBLIC      ${CPPMARKUP_INCLUDE_DIR})
-target_compile_definitions  (CPPMARKUP_lib      PUBLIC      "_CRT_SECURE_NO_WARNINGS")
+target_compile_features     (CPPMARKUP_lib      INTERFACE   cxx_std_17)
+target_include_directories  (CPPMARKUP_lib      INTERFACE   ${CPPMARKUP_INCLUDE_DIR})
+target_compile_definitions  (CPPMARKUP_lib      INTERFACE   "_CRT_SECURE_NO_WARNINGS")
 
 # -- INSTALLATIONS
 

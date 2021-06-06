@@ -5,10 +5,7 @@ aux_source_directory        (automation                 AUTOMATION_SOURCES)
 set                         (TARGET_NAME                cppmarkup-automated-tests)
 
 add_executable              (cppmarkup-automated-tests     ${AUTOMATION_SOURCES})
-add_dependencies            (cppmarkup-automated-tests     cppmarkup::static)
-
-target_link_libraries       (cppmarkup-automated-tests     PUBLIC      cppmarkup::static)
-target_include_directories  (cppmarkup-automated-tests     PUBLIC      cppmarkup::static)
+target_link_libraries       (cppmarkup-automated-tests     PUBLIC      cppmarkup::cppmarkup)
 
 if(MSVC)
     target_compile_options  (${TARGET_NAME}              PRIVATE     "/W4")

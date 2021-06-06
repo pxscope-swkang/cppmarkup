@@ -61,48 +61,80 @@ public:
         _buffered.clear();
         jsmn::jsmn_init(&_parse);
         _tokens.clear();
+
+        return result::ok;
     }
 
 private:
-    struct _visitor {
+    class _primitive_visitor {
+    public:
         template <typename Ty_>
         bool operator()(property_proxy<Ty_, false> dest) {
-            return false;
+            constexpr etype T = etype::from_type<Ty_>();
+            if constexpr (T.is_container()) {
+                return false;
+            } else if constexpr (T.is_one_of(etype::timestamp, etype::string, etype::binary)) {
+                generic_parse<Ty_>{}(_str.begin(), _str.end(), *dest);
+                return true;
+            } else if constexpr (T.is_null() || T.is_number() || T.is_boolean()) {
+                generic_parse<Ty_>{}(_str.begin(), _str.end(), *dest);
+                return true;
+            } else {
+                assert(false);
+                return false;
+            }
         }
+
+        _primitive_visitor(u8str_view s) : _str(s) {}
+
+    private:
+        u8str_view _str;
     };
 
-    bool _marshal(object& out, int& token_idx, int parent_idx = -1) const {
+    bool _marshal(object& out, int& token_idx, int const parent_idx = -1) const {
+        // when entering this function, token_idx
+
         auto baseaddr        = out.base();
         auto& traits         = out.traits();
         int self_idx         = token_idx;
         property const* prop = nullptr;
 
-        while (++token_idx < _tokens.size() &&
-               _tokens[token_idx].parent > parent_idx // while it's our children...
+        auto is_token_child_of = [this, &token_idx](int const parent) {
+            return _tokens[token_idx].parent > parent;
+        };
+
+        ++token_idx;
+
+        while (token_idx < _tokens.size() &&
+               is_token_child_of(parent_idx) // as long as it is child of this object ...
         ) {
             auto& token            = _tokens[token_idx];
-            u8str_view token_value = _str.substr(token.start, token.size);
+            u8str_view token_value = _str.substr(token.start, token.end - token.start);
             switch (token.type) {
                 case jsmn::JSMN_STRING:
+                    if (auto const is_tag = _tokens[token.parent].type != jsmn::JSMN_STRING) {
+                        if (
+                          auto propname_if_attr =
+                            utils::remove_suffix_if_found(token_value, ATTR_SUFFIX);
+                          propname_if_attr.empty() == false) {
 
-                    if (
-                      auto const is_tag = _tokens[token.parent].type != jsmn::JSMN_STRING;
-                      is_tag) {
+                        }
                         prop = traits.find_property(token_value);
                         if (prop == nullptr) {
                             // if given tag does not exist, ignore all children tokens.
                             // if any token's parent index is LE with current, it is sibling or
                             //unrelated node of this.
-                            auto super = token.parent;
+                            auto cur_super = token.parent;
                             while (++token_idx < _tokens.size() &&
-                                   _tokens[token_idx].parent > super) {}
+                                   is_token_child_of(cur_super)) {}
 
                             continue;
                         }
-                    } else if (prop->type() == etype::string) {
+                    } else if (prop->type().is_one_of(etype::binary, etype::string, etype::timestamp)) {
+                        // these 3 types are represented as JSON string.
+
                         assert(prop);
-                        auto proxy = make_proxy<u8str>(baseaddr, *prop);
-                        proxy->assign(token_value);
+                        visit_property(baseaddr, *prop, _primitive_visitor{token_value});
                         prop = nullptr;
                     } else {
                         return false;
@@ -110,29 +142,59 @@ private:
                     break;
                 case jsmn::JSMN_OBJECT:
                     assert(prop);
-                    if (prop->type() != etype::object) {
-                        return false;
-                    } else {
+                    if (prop->type().is_map()) {
+                        // since object map shares structure with general json object,
+                        //this token can indicate any map property.
+                        if (prop->type().is_object()) {
+                            // iterate all children tags
+                            // value type should be object
+                            // call _marshal() recursively.
+                            auto proxy = make_proxy<u8str_map<object>>(baseaddr, *prop);
+                        } else { // if it is map of primitive type ...
+                            // iterate all children tags
+                            // value type should be primitive or string
+                        }
+                    } else if (prop->type() == etype::object) {
                         auto proxy = make_proxy<object>(baseaddr, *prop);
+
+                        // recursively parse child json object
                         if (!_marshal(*proxy, token_idx, self_idx)) { return false; }
+                        prop = nullptr;
+                        continue;
+                    } else {
+                        return false;
                     }
                     break;
-                case jsmn::JSMN_ARRAY: break;
+                case jsmn::JSMN_ARRAY:
+                    assert(prop);
+                    if (!prop->type().is_array()) {
+                        return false;
+                    }
+                    if (prop->type().is_object()) {
+                        // call _marshal() for each array element
+                    } else {
+                        // visit each array element, then parse.
+                    }
+
+                    break;
                 case jsmn::JSMN_PRIMITIVE:
                     assert(prop);
                     if (prop->type().is_container() ||
-                        prop->type().is_one_of(
-                          etype::boolean, etype::null, etype::integer, etype::floating_point) ||
-                        !visit_property(baseaddr, *prop, _visitor{})) //
+                        !prop->type().is_one_of(
+                          etype::boolean, etype::null, etype::integer, etype::floating_point)) //
                     {
                         return false;
+                    } else if (!visit_property(baseaddr, *prop, _primitive_visitor{token_value})) {
+                        return false;
                     }
+                    prop = nullptr;
                     break;
                 default: throw std::runtime_error{"Json parsing gone wrong somehow."};
             }
 
             ++token_idx;
         }
+
         return true;
     }
 

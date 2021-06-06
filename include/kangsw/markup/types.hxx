@@ -301,6 +301,3 @@ private:
 
 } // namespace kangsw::refl
 
-namespace kangsw {
-namespace markup = refl;
-}

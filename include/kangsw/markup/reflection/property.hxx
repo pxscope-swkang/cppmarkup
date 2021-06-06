@@ -23,6 +23,8 @@ struct invalid_container_interface_setup_exception : std::logic_error {
     using std::logic_error::logic_error;
 };
 
+constexpr inline u8str_view ATTR_SUFFIX = "~@@ATTR@@";
+
 /**
  * 
  */

@@ -16,7 +16,6 @@ public:
     };
 };
 
-
 namespace Impl {
 template <typename Ty_>
 void _dump(Ty_ const& v, string_output& o) {
@@ -72,7 +71,7 @@ inline void _dump<object>(object const& v, string_output& o) {
 
         if (!prop.attributes().empty()) {
             // "PropTag~@@ATTR@@": {
-            o.wrap('"', prop.tag(), "~@@ATTR@@") << ": {";
+            o.wrap('"', prop.tag(), ATTR_SUFFIX) << ": {";
             ++o;
 
             for (auto& attr : prop.attributes()) {

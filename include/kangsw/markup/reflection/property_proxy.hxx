@@ -320,5 +320,7 @@ decltype(auto) visit_property(BasePtr_* obj, PropTy_ const& pr, HandleFn_&& fn) 
     } else {
         assert(0 && "fatal logic error: attribute must not have container type");
     }
+
+    throw;
 }
 } // namespace kangsw::refl

@@ -43,17 +43,18 @@ TEST_SUITE("Marshal.Json") {
     }
 
     CPPMARKUP_OBJECT_TEMPLATE(parsetest) {
-        CPPMARKUP_ELEMENT(abcd, 0);
-        CPPMARKUP_ELEMENT(alph, std::vector({1, 3}));
+        CPPMARKUP_ELEMENT(v1_int, 1);
+        CPPMARKUP_ELEMENT(v2_int_array, std::vector({1, 3}));
 
-        CPPMARKUP_EMBED_OBJECT_begin(CFV) //
+        CPPMARKUP_EMBED_OBJECT_begin(v3_inner_obj) //
         {
-            CPPMARKUP_ELEMENT(AAD, std::vector<kangsw::refl::boolean_t>());
+            CPPMARKUP_ELEMENT(v4_boolean_vector, std::vector({false, false, true, false}));
+            CPPMARKUP_ELEMENT(v5_timestamp, std::chrono::system_clock::now());
         }
-        CPPMARKUP_EMBED_OBJECT_end(CFV);
+        CPPMARKUP_EMBED_OBJECT_end(v3_inner_obj);
 
-        CPPMARKUP_ELEMENT(xc, 0);
-        CPPMARKUP_ELEMENT(foov, true);
+        CPPMARKUP_ELEMENT(v6_some_float, 2.0);
+        CPPMARKUP_ELEMENT(v7_some_binary, kangsw::refl::binary_chunk::from(3, 4, 1));
     };
 
     TEST_CASE("Parse") {
@@ -61,7 +62,40 @@ TEST_SUITE("Marshal.Json") {
         parsetest test;
         test.reset();
 
-        parse(R"({"abcd":"12345", "alph": [1,2,3,4], "CFV": { "AAD": [false, true, true] }, "xc": 1312.413, "foov" : false})",
-              test);
+        refl::u8str str;
+        marshal::json_dump{}(test, {str});
+
+        SUBCASE("Stringfy JSMN") {
+            jsmn::jsmn_parser p;
+            jsmn::jsmn_init(&p);
+
+            jsmn::jsmntok_t tokens[128];
+            auto n_token = jsmn::jsmn_parse(&p, str.c_str(), str.size(), tokens, (unsigned)std::size(tokens));
+
+            for (int i = 0; i < n_token; ++i) {
+                auto const& token             = tokens[i];
+                constexpr char const* names[] = {"Undefined", "Object", "Array", "String", "Primitive"};
+
+                printf("[%03d] (%-10s) ", i, names[token.type]);
+                for (auto node = tokens + i; node->parent != -1; node = tokens + node->parent) {
+                    putchar('\t');
+                }
+
+                printf("%.*s\n", token.end - token.start, str.c_str() + token.start);
+            }
+        }
+
+        SUBCASE("Parse dumped original object into memory") {
+            parsetest dest = {};
+            CHECK(marshal::json_parse{128}(str, dest) == marshal::json_parse::result::ok);
+
+            CHECK(dest.v1_int == test.v1_int);
+            CHECK(dest.v2_int_array == test.v2_int_array);
+            CHECK(dest.v3_inner_obj.v4_boolean_vector == test.v3_inner_obj.v4_boolean_vector);
+            CHECK(
+              dest.v3_inner_obj.v5_timestamp.time_since_epoch().count() / 1'000'000 == test.v3_inner_obj.v5_timestamp.time_since_epoch().count() / 1'000'000);
+            CHECK(dest.v6_some_float == test.v6_some_float);
+            CHECK(dest.v7_some_binary == test.v7_some_binary);
+        }
     }
 }

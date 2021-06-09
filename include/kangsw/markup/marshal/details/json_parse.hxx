@@ -122,21 +122,23 @@ private:
             switch (token.type) {
                 case jsmn::JSMN_STRING:
                     if (auto const is_tag = _tokens[token.parent].type != jsmn::JSMN_STRING) {
-                        if (
-                          auto propname_if_attr =
-                            utils::remove_suffix_if_found(token_value, ATTR_SUFFIX);
-                          propname_if_attr.empty() == false) {
-                        }
-                        prop = traits.find_property(token_value);
-                        if (prop == nullptr) {
-                            // if given tag does not exist, ignore all children tokens.
-                            // if any token's parent index is LE with current, it is sibling or
-                            //unrelated node of this.
-                            for (auto cur_super = token.parent;
-                                 ++token_idx < _tokens.size() && is_token_child_of(cur_super);) //
-                            {}
+                        if (auto propname_if_attr =
+                              utils::remove_suffix_if_found(token_value, ATTR_SUFFIX);
+                            propname_if_attr.empty() == false) //
+                        {
+                            // TODO: if it's attribute ...
+                        } else {
+                            prop = traits.find_property(token_value);
+                            if (prop == nullptr) {
+                                // if given tag does not exist, ignore all child tokens.
+                                // if any token's parent index is LE with current, it is sibling or
+                                //unrelated node of this.
+                                for (auto cur_super = token.parent;
+                                     ++token_idx < _tokens.size() && is_token_child_of(cur_super);) //
+                                {}
 
-                            continue;
+                                continue;
+                            }
                         }
                     } else if (prop->type().is_one_of(etype::binary, etype::string, etype::timestamp)) {
                         // these 3 types are represented as JSON string.
